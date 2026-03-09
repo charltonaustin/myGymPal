@@ -39,7 +39,7 @@
 
 **US-05** — As a user, I want to create a training program with a name, start date, and number of phases so that my workouts are organized into a structured plan.
 
-**US-06** — As a user, I want each phase in my program to contain 8 weeks so that my training follows a consistent cycle.
+**US-06** — As a user, I want each phase in my program to contain a user defined amount of weeks with a default of 8 so that my training follows a consistent cycle.
 
 **US-07** — As a user, I want to define a rep range (min and max) per phase (e.g. 10–12 for Phase 3, 8–10 for Phase 4) so that the target reps automatically adjust as I move through the program.
 

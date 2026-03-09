@@ -9,6 +9,7 @@
             <div class="navbar-nav me-auto">
                 {{if .LoggedIn}}
                 <a href="/" class="nav-link {{if eq .ActivePage "home"}}active fw-semibold{{end}}">Home</a>
+                <a href="/programs" class="nav-link {{if eq .ActivePage "programs"}}active fw-semibold{{end}}">Programs</a>
                 <a href="/dashboard" class="nav-link {{if eq .ActivePage "dashboard"}}active fw-semibold{{end}}">Dashboard</a>
                 <a href="/settings" class="nav-link {{if eq .ActivePage "settings"}}active fw-semibold{{end}}">Settings</a>
                 {{else}}

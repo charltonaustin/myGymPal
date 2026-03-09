@@ -18,4 +18,8 @@ func Register() {
 	beego.Router("/dashboard", &controllers.DashboardController{})
 	beego.Router("/settings", &controllers.AccountController{}, "get:Settings;post:SettingsPost")
 	beego.Router("/error", &controllers.ErrorController{})
+
+	// Programs
+	beego.Router("/programs", &controllers.ProgramController{}, "get:Index;post:Create")
+	beego.Router("/programs/new", &controllers.ProgramController{}, "get:New")
 }

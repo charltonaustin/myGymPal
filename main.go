@@ -7,6 +7,7 @@ import (
 	"myGymPal/routers"
 
 	beego "github.com/beego/beego/v2/server/web"
+	_ "github.com/beego/beego/v2/server/web/session/postgres"
 )
 
 func main() {

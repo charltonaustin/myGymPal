@@ -4,11 +4,15 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
 	beego "github.com/beego/beego/v2/server/web"
+	_ "github.com/beego/beego/v2/server/web/session/postgres"
 	"myGymPal/models"
 	"myGymPal/routers"
 )
+
+var testProgramDate = time.Date(2025, 1, 6, 0, 0, 0, 0, time.UTC)
 
 func TestMain(m *testing.M) {
 	// Use an absolute path so TestBeegoInit's internal Chdir + path join resolves correctly.
