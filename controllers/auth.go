@@ -15,6 +15,27 @@ func (c *AuthController) Register() {
 	c.TplName = "auth/register.tpl"
 }
 
+func (c *AuthController) Login() {
+	c.TplName = "auth/login.tpl"
+}
+
+func (c *AuthController) LoginPost() {
+	username := strings.TrimSpace(c.GetString("username"))
+	password := c.GetString("password")
+
+	user, err := models.GetUserByUsername(username)
+	if err != nil || !user.CheckPassword(password) {
+		c.Data["Error"] = "Invalid username or password."
+		c.Data["Username"] = username
+		c.TplName = "auth/login.tpl"
+		return
+	}
+
+	c.SetSession("user_id", user.ID)
+	c.SetSession("username", user.Username)
+	c.Redirect("/dashboard", 302)
+}
+
 func (c *AuthController) RegisterPost() {
 	username := strings.TrimSpace(c.GetString("username"))
 	password := c.GetString("password")
