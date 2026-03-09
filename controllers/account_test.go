@@ -25,8 +25,29 @@ func TestSettings_ShowsCurrentUnit(t *testing.T) {
 	assert.Equal(t, http.StatusOK, w.Code)
 	assert.Contains(t, w.Body.String(), `value="lb"`)
 	assert.Contains(t, w.Body.String(), `value="kg"`)
-	// default is lb, so lb radio should be checked
-	assert.Contains(t, w.Body.String(), `id="unit_lb" value="lb"`)
+	// default is lb, so lb radio should be checked and kg should not
+	assert.Regexp(t, `id="unit_lb"[^>]*checked`, w.Body.String())
+	assert.NotRegexp(t, `id="unit_kg"[^>]*checked`, w.Body.String())
+}
+
+func TestSettings_ShowsKgCheckedForKgUser(t *testing.T) {
+	_ = models.DeleteUserByUsername("test_settings_kg_get")
+	_, err := models.CreateUser("test_settings_kg_get", "password123", "kg")
+	require.NoError(t, err)
+	t.Cleanup(func() { models.DeleteUserByUsername("test_settings_kg_get") })
+
+	// Log in directly — loginAs always creates with "lb" and would overwrite the kg user.
+	w := postForm("/login", url.Values{
+		"username": {"test_settings_kg_get"},
+		"password": {"password123"},
+	}, nil)
+	require.Equal(t, http.StatusFound, w.Code)
+	cookies := w.Result().Cookies()
+
+	w2 := getPath("/settings", cookies)
+	assert.Equal(t, http.StatusOK, w2.Code)
+	assert.Regexp(t, `id="unit_kg"[^>]*checked`, w2.Body.String())
+	assert.NotRegexp(t, `id="unit_lb"[^>]*checked`, w2.Body.String())
 }
 
 func TestSettingsPost_Unauthenticated(t *testing.T) {

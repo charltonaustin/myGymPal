@@ -84,3 +84,43 @@ func TestCheckPassword_Wrong(t *testing.T) {
 
 	assert.False(t, user.CheckPassword("wrongpassword"))
 }
+
+func TestGetUserByID_Found(t *testing.T) {
+	user, err := CreateUser("test_get_id", "password123", "kg")
+	require.NoError(t, err)
+	t.Cleanup(func() { DeleteUserByUsername("test_get_id") })
+
+	found, err := GetUserByID(user.ID)
+	require.NoError(t, err)
+	assert.Equal(t, user.ID, found.ID)
+	assert.Equal(t, "test_get_id", found.Username)
+}
+
+func TestGetUserByID_NotFound(t *testing.T) {
+	_, err := GetUserByID(-1)
+	assert.Error(t, err)
+}
+
+func TestUpdateWeightUnit_Valid(t *testing.T) {
+	user, err := CreateUser("test_update_unit", "password123", "lb")
+	require.NoError(t, err)
+	t.Cleanup(func() { DeleteUserByUsername("test_update_unit") })
+
+	require.NoError(t, UpdateWeightUnit(user.ID, "kg"))
+	updated, err := GetUserByID(user.ID)
+	require.NoError(t, err)
+	assert.Equal(t, "kg", updated.WeightUnit)
+
+	require.NoError(t, UpdateWeightUnit(user.ID, "lb"))
+	updated, err = GetUserByID(user.ID)
+	require.NoError(t, err)
+	assert.Equal(t, "lb", updated.WeightUnit)
+}
+
+func TestUpdateWeightUnit_Invalid(t *testing.T) {
+	user, err := CreateUser("test_update_bad_unit", "password123", "lb")
+	require.NoError(t, err)
+	t.Cleanup(func() { DeleteUserByUsername("test_update_bad_unit") })
+
+	assert.Error(t, UpdateWeightUnit(user.ID, "stone"))
+}

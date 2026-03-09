@@ -11,7 +11,7 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./scripts/init-multiple-dbs.sh:/docker-entrypoint-initdb.d/init-multiple-dbs.sh
+      - ./scripts/init-multiple-dbs:/docker-entrypoint-initdb.d/init-multiple-dbs
 
 volumes:
   postgres_data:

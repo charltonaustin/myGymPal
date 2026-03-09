@@ -14,7 +14,7 @@
     <h1 class="h4 fw-bold mb-4">Account Settings</h1>
 
     {{if .Success}}
-    <div class="alert alert-success">{{.Success}}</div>
+    <div class="alert alert-success alert-dismissible fade show" id="success-alert">{{.Success}}</div>
     {{end}}
 
     {{if .Error}}
@@ -41,5 +41,11 @@
 </main>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    const alertEl = document.getElementById('success-alert');
+    if (alertEl) {
+        setTimeout(() => bootstrap.Alert.getOrCreateInstance(alertEl).close(), 3000);
+    }
+</script>
 </body>
 </html>

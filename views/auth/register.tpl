@@ -20,10 +20,10 @@
             <h1 class="h4 fw-bold mb-4 text-center">Create Account</h1>
 
             {{if .Error}}
-            <div class="alert alert-danger">{{.Error}}</div>
+            <div class="alert alert-danger alert-dismissible fade show" id="error-alert">{{.Error}}</div>
             {{end}}
 
-            <form method="POST" action="/register" novalidate>
+            <form method="POST" action="/register" novalidate id="register-form">
                 <div class="mb-3">
                     <label for="username" class="form-label">Username</label>
                     <input
@@ -35,6 +35,7 @@
                         autocomplete="username"
                         required
                     >
+                    <div class="invalid-feedback">Username is required.</div>
                 </div>
 
                 <div class="mb-3">
@@ -45,9 +46,11 @@
                         id="password"
                         name="password"
                         autocomplete="new-password"
+                        minlength="8"
                         required
                     >
                     <div class="form-text">At least 8 characters.</div>
+                    <div class="invalid-feedback">Password must be at least 8 characters.</div>
                 </div>
 
                 <div class="mb-3">
@@ -60,6 +63,7 @@
                         autocomplete="new-password"
                         required
                     >
+                    <div class="invalid-feedback">Passwords do not match.</div>
                 </div>
 
                 <button type="submit" class="btn btn-dark w-100 mt-2">Create Account</button>
@@ -73,5 +77,30 @@
 </main>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    const alertEl = document.getElementById('error-alert');
+    if (alertEl) {
+        setTimeout(() => bootstrap.Alert.getOrCreateInstance(alertEl).close(), 3000);
+    }
+
+    const password = document.getElementById('password');
+    const confirm = document.getElementById('confirm_password');
+
+    function checkPasswordMatch() {
+        confirm.setCustomValidity(confirm.value && confirm.value !== password.value ? 'Passwords do not match.' : '');
+    }
+
+    password.addEventListener('input', checkPasswordMatch);
+    confirm.addEventListener('input', checkPasswordMatch);
+
+    document.getElementById('register-form').addEventListener('submit', function (e) {
+        checkPasswordMatch();
+        if (!this.checkValidity()) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+        this.classList.add('was-validated');
+    });
+</script>
 </body>
 </html>

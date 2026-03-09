@@ -85,6 +85,17 @@ func TestRegisterPost_EmptyUsername(t *testing.T) {
 	assert.Contains(t, w.Body.String(), "required")
 }
 
+func TestRegisterPost_EmptyPassword(t *testing.T) {
+	w := postForm("/register", url.Values{
+		"username":         {"test_nopw_post"},
+		"password":         {""},
+		"confirm_password": {""},
+	}, nil)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	assert.Contains(t, w.Body.String(), "required")
+}
+
 func TestRegisterPost_ShortPassword(t *testing.T) {
 	w := postForm("/register", url.Values{
 		"username":         {"test_shortpw"},
