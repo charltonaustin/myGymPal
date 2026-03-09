@@ -9,6 +9,5 @@ type MainController struct {
 }
 
 func (c *MainController) Get() {
-	c.Data["json"] = map[string]string{"status": "ok", "app": "myGymPal"}
-	c.ServeJSON()
+	c.TplName = "index.tpl"
 }
