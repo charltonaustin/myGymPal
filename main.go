@@ -3,8 +3,8 @@ package main
 import (
 	"log"
 
-	_ "myGymPal/routers"
 	"myGymPal/models"
+	"myGymPal/routers"
 
 	beego "github.com/beego/beego/v2/server/web"
 )
@@ -14,5 +14,6 @@ func main() {
 		log.Fatalf("failed to connect to database: %v", err)
 	}
 
+	routers.Register()
 	beego.Run()
 }

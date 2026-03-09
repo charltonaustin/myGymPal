@@ -1,0 +1,26 @@
+package controllers_test
+
+import (
+	"os"
+	"path/filepath"
+	"testing"
+
+	beego "github.com/beego/beego/v2/server/web"
+	"myGymPal/models"
+	"myGymPal/routers"
+)
+
+func TestMain(m *testing.M) {
+	// Use an absolute path so TestBeegoInit's internal Chdir + path join resolves correctly.
+	root, _ := filepath.Abs("..")
+	// Change to project root so template/migration paths resolve correctly.
+	os.Chdir(root)
+	// InitBeegoBeforeTest loads config, sets RunMode=test, and initialises templates + sessions.
+	beego.InitBeegoBeforeTest(filepath.Join(root, "conf", "app.test.conf"))
+	if err := models.Init(); err != nil {
+		panic("failed to init DB: " + err.Error())
+	}
+	// Register routes AFTER config is loaded so routes inherit SessionOn=true.
+	routers.Register()
+	os.Exit(m.Run())
+}

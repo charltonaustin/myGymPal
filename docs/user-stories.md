@@ -25,7 +25,7 @@
 
 ~~**US-02** — As a returning user, I want to log in so that I can access my workout history and templates.~~
 
-**US-03** — As a logged-in user, I want to log out so that my account is secure on shared devices.
+~~**US-03** — As a logged-in user, I want to log out so that my account is secure on shared devices.~~
 
 ---
 

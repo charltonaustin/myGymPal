@@ -19,6 +19,14 @@ func (c *AuthController) Login() {
 	c.TplName = "auth/login.tpl"
 }
 
+func (c *AuthController) Logout() {
+	err := c.DestroySession()
+	if err != nil {
+		return
+	}
+	c.Redirect("/login", 302)
+}
+
 func (c *AuthController) LoginPost() {
 	username := strings.TrimSpace(c.GetString("username"))
 	password := c.GetString("password")

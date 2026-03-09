@@ -61,3 +61,9 @@ func GetUserByUsername(username string) (*User, error) {
 func (u *User) CheckPassword(password string) bool {
 	return bcrypt.CompareHashAndPassword([]byte(u.PasswordHash), []byte(password)) == nil
 }
+
+func DeleteUserByUsername(username string) error {
+	o := orm.NewOrm()
+	_, err := o.QueryTable(&User{}).Filter("Username", username).Delete()
+	return err
+}
