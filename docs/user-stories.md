@@ -105,8 +105,7 @@
 
 **US-28** — As a user, I want to log a cardio activity with a type (e.g. fartlek, steady state), a goal duration, and the actual duration completed so that I can track both intent and reality.
 
-**US-29** — As a user, I want to record a partial cardio session (e.g. 25 of 30 mins) without it being treated as an error so that incomplete efforts are captured honestly.
-
+**US-29** — As a user, I want to record a partial cardio session (e.g. 25 of 30 mins) without it being treated as an error so that incomplete efforts are captured 
 ---
 
 ## Stretching

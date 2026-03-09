@@ -5,6 +5,9 @@ import (
 
 	"github.com/beego/beego/v2/client/orm"
 	beego "github.com/beego/beego/v2/server/web"
+	"github.com/golang-migrate/migrate/v4"
+	_ "github.com/golang-migrate/migrate/v4/database/postgres"
+	_ "github.com/golang-migrate/migrate/v4/source/file"
 	_ "github.com/lib/pq"
 )
 
@@ -22,5 +25,28 @@ func Init() error {
 	)
 
 	orm.RegisterDriver("postgres", orm.DRPostgres)
-	return orm.RegisterDataBase("default", "postgres", dsn)
+	if err := orm.RegisterDataBase("default", "postgres", dsn); err != nil {
+		return err
+	}
+
+	return runMigrations(host, port, name, user, password, sslmode)
+}
+
+func runMigrations(host, port, dbname, user, password, sslmode string) error {
+	pgURL := fmt.Sprintf(
+		"postgres://%s:%s@%s:%s/%s?sslmode=%s",
+		user, password, host, port, dbname, sslmode,
+	)
+
+	m, err := migrate.New("file://migrations", pgURL)
+	if err != nil {
+		return fmt.Errorf("migrate init: %w", err)
+	}
+	defer m.Close()
+
+	if err := m.Up(); err != nil && err != migrate.ErrNoChange {
+		return fmt.Errorf("migrate up: %w", err)
+	}
+
+	return nil
 }
