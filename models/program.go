@@ -8,13 +8,14 @@ import (
 )
 
 type Program struct {
-	ID        int64     `orm:"column(id);auto;pk"`
-	UserID    int64     `orm:"column(user_id)"`
-	Name      string    `orm:"column(name)"`
-	StartDate time.Time `orm:"column(start_date);type(date)"`
-	NumPhases int       `orm:"column(num_phases)"`
-	CreatedAt time.Time `orm:"column(created_at);auto_now_add"`
-	UpdatedAt time.Time `orm:"column(updated_at);auto_now"`
+	ID            int64     `orm:"column(id);auto;pk"`
+	UserID        int64     `orm:"column(user_id)"`
+	Name          string    `orm:"column(name)"`
+	StartDate     time.Time `orm:"column(start_date);type(date)"`
+	NumPhases     int       `orm:"column(num_phases)"`
+	WeeksPerPhase int       `orm:"column(weeks_per_phase)"`
+	CreatedAt     time.Time `orm:"column(created_at);auto_now_add"`
+	UpdatedAt     time.Time `orm:"column(updated_at);auto_now"`
 }
 
 func (p *Program) TableName() string {
@@ -25,19 +26,23 @@ func init() {
 	orm.RegisterModel(&Program{})
 }
 
-func CreateProgram(userID int64, name string, startDate time.Time, numPhases int) (*Program, error) {
+func CreateProgram(userID int64, name string, startDate time.Time, numPhases, weeksPerPhase int) (*Program, error) {
 	if name == "" {
 		return nil, errors.New("program name is required")
 	}
 	if numPhases <= 0 {
 		return nil, errors.New("num_phases must be greater than 0")
 	}
+	if weeksPerPhase <= 0 {
+		return nil, errors.New("weeks_per_phase must be greater than 0")
+	}
 
 	p := &Program{
-		UserID:    userID,
-		Name:      name,
-		StartDate: startDate,
-		NumPhases: numPhases,
+		UserID:        userID,
+		Name:          name,
+		StartDate:     startDate,
+		NumPhases:     numPhases,
+		WeeksPerPhase: weeksPerPhase,
 	}
 
 	o := orm.NewOrm()

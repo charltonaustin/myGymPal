@@ -45,6 +45,7 @@ func (c *ProgramController) New() {
 
 	c.Data["LoggedIn"] = true
 	c.Data["ActivePage"] = "programs"
+	c.Data["WeeksPerPhase"] = "8"
 	c.TplName = "programs/new.tpl"
 }
 
@@ -58,6 +59,7 @@ func (c *ProgramController) Create() {
 	name := c.GetString("name")
 	startDateStr := c.GetString("start_date")
 	numPhasesStr := c.GetString("num_phases")
+	weeksPerPhaseStr := c.GetString("weeks_per_phase")
 
 	renderForm := func(errMsg string) {
 		c.Data["LoggedIn"] = true
@@ -66,6 +68,7 @@ func (c *ProgramController) Create() {
 		c.Data["Name"] = name
 		c.Data["StartDate"] = startDateStr
 		c.Data["NumPhases"] = numPhasesStr
+		c.Data["WeeksPerPhase"] = weeksPerPhaseStr
 		c.TplName = "programs/new.tpl"
 	}
 
@@ -86,7 +89,13 @@ func (c *ProgramController) Create() {
 		return
 	}
 
-	if _, err := models.CreateProgram(userID.(int64), name, startDate, numPhases); err != nil {
+	weeksPerPhase, err := strconv.Atoi(weeksPerPhaseStr)
+	if err != nil || weeksPerPhase <= 0 {
+		renderForm("Weeks per phase must be a positive number.")
+		return
+	}
+
+	if _, err := models.CreateProgram(userID.(int64), name, startDate, numPhases, weeksPerPhase); err != nil {
 		renderForm("Something went wrong. Please try again.")
 		return
 	}

@@ -60,6 +60,20 @@
             <div class="invalid-feedback">Enter a number of phases (at least 1).</div>
         </div>
 
+        <div class="mb-3">
+            <label for="weeks_per_phase" class="form-label">Weeks per Phase</label>
+            <input
+                type="number"
+                class="form-control"
+                id="weeks_per_phase"
+                name="weeks_per_phase"
+                value="{{.WeeksPerPhase}}"
+                min="1"
+                required
+            >
+            <div class="invalid-feedback">Enter a number of weeks (at least 1).</div>
+        </div>
+
         <div class="d-flex gap-2">
             <button type="submit" class="btn btn-dark">Create Program</button>
             <a href="/programs" class="btn btn-outline-secondary">Cancel</a>

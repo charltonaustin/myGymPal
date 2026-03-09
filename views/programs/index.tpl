@@ -28,7 +28,7 @@
             <div>
                 <div class="fw-semibold">{{.Name}}</div>
                 <div class="text-muted small">
-                    Starts {{.StartDate.Format "Jan 2, 2006"}} &middot; {{.NumPhases}} phase{{if gt .NumPhases 1}}s{{end}}
+                    Starts {{.StartDate.Format "Jan 2, 2006"}} &middot; {{.NumPhases}} phase{{if gt .NumPhases 1}}s{{end}} &middot; {{.WeeksPerPhase}} week{{if gt .WeeksPerPhase 1}}s{{end}}/phase
                 </div>
             </div>
         </li>
