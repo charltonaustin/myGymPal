@@ -37,7 +37,7 @@
 
 ## Training Programs
 
-**US-05** — As a user, I want to create a training program with a name, start date, and number of phases so that my workouts are organized into a structured plan.
+~~**US-05** — As a user, I want to create a training program with a name, start date, and number of phases so that my workouts are organized into a structured plan.~~
 
 **US-06** — As a user, I want each phase in my program to contain a user defined amount of weeks with a default of 8 so that my training follows a consistent cycle.
 

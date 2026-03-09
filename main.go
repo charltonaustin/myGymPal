@@ -15,6 +15,7 @@ func main() {
 		log.Fatalf("failed to connect to database: %v", err)
 	}
 
+	beego.SetStaticPath("/static", "static")
 	routers.Register()
 	beego.Run()
 }

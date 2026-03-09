@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Settings — My Gym Pal</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="manifest" href="/manifest.json">
 </head>
 <body>
 
@@ -21,7 +22,7 @@
     <div class="alert alert-danger">{{.Error}}</div>
     {{end}}
 
-    <form method="post" action="/settings">
+    <form method="post" action="/settings" data-offline-sync>
         <fieldset class="mb-4">
             <legend class="form-label fw-semibold">Weight Unit</legend>
             <div class="form-check">
@@ -47,5 +48,7 @@
         setTimeout(() => bootstrap.Alert.getOrCreateInstance(alertEl).close(), 3000);
     }
 </script>
+<script src="/static/offline-sync.js"></script>
+<script>if ('serviceWorker' in navigator) { navigator.serviceWorker.register('/sw.js').catch(console.error); }</script>
 </body>
 </html>

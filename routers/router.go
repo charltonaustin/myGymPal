@@ -7,6 +7,11 @@ import (
 )
 
 func Register() {
+	// PWA assets (must be served from root path for correct service worker scope)
+	beego.Router("/sw.js", &controllers.PWAController{}, "get:ServiceWorker")
+	beego.Router("/manifest.json", &controllers.PWAController{}, "get:Manifest")
+	beego.Router("/offline", &controllers.PWAController{}, "get:Offline")
+
 	beego.Router("/", &controllers.MainController{})
 
 	// Auth

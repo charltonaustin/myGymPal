@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Create Account — My Gym Pal</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="manifest" href="/manifest.json">
 </head>
 <body class="bg-light">
 
@@ -102,5 +103,7 @@
         this.classList.add('was-validated');
     });
 </script>
+<script src="/static/offline-sync.js"></script>
+<script>if ('serviceWorker' in navigator) { navigator.serviceWorker.register('/sw.js').catch(console.error); }</script>
 </body>
 </html>

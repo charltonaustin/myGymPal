@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>New Program — My Gym Pal</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="manifest" href="/manifest.json">
 </head>
 <body>
 
@@ -17,7 +18,7 @@
     <div class="alert alert-danger alert-dismissible fade show" id="error-alert">{{.Error}}</div>
     {{end}}
 
-    <form method="POST" action="/programs" novalidate id="program-form">
+    <form method="POST" action="/programs" novalidate id="program-form" data-offline-sync>
         <div class="mb-3">
             <label for="name" class="form-label">Program Name</label>
             <input
@@ -81,5 +82,7 @@
         this.classList.add('was-validated');
     });
 </script>
+<script src="/static/offline-sync.js"></script>
+<script>if ('serviceWorker' in navigator) { navigator.serviceWorker.register('/sw.js').catch(console.error); }</script>
 </body>
 </html>
