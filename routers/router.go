@@ -16,4 +16,5 @@ func Register() {
 
 	// App
 	beego.Router("/dashboard", &controllers.DashboardController{})
+	beego.Router("/error", &controllers.ErrorController{})
 }

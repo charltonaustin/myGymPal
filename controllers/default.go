@@ -9,5 +9,6 @@ type MainController struct {
 }
 
 func (c *MainController) Get() {
+	c.Data["LoggedIn"] = c.GetSession("user_id") != nil
 	c.TplName = "index.tpl"
 }

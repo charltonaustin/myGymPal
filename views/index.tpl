@@ -11,6 +11,14 @@
 <nav class="navbar navbar-dark bg-dark">
     <div class="container">
         <a class="navbar-brand fw-bold" href="/">My Gym Pal</a>
+        <div class="d-flex gap-2">
+            {{if .LoggedIn}}
+            <a href="/logout" class="btn btn-outline-light btn-sm">Log Out</a>
+            {{else}}
+            <a href="/login" class="btn btn-outline-light btn-sm">Log In</a>
+            <a href="/register" class="btn btn-light btn-sm">Create Account</a>
+            {{end}}
+        </div>
     </div>
 </nav>
 

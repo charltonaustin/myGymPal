@@ -20,8 +20,8 @@ func (c *AuthController) Login() {
 }
 
 func (c *AuthController) Logout() {
-	err := c.DestroySession()
-	if err != nil {
+	if err := c.DestroySession(); err != nil {
+		c.Redirect("/error", 302)
 		return
 	}
 	c.Redirect("/login", 302)
@@ -39,8 +39,16 @@ func (c *AuthController) LoginPost() {
 		return
 	}
 
-	c.SetSession("user_id", user.ID)
-	c.SetSession("username", user.Username)
+	err = c.SetSession("user_id", user.ID)
+	if err != nil {
+		c.Redirect("/error", 302)
+		return
+	}
+	err = c.SetSession("username", user.Username)
+	if err != nil {
+		c.Redirect("/error", 302)
+		return
+	}
 	c.Redirect("/dashboard", 302)
 }
 

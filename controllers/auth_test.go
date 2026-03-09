@@ -7,10 +7,11 @@ import (
 	"strings"
 	"testing"
 
+	"myGymPal/models"
+
 	beego "github.com/beego/beego/v2/server/web"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"myGymPal/models"
 )
 
 // postForm is a helper that submits a form POST and returns the response.
