@@ -8,15 +8,7 @@
 </head>
 <body>
 
-<nav class="navbar navbar-dark bg-dark">
-    <div class="container">
-        <a class="navbar-brand fw-bold" href="/">My Gym Pal</a>
-        <div class="d-flex align-items-center gap-3">
-            <span class="text-white-50 small">{{.Username}}</span>
-            <a href="/logout" class="btn btn-outline-light btn-sm">Log out</a>
-        </div>
-    </div>
-</nav>
+{{template "partials/navbar.tpl" .}}
 
 <main class="container mt-5">
     <h1 class="h4 fw-bold">Welcome back, {{.Username}}!</h1>

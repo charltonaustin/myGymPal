@@ -10,5 +10,6 @@ type MainController struct {
 
 func (c *MainController) Get() {
 	c.Data["LoggedIn"] = c.GetSession("user_id") != nil
+	c.Data["ActivePage"] = "home"
 	c.TplName = "index.tpl"
 }

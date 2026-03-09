@@ -8,19 +8,7 @@
 </head>
 <body>
 
-<nav class="navbar navbar-dark bg-dark">
-    <div class="container">
-        <a class="navbar-brand fw-bold" href="/">My Gym Pal</a>
-        <div class="d-flex gap-2">
-            {{if .LoggedIn}}
-            <a href="/logout" class="btn btn-outline-light btn-sm">Log Out</a>
-            {{else}}
-            <a href="/login" class="btn btn-outline-light btn-sm">Log In</a>
-            <a href="/register" class="btn btn-light btn-sm">Create Account</a>
-            {{end}}
-        </div>
-    </div>
-</nav>
+{{template "partials/navbar.tpl" .}}
 
 <main class="container text-center mt-5">
     <h1 class="display-4 fw-bold mb-3">Welcome to My Gym Pal</h1>

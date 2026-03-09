@@ -31,7 +31,7 @@
 
 ## Account Settings
 
-**US-04** — As a user, I want to choose my preferred weight unit (lb or kg) in my account settings so that all weights are displayed and entered in the unit I use.
+~~**US-04** — As a user, I want to choose my preferred weight unit (lb or kg) in my account settings so that all weights are displayed and entered in the unit I use.~~
 
 ---
 

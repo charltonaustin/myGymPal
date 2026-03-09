@@ -62,6 +62,24 @@ func (u *User) CheckPassword(password string) bool {
 	return bcrypt.CompareHashAndPassword([]byte(u.PasswordHash), []byte(password)) == nil
 }
 
+func GetUserByID(id int64) (*User, error) {
+	o := orm.NewOrm()
+	user := &User{ID: id}
+	if err := o.Read(user); err != nil {
+		return nil, err
+	}
+	return user, nil
+}
+
+func UpdateWeightUnit(userID int64, unit string) error {
+	if unit != "lb" && unit != "kg" {
+		return errors.New("weight_unit must be lb or kg")
+	}
+	o := orm.NewOrm()
+	_, err := o.QueryTable(&User{}).Filter("ID", userID).Update(orm.Params{"weight_unit": unit})
+	return err
+}
+
 func DeleteUserByUsername(username string) error {
 	o := orm.NewOrm()
 	_, err := o.QueryTable(&User{}).Filter("Username", username).Delete()

@@ -12,6 +12,8 @@ func (c *DashboardController) Get() {
 		c.Redirect("/login", 302)
 		return
 	}
+	c.Data["LoggedIn"] = true
+	c.Data["ActivePage"] = "dashboard"
 	c.Data["Username"] = c.GetSession("username")
 	c.TplName = "dashboard.tpl"
 }

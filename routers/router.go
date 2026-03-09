@@ -16,5 +16,6 @@ func Register() {
 
 	// App
 	beego.Router("/dashboard", &controllers.DashboardController{})
+	beego.Router("/settings", &controllers.AccountController{}, "get:Settings;post:SettingsPost")
 	beego.Router("/error", &controllers.ErrorController{})
 }
