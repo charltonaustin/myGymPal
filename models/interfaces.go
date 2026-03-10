@@ -26,10 +26,19 @@ type TemplateRepository interface {
 	Create(name, focus string, exercises []TemplateExerciseInput) (*Template, error)
 	GetAll() ([]*Template, error)
 	GetByID(id int64) (*Template, []*TemplateExercise, error)
+	Delete(id int64) error
 }
 
 type SessionRepository interface {
 	Create(programID, userID int64, phaseNumber, weekNumber, workoutNumber int, isDeload bool, date time.Time) (*Session, error)
 	CountByProgram(programID int64) (int, error)
 	GetByID(id, userID int64) (*Session, error)
+}
+
+type SessionExerciseRepository interface {
+	Create(sessionID int64, name string, isBodyweight bool, goalWeight float64, weightUnit string) (*SessionExercise, error)
+	GetBySession(sessionID int64) ([]*SessionExerciseView, error)
+	GetByID(exerciseID int64) (*SessionExercise, error)
+	LogSet(exerciseID int64, setNumber int, actualWeight float64, weightUnit string, actualReps int) (*SessionSet, error)
+	CountSetsByExercise(exerciseID int64) (int, error)
 }

@@ -162,6 +162,30 @@ func (c *ProgramController) Show() {
 	c.TplName = "programs/show.tpl"
 }
 
+func (c *ProgramController) Delete() {
+	userID := c.GetSession("user_id")
+	if userID == nil {
+		c.Redirect("/login", 302)
+		return
+	}
+
+	id, err := strconv.ParseInt(c.Ctx.Input.Param(":id"), 10, 64)
+	if err != nil {
+		c.Redirect("/programs", 302)
+		return
+	}
+
+	if err := Programs.Delete(id, userID.(int64)); err != nil {
+		c.Redirect("/programs", 302)
+		return
+	}
+
+	flash := beego.NewFlash()
+	flash.Success("Program deleted.")
+	flash.Store(&c.Controller)
+	c.Redirect("/programs", 302)
+}
+
 func (c *ProgramController) UpdatePhases() {
 	userID := c.GetSession("user_id")
 	if userID == nil {

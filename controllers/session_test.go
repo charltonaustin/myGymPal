@@ -110,3 +110,123 @@ func TestSessionShow_DeloadBadge(t *testing.T) {
 	assert.Equal(t, http.StatusOK, w.Code)
 	assert.Contains(t, w.Body.String(), "Deload")
 }
+
+func TestSessionShow_ShowsExercises(t *testing.T) {
+	t.Cleanup(resetMocks)
+	setSessionGetByID(1, 1, 1, false)
+	setProgramGetByID("My Program", 4)
+	setSessionExerciseGetBySessionWithOne("Bench Press", "lb")
+	cookies := loginAs(t, "session_show_exercises", "lb")
+
+	w := getPath("/sessions/99", cookies)
+	assert.Equal(t, http.StatusOK, w.Code)
+	assert.Contains(t, w.Body.String(), "Bench Press")
+}
+
+// --- Add exercise ---
+
+func TestSessionAddExercise_Unauthenticated(t *testing.T) {
+	w := postForm("/sessions/99/exercises", url.Values{"name": {"Squat"}}, nil)
+	assert.Equal(t, http.StatusFound, w.Code)
+	assert.Equal(t, "/login", w.Header().Get("Location"))
+}
+
+func TestSessionAddExercise_SessionNotFound(t *testing.T) {
+	t.Cleanup(resetMocks)
+	setSessionGetByIDError(errors.New("not found"))
+	cookies := loginAs(t, "add_exercise_nosession", "lb")
+
+	w := postForm("/sessions/99/exercises", url.Values{"name": {"Squat"}}, cookies)
+	assert.Equal(t, http.StatusFound, w.Code)
+	assert.Equal(t, "/programs", w.Header().Get("Location"))
+}
+
+func TestSessionAddExercise_Success(t *testing.T) {
+	t.Cleanup(resetMocks)
+	setSessionGetByID(1, 1, 1, false)
+	cookies := loginAs(t, "add_exercise_ok", "lb")
+
+	w := postForm("/sessions/99/exercises", url.Values{
+		"name":        {"Bench Press"},
+		"goal_weight": {"135"},
+		"weight_unit": {"lb"},
+	}, cookies)
+	assert.Equal(t, http.StatusFound, w.Code)
+	assert.Equal(t, fmt.Sprintf("/sessions/%d", testSessionID), w.Header().Get("Location"))
+}
+
+func TestSessionAddExercise_EmptyNameRedirects(t *testing.T) {
+	t.Cleanup(resetMocks)
+	setSessionGetByID(1, 1, 1, false)
+	cookies := loginAs(t, "add_exercise_empty", "lb")
+
+	w := postForm("/sessions/99/exercises", url.Values{"name": {""}}, cookies)
+	assert.Equal(t, http.StatusFound, w.Code)
+	assert.Equal(t, fmt.Sprintf("/sessions/%d", testSessionID), w.Header().Get("Location"))
+}
+
+// --- Log set ---
+
+func TestSessionLogSet_Unauthenticated(t *testing.T) {
+	w := postForm("/sessions/99/exercises/77/sets", url.Values{"actual_reps": {"8"}}, nil)
+	assert.Equal(t, http.StatusFound, w.Code)
+	assert.Equal(t, "/login", w.Header().Get("Location"))
+}
+
+func TestSessionLogSet_SessionNotFound(t *testing.T) {
+	t.Cleanup(resetMocks)
+	setSessionGetByIDError(errors.New("not found"))
+	cookies := loginAs(t, "log_set_nosession", "lb")
+
+	w := postForm("/sessions/99/exercises/77/sets", url.Values{"actual_reps": {"8"}}, cookies)
+	assert.Equal(t, http.StatusFound, w.Code)
+	assert.Equal(t, "/programs", w.Header().Get("Location"))
+}
+
+func TestSessionLogSet_ExerciseNotFound(t *testing.T) {
+	t.Cleanup(resetMocks)
+	setSessionGetByID(1, 1, 1, false)
+	setSessionExerciseGetByIDError(errors.New("not found"))
+	cookies := loginAs(t, "log_set_noexercise", "lb")
+
+	w := postForm("/sessions/99/exercises/77/sets", url.Values{"actual_reps": {"8"}}, cookies)
+	assert.Equal(t, http.StatusFound, w.Code)
+	assert.Equal(t, fmt.Sprintf("/sessions/%d", testSessionID), w.Header().Get("Location"))
+}
+
+func TestSessionLogSet_Success(t *testing.T) {
+	t.Cleanup(resetMocks)
+	setSessionGetByID(1, 1, 1, false)
+	setSessionExerciseGetByID(testSessionID)
+	captureLogSet()
+	cookies := loginAs(t, "log_set_ok", "lb")
+
+	w := postForm("/sessions/99/exercises/77/sets", url.Values{
+		"actual_weight": {"135"},
+		"weight_unit":   {"lb"},
+		"actual_reps":   {"10"},
+	}, cookies)
+	assert.Equal(t, http.StatusFound, w.Code)
+	assert.Equal(t, fmt.Sprintf("/sessions/%d", testSessionID), w.Header().Get("Location"))
+	assert.Equal(t, float64(135), lastLogSet.actualWeight)
+	assert.Equal(t, 10, lastLogSet.actualReps)
+	assert.Equal(t, "lb", lastLogSet.weightUnit)
+	assert.Equal(t, 1, lastLogSet.setNumber)
+}
+
+func TestSessionLogSet_IncrementsSetNumber(t *testing.T) {
+	t.Cleanup(resetMocks)
+	setSessionGetByID(1, 1, 1, false)
+	setSessionExerciseGetByID(testSessionID)
+	setLogSetCountByExercise(2)
+	captureLogSet()
+	cookies := loginAs(t, "log_set_increment", "lb")
+
+	w := postForm("/sessions/99/exercises/77/sets", url.Values{
+		"actual_weight": {"135"},
+		"weight_unit":   {"lb"},
+		"actual_reps":   {"8"},
+	}, cookies)
+	assert.Equal(t, http.StatusFound, w.Code)
+	assert.Equal(t, 3, lastLogSet.setNumber)
+}

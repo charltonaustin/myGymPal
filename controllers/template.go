@@ -187,3 +187,27 @@ func (c *TemplateController) Show() {
 	c.Data["Exercises"] = exercises
 	c.TplName = "templates/show.tpl"
 }
+
+func (c *TemplateController) Delete() {
+	userID := c.GetSession("user_id")
+	if userID == nil {
+		c.Redirect("/login", 302)
+		return
+	}
+
+	id, err := strconv.ParseInt(c.Ctx.Input.Param(":id"), 10, 64)
+	if err != nil {
+		c.Redirect("/templates", 302)
+		return
+	}
+
+	if err := Templates.Delete(id); err != nil {
+		c.Redirect("/templates", 302)
+		return
+	}
+
+	flash := beego.NewFlash()
+	flash.Success("Template deleted.")
+	flash.Store(&c.Controller)
+	c.Redirect("/templates", 302)
+}

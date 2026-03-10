@@ -224,3 +224,32 @@ func TestTemplatesShow_ShowsTemplate(t *testing.T) {
 	assert.Contains(t, body, "Exercise 2")
 	assert.Contains(t, body, "Exercise 3")
 }
+
+// --- Delete template ---
+
+func TestTemplateDelete_Unauthenticated(t *testing.T) {
+	w := postForm(fmt.Sprintf("/templates/%d/delete", testTemplateID), url.Values{}, nil)
+	assert.Equal(t, http.StatusFound, w.Code)
+	assert.Equal(t, "/login", w.Header().Get("Location"))
+}
+
+func TestTemplateDelete_Error(t *testing.T) {
+	t.Cleanup(resetMocks)
+	mockTemplates.DeleteFn = func(id int64) error {
+		return errors.New("not found")
+	}
+	cookies := loginAs(t, "tmpl_delete_err", "lb")
+
+	w := postForm(fmt.Sprintf("/templates/%d/delete", testTemplateID), url.Values{}, cookies)
+	assert.Equal(t, http.StatusFound, w.Code)
+	assert.Equal(t, "/templates", w.Header().Get("Location"))
+}
+
+func TestTemplateDelete_Success(t *testing.T) {
+	t.Cleanup(resetMocks)
+	cookies := loginAs(t, "tmpl_delete_ok", "lb")
+
+	w := postForm(fmt.Sprintf("/templates/%d/delete", testTemplateID), url.Values{}, cookies)
+	assert.Equal(t, http.StatusFound, w.Code)
+	assert.Equal(t, "/templates", w.Header().Get("Location"))
+}

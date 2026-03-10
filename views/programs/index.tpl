@@ -31,6 +31,11 @@
                     Starts {{.StartDate.Format "Jan 2, 2006"}} &middot; {{.NumPhases}} phase{{if gt .NumPhases 1}}s{{end}} &middot; {{.WeeksPerPhase}} week{{if gt .WeeksPerPhase 1}}s{{end}}/phase
                 </div>
             </div>
+            <button type="button" class="btn btn-outline-danger btn-sm ms-3 flex-shrink-0"
+                data-bs-toggle="modal" data-bs-target="#deleteModal"
+                data-program-id="{{.ID}}" data-program-name="{{.Name}}">
+                Delete
+            </button>
         </li>
         {{end}}
     </ul>
@@ -39,12 +44,39 @@
     {{end}}
 </main>
 
+<!-- Delete confirmation modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Delete program?</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-0">This will permanently delete <strong id="deleteModalName"></strong> and all its sessions. This cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                <form id="deleteForm" method="POST">
+                    <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
     const alertEl = document.getElementById('success-alert');
     if (alertEl) {
         setTimeout(() => bootstrap.Alert.getOrCreateInstance(alertEl).close(), 3000);
     }
+
+    document.getElementById('deleteModal').addEventListener('show.bs.modal', e => {
+        const btn = e.relatedTarget;
+        document.getElementById('deleteModalName').textContent = btn.dataset.programName;
+        document.getElementById('deleteForm').action = '/programs/' + btn.dataset.programId + '/delete';
+    });
 </script>
 <script src="/static/offline-sync.js"></script>
 <script>if ('serviceWorker' in navigator) { navigator.serviceWorker.register('/sw.js').catch(console.error); }</script>

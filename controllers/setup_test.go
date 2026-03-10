@@ -25,5 +25,6 @@ func TestMain(m *testing.M) {
 	controllers.Phases = mockPhases
 	controllers.Sessions = mockSessions
 	controllers.Templates = mockTemplates
+	controllers.SessionExercises = mockSessionExercises
 	os.Exit(m.Run())
 }

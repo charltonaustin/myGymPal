@@ -113,6 +113,12 @@ func GetAllTemplates() ([]*Template, error) {
 	return templates, err
 }
 
+func DeleteTemplate(id int64) error {
+	o := orm.NewOrm()
+	_, err := o.Delete(&Template{ID: id})
+	return err
+}
+
 func GetTemplateByID(id int64) (*Template, []*TemplateExercise, error) {
 	o := orm.NewOrm()
 	t := &Template{ID: id}

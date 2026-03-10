@@ -17,3 +17,7 @@ func (r *ormTemplateRepository) GetAll() ([]*Template, error) {
 func (r *ormTemplateRepository) GetByID(id int64) (*Template, []*TemplateExercise, error) {
 	return GetTemplateByID(id)
 }
+
+func (r *ormTemplateRepository) Delete(id int64) error {
+	return DeleteTemplate(id)
+}

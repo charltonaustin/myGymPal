@@ -285,6 +285,35 @@ func TestUpdatePhases_InvalidRange(t *testing.T) {
 	assert.Contains(t, w.Body.String(), "rep_max")
 }
 
+// --- Delete program ---
+
+func TestProgramDelete_Unauthenticated(t *testing.T) {
+	w := postForm("/programs/1/delete", url.Values{}, nil)
+	assert.Equal(t, http.StatusFound, w.Code)
+	assert.Equal(t, "/login", w.Header().Get("Location"))
+}
+
+func TestProgramDelete_NotFound(t *testing.T) {
+	t.Cleanup(resetMocks)
+	mockPrograms.DeleteFn = func(id, userID int64) error {
+		return errors.New("not found")
+	}
+	cookies := loginAs(t, "prog_delete_notfound", "lb")
+
+	w := postForm("/programs/1/delete", url.Values{}, cookies)
+	assert.Equal(t, http.StatusFound, w.Code)
+	assert.Equal(t, "/programs", w.Header().Get("Location"))
+}
+
+func TestProgramDelete_Success(t *testing.T) {
+	t.Cleanup(resetMocks)
+	cookies := loginAs(t, "prog_delete_ok", "lb")
+
+	w := postForm(fmt.Sprintf("/programs/%d/delete", testProgramID), url.Values{}, cookies)
+	assert.Equal(t, http.StatusFound, w.Code)
+	assert.Equal(t, "/programs", w.Header().Get("Location"))
+}
+
 func TestProgramsCreate_ReentersFormValues(t *testing.T) {
 	t.Cleanup(resetMocks)
 	cookies := loginAs(t, "prog_create_reenter", "lb")

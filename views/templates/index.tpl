@@ -24,10 +24,17 @@
     {{if .Templates}}
     <div class="list-group">
         {{range .Templates}}
-        <a href="/templates/{{.ID}}" class="list-group-item list-group-item-action">
-            <div class="fw-semibold">{{.Name}}</div>
-            {{if .Focus}}<div class="text-muted small">{{.Focus}}</div>{{end}}
-        </a>
+        <div class="list-group-item d-flex justify-content-between align-items-center">
+            <a href="/templates/{{.ID}}" class="text-decoration-none text-dark flex-grow-1">
+                <div class="fw-semibold">{{.Name}}</div>
+                {{if .Focus}}<div class="text-muted small">{{.Focus}}</div>{{end}}
+            </a>
+            <button type="button" class="btn btn-outline-danger btn-sm ms-3 flex-shrink-0"
+                data-bs-toggle="modal" data-bs-target="#deleteModal"
+                data-template-id="{{.ID}}" data-template-name="{{.Name}}">
+                Delete
+            </button>
+        </div>
         {{end}}
     </div>
     {{else}}
@@ -35,12 +42,39 @@
     {{end}}
 </main>
 
+<!-- Delete confirmation modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Delete template?</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-0">This will permanently delete <strong id="deleteModalName"></strong>. This cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                <form id="deleteForm" method="POST">
+                    <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
     const alertEl = document.getElementById('success-alert');
     if (alertEl) {
         setTimeout(() => bootstrap.Alert.getOrCreateInstance(alertEl).close(), 3000);
     }
+
+    document.getElementById('deleteModal').addEventListener('show.bs.modal', e => {
+        const btn = e.relatedTarget;
+        document.getElementById('deleteModalName').textContent = btn.dataset.templateName;
+        document.getElementById('deleteForm').action = '/templates/' + btn.dataset.templateId + '/delete';
+    });
 </script>
 <script>if ('serviceWorker' in navigator) { navigator.serviceWorker.register('/sw.js').catch(console.error); }</script>
 </body>
