@@ -122,6 +122,7 @@ type mockSessionRepo struct {
 	CreateFn         func(programID, userID int64, phaseNumber, weekNumber, workoutNumber int, isDeload bool, date time.Time) (*models.Session, error)
 	CountByProgramFn func(programID int64) (int, error)
 	GetByIDFn        func(id, userID int64) (*models.Session, error)
+	GetByProgramFn   func(programID int64) ([]*models.Session, error)
 }
 
 func (m *mockSessionRepo) Create(programID, userID int64, phaseNumber, weekNumber, workoutNumber int, isDeload bool, date time.Time) (*models.Session, error) {
@@ -143,6 +144,13 @@ func (m *mockSessionRepo) GetByID(id, userID int64) (*models.Session, error) {
 		return m.GetByIDFn(id, userID)
 	}
 	return nil, errors.New("not found")
+}
+
+func (m *mockSessionRepo) GetByProgram(programID int64) ([]*models.Session, error) {
+	if m.GetByProgramFn != nil {
+		return m.GetByProgramFn(programID)
+	}
+	return []*models.Session{}, nil
 }
 
 type mockTemplateRepo struct {
@@ -403,6 +411,23 @@ func captureSessionCreate() {
 		lastSessionCreate.workoutNumber = workoutNumber
 		lastSessionCreate.isDeload = isDeload
 		return &models.Session{ID: testSessionID, ProgramID: programID, UserID: userID, PhaseNumber: phaseNumber, WeekNumber: weekNumber, WorkoutNumber: workoutNumber, IsDeload: isDeload}, nil
+	}
+}
+
+// setSessionsGetByProgram makes GetByProgram return n sessions.
+func setSessionsGetByProgram(count int) {
+	mockSessions.GetByProgramFn = func(programID int64) ([]*models.Session, error) {
+		sessions := make([]*models.Session, count)
+		for i := range sessions {
+			sessions[i] = &models.Session{
+				ID:            int64(i + 1),
+				ProgramID:     programID,
+				PhaseNumber:   1,
+				WeekNumber:    i + 1,
+				WorkoutNumber: i + 1,
+			}
+		}
+		return sessions, nil
 	}
 }
 

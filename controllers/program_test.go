@@ -239,6 +239,32 @@ func TestProgramShow_ShowsPhases(t *testing.T) {
 	assert.Contains(t, body, `name="rep_max_1"`)
 }
 
+func TestProgramShow_ShowsSessions(t *testing.T) {
+	t.Cleanup(resetMocks)
+	setProgramGetByID("My Program", 4)
+	setPhasesGetByProgram(4)
+	setSessionsGetByProgram(3)
+	cookies := loginAs(t, "prog_show_sessions", "lb")
+
+	w := getPath("/programs/1", cookies)
+	assert.Equal(t, http.StatusOK, w.Code)
+	body := w.Body.String()
+	assert.Contains(t, body, "Workout #1")
+	assert.Contains(t, body, "Workout #2")
+	assert.Contains(t, body, "Workout #3")
+}
+
+func TestProgramShow_NoSessions(t *testing.T) {
+	t.Cleanup(resetMocks)
+	setProgramGetByID("My Program", 4)
+	setPhasesGetByProgram(4)
+	cookies := loginAs(t, "prog_show_no_sessions", "lb")
+
+	w := getPath("/programs/1", cookies)
+	assert.Equal(t, http.StatusOK, w.Code)
+	assert.Contains(t, w.Body.String(), "No workouts yet")
+}
+
 // --- Update phase rep ranges ---
 
 func TestUpdatePhases_Unauthenticated(t *testing.T) {

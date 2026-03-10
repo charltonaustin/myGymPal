@@ -33,6 +33,7 @@ type SessionRepository interface {
 	Create(programID, userID int64, phaseNumber, weekNumber, workoutNumber int, isDeload bool, date time.Time) (*Session, error)
 	CountByProgram(programID int64) (int, error)
 	GetByID(id, userID int64) (*Session, error)
+	GetByProgram(programID int64) ([]*Session, error)
 }
 
 type SessionExerciseRepository interface {

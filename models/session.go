@@ -67,6 +67,13 @@ func CountSessionsByProgram(programID int64) (int, error) {
 	return int(n), err
 }
 
+func GetSessionsByProgram(programID int64) ([]*Session, error) {
+	o := orm.NewOrm()
+	var sessions []*Session
+	_, err := o.QueryTable(&Session{}).Filter("ProgramID", programID).OrderBy("-Date", "-ID").All(&sessions)
+	return sessions, err
+}
+
 func GetSessionByID(id, userID int64) (*Session, error) {
 	o := orm.NewOrm()
 	s := &Session{ID: id}

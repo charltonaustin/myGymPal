@@ -90,6 +90,28 @@
             <button type="submit" class="btn btn-dark btn-sm">Save Rep Ranges</button>
         </div>
     </form>
+
+    <h2 class="h6 fw-semibold text-uppercase text-muted mt-4 mb-3">Workout History</h2>
+
+    {{if .Sessions}}
+    <div class="card">
+        <ul class="list-group list-group-flush">
+            {{range .Sessions}}
+            <li class="list-group-item">
+                <a href="/sessions/{{.ID}}" class="text-decoration-none d-flex justify-content-between align-items-center">
+                    <div>
+                        <span class="fw-semibold">Workout #{{.WorkoutNumber}}</span>
+                        <span class="text-muted ms-2 small">Phase {{.PhaseNumber}} · Week {{.WeekNumber}}{{if .IsDeload}} · <span class="text-warning">Deload</span>{{end}}</span>
+                    </div>
+                    <span class="text-muted small">{{.Date.Format "Jan 2, 2006"}}</span>
+                </a>
+            </li>
+            {{end}}
+        </ul>
+    </div>
+    {{else}}
+    <p class="text-muted small">No workouts yet. Start one above.</p>
+    {{end}}
 </main>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>

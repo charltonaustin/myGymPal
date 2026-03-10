@@ -156,12 +156,14 @@ func (c *ProgramController) Show() {
 	}
 
 	templates, _ := Templates.GetAll()
+	sessions, _ := Sessions.GetByProgram(id)
 
 	c.Data["LoggedIn"] = true
 	c.Data["ActivePage"] = "programs"
 	c.Data["Program"] = program
 	c.Data["Phases"] = phases
 	c.Data["Templates"] = templates
+	c.Data["Sessions"] = sessions
 	c.TplName = "programs/show.tpl"
 }
 
