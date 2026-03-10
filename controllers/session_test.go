@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"net/url"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -35,7 +34,11 @@ func TestSessionCreate_Success(t *testing.T) {
 	captureSessionCreate()
 	cookies := loginAs(t, "session_create_ok", "lb")
 
-	w := postForm("/programs/1/sessions", url.Values{}, cookies)
+	w := postForm("/programs/1/sessions", url.Values{
+		"phase_number":   {"1"},
+		"week_number":    {"1"},
+		"workout_number": {"1"},
+	}, cookies)
 	assert.Equal(t, http.StatusFound, w.Code)
 	assert.Equal(t, fmt.Sprintf("/sessions/%d", testSessionID), w.Header().Get("Location"))
 	assert.Equal(t, 1, lastSessionCreate.workoutNumber)
@@ -44,27 +47,62 @@ func TestSessionCreate_Success(t *testing.T) {
 func TestSessionCreate_IncrementsWorkoutNumber(t *testing.T) {
 	t.Cleanup(resetMocks)
 	setProgramGetByIDWithDates("My Program", 4, 8, testProgramDate)
-	setSessionCountByProgram(4)
 	captureSessionCreate()
 	cookies := loginAs(t, "session_create_workout5", "lb")
 
-	w := postForm("/programs/1/sessions", url.Values{}, cookies)
+	w := postForm("/programs/1/sessions", url.Values{
+		"phase_number":   {"1"},
+		"week_number":    {"1"},
+		"workout_number": {"5"},
+	}, cookies)
 	assert.Equal(t, http.StatusFound, w.Code)
 	assert.Equal(t, 5, lastSessionCreate.workoutNumber)
 }
 
 func TestSessionCreate_DeloadWeekFlagged(t *testing.T) {
 	t.Cleanup(resetMocks)
-	// Start date 49 days (7 weeks) before today → currently in week 8 of phase 1 → deload.
-	startDate := time.Now().UTC().AddDate(0, 0, -49)
-	setProgramGetByIDWithDates("My Program", 4, 8, startDate)
+	setProgramGetByIDWithDates("My Program", 4, 8, testProgramDate)
 	captureSessionCreate()
 	cookies := loginAs(t, "session_create_deload", "lb")
 
-	w := postForm("/programs/1/sessions", url.Values{}, cookies)
+	// Submitting week 8 on an 8-week program → deload.
+	w := postForm("/programs/1/sessions", url.Values{
+		"phase_number":   {"1"},
+		"week_number":    {"8"},
+		"workout_number": {"1"},
+	}, cookies)
 	assert.Equal(t, http.StatusFound, w.Code)
 	assert.True(t, lastSessionCreate.isDeload)
 	assert.Equal(t, 8, lastSessionCreate.weekNumber)
+}
+
+func TestSessionCreate_NonDeloadWeek(t *testing.T) {
+	t.Cleanup(resetMocks)
+	setProgramGetByIDWithDates("My Program", 4, 8, testProgramDate)
+	captureSessionCreate()
+	cookies := loginAs(t, "session_create_nodeload", "lb")
+
+	w := postForm("/programs/1/sessions", url.Values{
+		"phase_number":   {"1"},
+		"week_number":    {"4"},
+		"workout_number": {"1"},
+	}, cookies)
+	assert.Equal(t, http.StatusFound, w.Code)
+	assert.False(t, lastSessionCreate.isDeload)
+}
+
+func TestSessionCreate_InvalidInputRedirectsToNew(t *testing.T) {
+	t.Cleanup(resetMocks)
+	setProgramGetByIDWithDates("My Program", 4, 8, testProgramDate)
+	cookies := loginAs(t, "session_create_invalid", "lb")
+
+	w := postForm("/programs/1/sessions", url.Values{
+		"phase_number":   {"0"},
+		"week_number":    {"1"},
+		"workout_number": {"1"},
+	}, cookies)
+	assert.Equal(t, http.StatusFound, w.Code)
+	assert.Equal(t, fmt.Sprintf("/programs/%d/sessions/new", testProgramID), w.Header().Get("Location"))
 }
 
 func TestSessionCreate_NoTemplateSkipsCopy(t *testing.T) {
@@ -74,7 +112,11 @@ func TestSessionCreate_NoTemplateSkipsCopy(t *testing.T) {
 	captureSessionExerciseCreates()
 	cookies := loginAs(t, "session_create_notmpl", "lb")
 
-	w := postForm("/programs/1/sessions", url.Values{}, cookies)
+	w := postForm("/programs/1/sessions", url.Values{
+		"phase_number":   {"1"},
+		"week_number":    {"1"},
+		"workout_number": {"1"},
+	}, cookies)
 	assert.Equal(t, http.StatusFound, w.Code)
 	assert.Len(t, sessionExerciseCreateNames, 0)
 }
@@ -88,12 +130,61 @@ func TestSessionCreate_CopiesTemplateExercises(t *testing.T) {
 	cookies := loginAs(t, "session_create_tmpl", "lb")
 
 	w := postForm("/programs/1/sessions", url.Values{
-		"template_id": {fmt.Sprintf("%d", testTemplateID)},
+		"phase_number":   {"1"},
+		"week_number":    {"1"},
+		"workout_number": {"1"},
+		"template_id":    {fmt.Sprintf("%d", testTemplateID)},
 	}, cookies)
 	assert.Equal(t, http.StatusFound, w.Code)
 	assert.Len(t, sessionExerciseCreateNames, 3)
 	assert.Equal(t, "Exercise 1", sessionExerciseCreateNames[0])
 	assert.Equal(t, "Exercise 3", sessionExerciseCreateNames[2])
+}
+
+// --- New session form ---
+
+func TestSessionNew_Unauthenticated(t *testing.T) {
+	w := getPath("/programs/1/sessions/new", nil)
+	assert.Equal(t, http.StatusFound, w.Code)
+	assert.Equal(t, "/login", w.Header().Get("Location"))
+}
+
+func TestSessionNew_ProgramNotFound(t *testing.T) {
+	t.Cleanup(resetMocks)
+	setProgramGetByIDError(errors.New("not found"))
+	cookies := loginAs(t, "session_new_noprog", "lb")
+
+	w := getPath("/programs/1/sessions/new", cookies)
+	assert.Equal(t, http.StatusFound, w.Code)
+	assert.Equal(t, "/programs", w.Header().Get("Location"))
+}
+
+func TestSessionNew_ShowsForm(t *testing.T) {
+	t.Cleanup(resetMocks)
+	setProgramGetByIDWithDates("My Program", 4, 8, testProgramDate)
+	setSessionCountByProgram(3)
+	cookies := loginAs(t, "session_new_ok", "lb")
+
+	w := getPath("/programs/1/sessions/new", cookies)
+	assert.Equal(t, http.StatusOK, w.Code)
+	body := w.Body.String()
+	assert.Contains(t, body, "My Program")
+	assert.Contains(t, body, `name="phase_number"`)
+	assert.Contains(t, body, `name="week_number"`)
+	assert.Contains(t, body, `name="workout_number"`)
+	// Workout number default = count+1 = 4
+	assert.Contains(t, body, `value="4"`)
+}
+
+func TestSessionNew_ShowsTemplates(t *testing.T) {
+	t.Cleanup(resetMocks)
+	setProgramGetByIDWithDates("My Program", 4, 8, testProgramDate)
+	setTemplatesGetAllWithOne(testTemplateID, "Upper Body A", "Upper")
+	cookies := loginAs(t, "session_new_templates", "lb")
+
+	w := getPath("/programs/1/sessions/new", cookies)
+	assert.Equal(t, http.StatusOK, w.Code)
+	assert.Contains(t, w.Body.String(), "Upper Body A")
 }
 
 // --- Show session ---
@@ -258,4 +349,45 @@ func TestSessionLogSet_IncrementsSetNumber(t *testing.T) {
 	}, cookies)
 	assert.Equal(t, http.StatusFound, w.Code)
 	assert.Equal(t, 3, lastLogSet.setNumber)
+}
+
+// --- Delete session ---
+
+func TestSessionDelete_Unauthenticated(t *testing.T) {
+	w := postForm("/sessions/99/delete", url.Values{}, nil)
+	assert.Equal(t, http.StatusFound, w.Code)
+	assert.Equal(t, "/login", w.Header().Get("Location"))
+}
+
+func TestSessionDelete_NotFound(t *testing.T) {
+	t.Cleanup(resetMocks)
+	setSessionGetByIDError(errors.New("not found"))
+	cookies := loginAs(t, "session_delete_notfound", "lb")
+
+	w := postForm("/sessions/99/delete", url.Values{}, cookies)
+	assert.Equal(t, http.StatusFound, w.Code)
+	assert.Equal(t, "/programs", w.Header().Get("Location"))
+}
+
+func TestSessionDelete_Success(t *testing.T) {
+	t.Cleanup(resetMocks)
+	setSessionGetByID(1, 1, 1, false)
+	cookies := loginAs(t, "session_delete_ok", "lb")
+
+	w := postForm("/sessions/99/delete", url.Values{}, cookies)
+	assert.Equal(t, http.StatusFound, w.Code)
+	assert.Equal(t, fmt.Sprintf("/programs/%d", testProgramID), w.Header().Get("Location"))
+}
+
+func TestSessionDelete_DeleteError(t *testing.T) {
+	t.Cleanup(resetMocks)
+	setSessionGetByID(1, 1, 1, false)
+	mockSessions.DeleteFn = func(id, userID int64) error {
+		return errors.New("db error")
+	}
+	cookies := loginAs(t, "session_delete_err", "lb")
+
+	w := postForm("/sessions/99/delete", url.Values{}, cookies)
+	assert.Equal(t, http.StatusFound, w.Code)
+	assert.Equal(t, fmt.Sprintf("/programs/%d", testProgramID), w.Header().Get("Location"))
 }

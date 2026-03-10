@@ -34,6 +34,7 @@ type SessionRepository interface {
 	CountByProgram(programID int64) (int, error)
 	GetByID(id, userID int64) (*Session, error)
 	GetByProgram(programID int64) ([]*Session, error)
+	Delete(id, userID int64) error
 }
 
 type SessionExerciseRepository interface {

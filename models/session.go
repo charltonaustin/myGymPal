@@ -74,6 +74,19 @@ func GetSessionsByProgram(programID int64) ([]*Session, error) {
 	return sessions, err
 }
 
+func DeleteSession(id, userID int64) error {
+	o := orm.NewOrm()
+	s := &Session{ID: id}
+	if err := o.Read(s); err != nil {
+		return errors.New("not found")
+	}
+	if s.UserID != userID {
+		return errors.New("not found")
+	}
+	_, err := o.Delete(s)
+	return err
+}
+
 func GetSessionByID(id, userID int64) (*Session, error) {
 	o := orm.NewOrm()
 	s := &Session{ID: id}

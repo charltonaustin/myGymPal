@@ -24,17 +24,7 @@
                     &middot; {{.Program.WeeksPerPhase}} week{{if gt .Program.WeeksPerPhase 1}}s{{end}}/phase
                 </p>
             </div>
-            <form method="POST" action="/programs/{{.Program.ID}}/sessions" class="ms-3 flex-shrink-0 text-end">
-                {{if .Templates}}
-                <select name="template_id" class="form-select form-select-sm mb-1">
-                    <option value="">No template</option>
-                    {{range .Templates}}
-                    <option value="{{.ID}}">{{.Name}}</option>
-                    {{end}}
-                </select>
-                {{end}}
-                <button type="submit" class="btn btn-dark btn-sm w-100">Start Workout</button>
-            </form>
+            <a href="/programs/{{.Program.ID}}/sessions/new" class="btn btn-dark btn-sm ms-3 flex-shrink-0">Start Workout</a>
         </div>
     </div>
 
@@ -97,14 +87,19 @@
     <div class="card">
         <ul class="list-group list-group-flush">
             {{range .Sessions}}
-            <li class="list-group-item">
-                <a href="/sessions/{{.ID}}" class="text-decoration-none d-flex justify-content-between align-items-center">
+            <li class="list-group-item d-flex align-items-center gap-2">
+                <a href="/sessions/{{.ID}}" class="text-decoration-none flex-grow-1 d-flex justify-content-between align-items-center">
                     <div>
                         <span class="fw-semibold">Workout #{{.WorkoutNumber}}</span>
                         <span class="text-muted ms-2 small">Phase {{.PhaseNumber}} · Week {{.WeekNumber}}{{if .IsDeload}} · <span class="text-warning">Deload</span>{{end}}</span>
                     </div>
                     <span class="text-muted small">{{.Date.Format "Jan 2, 2006"}}</span>
                 </a>
+                <form method="POST" action="/sessions/{{.ID}}/delete" class="flex-shrink-0">
+                    <button type="submit" class="btn btn-link text-danger p-0" title="Delete workout" onclick="return confirm('Delete Workout #{{.WorkoutNumber}}?')">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </form>
             </li>
             {{end}}
         </ul>

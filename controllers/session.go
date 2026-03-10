@@ -13,7 +13,7 @@ type SessionController struct {
 	beego.Controller
 }
 
-func (c *SessionController) Create() {
+func (c *SessionController) New() {
 	userID := c.GetSession("user_id")
 	if userID == nil {
 		c.Redirect("/login", 302)
@@ -33,7 +33,7 @@ func (c *SessionController) Create() {
 	}
 
 	now := time.Now().UTC()
-	phase, week, isDeload := models.CalculatePhaseAndWeek(now, program.StartDate, program.WeeksPerPhase)
+	phase, week, _ := models.CalculatePhaseAndWeek(now, program.StartDate, program.WeeksPerPhase)
 
 	count, err := Sessions.CountByProgram(programID)
 	if err != nil {
@@ -41,7 +41,59 @@ func (c *SessionController) Create() {
 		return
 	}
 
-	session, err := Sessions.Create(programID, userID.(int64), phase, week, count+1, isDeload, now.Truncate(24*time.Hour))
+	templates, _ := Templates.GetAll()
+
+	c.Data["LoggedIn"] = true
+	c.Data["ActivePage"] = "programs"
+	c.Data["Program"] = program
+	c.Data["PhaseNumber"] = phase
+	c.Data["WeekNumber"] = week
+	c.Data["WorkoutNumber"] = count + 1
+	c.Data["Templates"] = templates
+	c.TplName = "sessions/new.tpl"
+}
+
+func (c *SessionController) Create() {
+	userID := c.GetSession("user_id")
+	if userID == nil {
+		c.Redirect("/login", 302)
+		return
+	}
+
+	programID, err := strconv.ParseInt(c.Ctx.Input.Param(":id"), 10, 64)
+	if err != nil {
+		c.Redirect("/programs", 302)
+		return
+	}
+
+	program, err := Programs.GetByID(programID, userID.(int64))
+	if err != nil {
+		c.Redirect("/programs", 302)
+		return
+	}
+
+	phaseNumber, err := strconv.Atoi(c.GetString("phase_number"))
+	if err != nil || phaseNumber < 1 {
+		c.Redirect(fmt.Sprintf("/programs/%d/sessions/new", programID), 302)
+		return
+	}
+
+	weekNumber, err := strconv.Atoi(c.GetString("week_number"))
+	if err != nil || weekNumber < 1 {
+		c.Redirect(fmt.Sprintf("/programs/%d/sessions/new", programID), 302)
+		return
+	}
+
+	workoutNumber, err := strconv.Atoi(c.GetString("workout_number"))
+	if err != nil || workoutNumber < 1 {
+		c.Redirect(fmt.Sprintf("/programs/%d/sessions/new", programID), 302)
+		return
+	}
+
+	isDeload := weekNumber == program.WeeksPerPhase
+	now := time.Now().UTC()
+
+	session, err := Sessions.Create(programID, userID.(int64), phaseNumber, weekNumber, workoutNumber, isDeload, now.Truncate(24*time.Hour))
 	if err != nil {
 		c.Redirect("/error", 302)
 		return
@@ -57,6 +109,38 @@ func (c *SessionController) Create() {
 	}
 
 	c.Redirect(fmt.Sprintf("/sessions/%d", session.ID), 302)
+}
+
+func (c *SessionController) Delete() {
+	userID := c.GetSession("user_id")
+	if userID == nil {
+		c.Redirect("/login", 302)
+		return
+	}
+
+	id, err := strconv.ParseInt(c.Ctx.Input.Param(":id"), 10, 64)
+	if err != nil {
+		c.Redirect("/programs", 302)
+		return
+	}
+
+	// Need the program ID to redirect back; look up the session first.
+	session, err := Sessions.GetByID(id, userID.(int64))
+	if err != nil {
+		c.Redirect("/programs", 302)
+		return
+	}
+	programID := session.ProgramID
+
+	if err := Sessions.Delete(id, userID.(int64)); err != nil {
+		c.Redirect(fmt.Sprintf("/programs/%d", programID), 302)
+		return
+	}
+
+	flash := beego.NewFlash()
+	flash.Success("Workout deleted.")
+	flash.Store(&c.Controller)
+	c.Redirect(fmt.Sprintf("/programs/%d", programID), 302)
 }
 
 func (c *SessionController) Show() {

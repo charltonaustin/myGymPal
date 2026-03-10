@@ -123,6 +123,7 @@ type mockSessionRepo struct {
 	CountByProgramFn func(programID int64) (int, error)
 	GetByIDFn        func(id, userID int64) (*models.Session, error)
 	GetByProgramFn   func(programID int64) ([]*models.Session, error)
+	DeleteFn         func(id, userID int64) error
 }
 
 func (m *mockSessionRepo) Create(programID, userID int64, phaseNumber, weekNumber, workoutNumber int, isDeload bool, date time.Time) (*models.Session, error) {
@@ -151,6 +152,13 @@ func (m *mockSessionRepo) GetByProgram(programID int64) ([]*models.Session, erro
 		return m.GetByProgramFn(programID)
 	}
 	return []*models.Session{}, nil
+}
+
+func (m *mockSessionRepo) Delete(id, userID int64) error {
+	if m.DeleteFn != nil {
+		return m.DeleteFn(id, userID)
+	}
+	return nil
 }
 
 type mockTemplateRepo struct {
