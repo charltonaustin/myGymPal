@@ -74,6 +74,38 @@
             <div class="invalid-feedback">Enter a number of weeks (at least 1).</div>
         </div>
 
+        <div class="mb-3">
+            <label class="form-label">Default Rep Range</label>
+            <div class="d-flex align-items-center gap-2">
+                <input
+                    type="number"
+                    class="form-control"
+                    id="default_rep_min"
+                    name="default_rep_min"
+                    value="{{.DefaultRepMin}}"
+                    placeholder="Min"
+                    min="1"
+                    required
+                    style="max-width: 100px;"
+                >
+                <span class="text-muted">–</span>
+                <input
+                    type="number"
+                    class="form-control"
+                    id="default_rep_max"
+                    name="default_rep_max"
+                    value="{{.DefaultRepMax}}"
+                    placeholder="Max"
+                    min="1"
+                    required
+                    style="max-width: 100px;"
+                >
+                <span class="text-muted small">reps</span>
+            </div>
+            <div class="form-text">Applied to all phases — adjust per phase after creating.</div>
+            <div class="invalid-feedback">Enter a valid rep range (min ≥ 1, max ≥ min).</div>
+        </div>
+
         <div class="d-flex gap-2">
             <button type="submit" class="btn btn-dark">Create Program</button>
             <a href="/programs" class="btn btn-outline-secondary">Cancel</a>

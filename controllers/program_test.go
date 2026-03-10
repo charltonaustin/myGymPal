@@ -3,6 +3,7 @@ package controllers_test
 import (
 	"net/http"
 	"net/url"
+	"strconv"
 	"testing"
 
 	"myGymPal/models"
@@ -35,7 +36,7 @@ func TestProgramsIndex_ShowsPrograms(t *testing.T) {
 	// Create a program directly via model so we can verify it appears.
 	user, err := models.GetUserByUsername("prog_idx_list")
 	require.NoError(t, err)
-	p, err := models.CreateProgram(user.ID, "My Test Program", testProgramDate, 4, 8)
+	p, err := models.CreateProgram(user.ID, "My Test Program", testProgramDate, 4, 8, 10, 12)
 	require.NoError(t, err)
 	t.Cleanup(func() { models.DeleteProgram(p.ID, user.ID) })
 
@@ -74,6 +75,8 @@ func TestProgramsCreate_Unauthenticated(t *testing.T) {
 		"start_date":      {"2025-01-06"},
 		"num_phases":      {"4"},
 		"weeks_per_phase": {"8"},
+		"default_rep_min": {"10"},
+		"default_rep_max": {"12"},
 	}, nil)
 	assert.Equal(t, http.StatusFound, w.Code)
 	assert.Equal(t, "/login", w.Header().Get("Location"))
@@ -88,6 +91,8 @@ func TestProgramsCreate_Success(t *testing.T) {
 		"start_date":      {"2025-01-06"},
 		"num_phases":      {"4"},
 		"weeks_per_phase": {"6"},
+		"default_rep_min": {"10"},
+		"default_rep_max": {"12"},
 	}, cookies)
 
 	assert.Equal(t, http.StatusFound, w.Code)
@@ -118,6 +123,8 @@ func TestProgramsCreate_EmptyName(t *testing.T) {
 		"start_date":      {"2025-01-06"},
 		"num_phases":      {"4"},
 		"weeks_per_phase": {"8"},
+		"default_rep_min": {"10"},
+		"default_rep_max": {"12"},
 	}, cookies)
 
 	assert.Equal(t, http.StatusOK, w.Code)
@@ -133,6 +140,8 @@ func TestProgramsCreate_InvalidDate(t *testing.T) {
 		"start_date":      {"not-a-date"},
 		"num_phases":      {"4"},
 		"weeks_per_phase": {"8"},
+		"default_rep_min": {"10"},
+		"default_rep_max": {"12"},
 	}, cookies)
 
 	assert.Equal(t, http.StatusOK, w.Code)
@@ -148,10 +157,46 @@ func TestProgramsCreate_InvalidPhases(t *testing.T) {
 		"start_date":      {"2025-01-06"},
 		"num_phases":      {"0"},
 		"weeks_per_phase": {"8"},
+		"default_rep_min": {"10"},
+		"default_rep_max": {"12"},
 	}, cookies)
 
 	assert.Equal(t, http.StatusOK, w.Code)
 	assert.Contains(t, w.Body.String(), "positive")
+}
+
+func TestProgramsCreate_InvalidDefaultRepMin(t *testing.T) {
+	cookies := loginAs(t, "prog_create_bad_repmin", "password123")
+	t.Cleanup(func() { models.DeleteUserByUsername("prog_create_bad_repmin") })
+
+	w := postForm("/programs", url.Values{
+		"name":            {"My Program"},
+		"start_date":      {"2025-01-06"},
+		"num_phases":      {"4"},
+		"weeks_per_phase": {"8"},
+		"default_rep_min": {"0"},
+		"default_rep_max": {"12"},
+	}, cookies)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	assert.Contains(t, w.Body.String(), "positive")
+}
+
+func TestProgramsCreate_DefaultRepMaxLessThanMin(t *testing.T) {
+	cookies := loginAs(t, "prog_create_bad_repmax", "password123")
+	t.Cleanup(func() { models.DeleteUserByUsername("prog_create_bad_repmax") })
+
+	w := postForm("/programs", url.Values{
+		"name":            {"My Program"},
+		"start_date":      {"2025-01-06"},
+		"num_phases":      {"4"},
+		"weeks_per_phase": {"8"},
+		"default_rep_min": {"12"},
+		"default_rep_max": {"8"},
+	}, cookies)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	assert.Contains(t, w.Body.String(), "least")
 }
 
 func TestProgramsCreate_InvalidWeeksPerPhase(t *testing.T) {
@@ -163,10 +208,108 @@ func TestProgramsCreate_InvalidWeeksPerPhase(t *testing.T) {
 		"start_date":      {"2025-01-06"},
 		"num_phases":      {"4"},
 		"weeks_per_phase": {"0"},
+		"default_rep_min": {"10"},
+		"default_rep_max": {"12"},
 	}, cookies)
 
 	assert.Equal(t, http.StatusOK, w.Code)
 	assert.Contains(t, w.Body.String(), "positive")
+}
+
+// --- Program detail / show ---
+
+func TestProgramShow_Unauthenticated(t *testing.T) {
+	w := getPath("/programs/1", nil)
+	assert.Equal(t, http.StatusFound, w.Code)
+	assert.Equal(t, "/login", w.Header().Get("Location"))
+}
+
+func TestProgramShow_WrongUser(t *testing.T) {
+	loginAs(t, "prog_show_owner", "password123")
+	t.Cleanup(func() { models.DeleteUserByUsername("prog_show_owner") })
+
+	ownerUser, err := models.GetUserByUsername("prog_show_owner")
+	require.NoError(t, err)
+	p, err := models.CreateProgram(ownerUser.ID, "Owner Program", testProgramDate, 2, 8, 10, 12)
+	require.NoError(t, err)
+
+	other := loginAs(t, "prog_show_other", "password123")
+	t.Cleanup(func() { models.DeleteUserByUsername("prog_show_other") })
+
+	w := getPath("/programs/"+strconv.FormatInt(p.ID, 10), other)
+	assert.Equal(t, http.StatusFound, w.Code)
+	assert.Equal(t, "/programs", w.Header().Get("Location"))
+}
+
+func TestProgramShow_ShowsPhases(t *testing.T) {
+	cookies := loginAs(t, "prog_show_phases", "password123")
+	t.Cleanup(func() { models.DeleteUserByUsername("prog_show_phases") })
+
+	user, err := models.GetUserByUsername("prog_show_phases")
+	require.NoError(t, err)
+	p, err := models.CreateProgram(user.ID, "Show Program", testProgramDate, 3, 8, 10, 12)
+	require.NoError(t, err)
+
+	w := getPath("/programs/"+strconv.FormatInt(p.ID, 10), cookies)
+	assert.Equal(t, http.StatusOK, w.Code)
+	body := w.Body.String()
+	assert.Contains(t, body, "Show Program")
+	assert.Contains(t, body, "Phase 1")
+	assert.Contains(t, body, "Phase 2")
+	assert.Contains(t, body, "Phase 3")
+	assert.Contains(t, body, `name="rep_min_1"`)
+	assert.Contains(t, body, `name="rep_max_1"`)
+}
+
+// --- Update phase rep ranges ---
+
+func TestUpdatePhases_Unauthenticated(t *testing.T) {
+	w := postForm("/programs/1", url.Values{"rep_min_1": {"10"}, "rep_max_1": {"12"}}, nil)
+	assert.Equal(t, http.StatusFound, w.Code)
+	assert.Equal(t, "/login", w.Header().Get("Location"))
+}
+
+func TestUpdatePhases_Success(t *testing.T) {
+	cookies := loginAs(t, "prog_update_phases_ok", "password123")
+	t.Cleanup(func() { models.DeleteUserByUsername("prog_update_phases_ok") })
+
+	user, err := models.GetUserByUsername("prog_update_phases_ok")
+	require.NoError(t, err)
+	p, err := models.CreateProgram(user.ID, "Phase Update Program", testProgramDate, 2, 8, 10, 12)
+	require.NoError(t, err)
+
+	w := postForm("/programs/"+strconv.FormatInt(p.ID, 10), url.Values{
+		"rep_min_1": {"10"}, "rep_max_1": {"12"},
+		"rep_min_2": {"8"}, "rep_max_2": {"10"},
+	}, cookies)
+
+	assert.Equal(t, http.StatusFound, w.Code)
+	assert.Equal(t, "/programs/"+strconv.FormatInt(p.ID, 10), w.Header().Get("Location"))
+
+	phases, err := models.GetPhasesByProgramID(p.ID)
+	require.NoError(t, err)
+	assert.Equal(t, 10, phases[0].RepMin)
+	assert.Equal(t, 12, phases[0].RepMax)
+	assert.Equal(t, 8, phases[1].RepMin)
+	assert.Equal(t, 10, phases[1].RepMax)
+}
+
+func TestUpdatePhases_InvalidRange(t *testing.T) {
+	cookies := loginAs(t, "prog_update_phases_bad", "password123")
+	t.Cleanup(func() { models.DeleteUserByUsername("prog_update_phases_bad") })
+
+	user, err := models.GetUserByUsername("prog_update_phases_bad")
+	require.NoError(t, err)
+	p, err := models.CreateProgram(user.ID, "Bad Range Program", testProgramDate, 1, 8, 10, 12)
+	require.NoError(t, err)
+
+	// max < min
+	w := postForm("/programs/"+strconv.FormatInt(p.ID, 10), url.Values{
+		"rep_min_1": {"12"}, "rep_max_1": {"8"},
+	}, cookies)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	assert.Contains(t, w.Body.String(), "rep_max")
 }
 
 func TestProgramsCreate_ReentersFormValues(t *testing.T) {
@@ -178,6 +321,8 @@ func TestProgramsCreate_ReentersFormValues(t *testing.T) {
 		"start_date":      {"2025-03-01"},
 		"num_phases":      {"0"},
 		"weeks_per_phase": {"10"},
+		"default_rep_min": {"8"},
+		"default_rep_max": {"12"},
 	}, cookies)
 
 	assert.Equal(t, http.StatusOK, w.Code)

@@ -26,7 +26,7 @@ func init() {
 	orm.RegisterModel(&Program{})
 }
 
-func CreateProgram(userID int64, name string, startDate time.Time, numPhases, weeksPerPhase int) (*Program, error) {
+func CreateProgram(userID int64, name string, startDate time.Time, numPhases, weeksPerPhase, defaultRepMin, defaultRepMax int) (*Program, error) {
 	if name == "" {
 		return nil, errors.New("program name is required")
 	}
@@ -35,6 +35,12 @@ func CreateProgram(userID int64, name string, startDate time.Time, numPhases, we
 	}
 	if weeksPerPhase <= 0 {
 		return nil, errors.New("weeks_per_phase must be greater than 0")
+	}
+	if defaultRepMin <= 0 {
+		return nil, errors.New("default_rep_min must be greater than 0")
+	}
+	if defaultRepMax < defaultRepMin {
+		return nil, errors.New("default_rep_max must be at least default_rep_min")
 	}
 
 	p := &Program{
@@ -45,8 +51,25 @@ func CreateProgram(userID int64, name string, startDate time.Time, numPhases, we
 		WeeksPerPhase: weeksPerPhase,
 	}
 
-	o := orm.NewOrm()
-	if _, err := o.Insert(p); err != nil {
+	tx, err := orm.NewOrm().Begin()
+	if err != nil {
+		return nil, err
+	}
+
+	if _, err := tx.Insert(p); err != nil {
+		tx.Rollback()
+		return nil, err
+	}
+
+	for i := 1; i <= numPhases; i++ {
+		ph := &Phase{ProgramID: p.ID, PhaseNumber: i, RepMin: defaultRepMin, RepMax: defaultRepMax}
+		if _, err := tx.Insert(ph); err != nil {
+			tx.Rollback()
+			return nil, err
+		}
+	}
+
+	if err := tx.Commit(); err != nil {
 		return nil, err
 	}
 	return p, nil

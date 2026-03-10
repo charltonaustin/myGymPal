@@ -27,4 +27,5 @@ func Register() {
 	// Programs
 	beego.Router("/programs", &controllers.ProgramController{}, "get:Index;post:Create")
 	beego.Router("/programs/new", &controllers.ProgramController{}, "get:New")
+	beego.Router("/programs/:id", &controllers.ProgramController{}, "get:Show;post:UpdatePhases")
 }
