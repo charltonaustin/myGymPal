@@ -4,8 +4,6 @@ import (
 	"net/http"
 	"testing"
 
-	"myGymPal/models"
-
 	"github.com/stretchr/testify/assert"
 )
 
@@ -18,8 +16,8 @@ func TestHomepage_Unauthenticated(t *testing.T) {
 }
 
 func TestHomepage_Authenticated(t *testing.T) {
-	cookies := loginAs(t, "test_home", "password123")
-	t.Cleanup(func() { models.DeleteUserByUsername("test_home") })
+	t.Cleanup(resetMocks)
+	cookies := loginAs(t, "test_home", "lb")
 
 	w := getPath("/", cookies)
 	assert.Equal(t, http.StatusOK, w.Code)

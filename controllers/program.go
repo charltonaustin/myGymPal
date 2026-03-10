@@ -20,7 +20,7 @@ func (c *ProgramController) Index() {
 		return
 	}
 
-	programs, err := models.GetProgramsByUserID(userID.(int64))
+	programs, err := Programs.GetAllByUser(userID.(int64))
 	if err != nil {
 		c.Redirect("/error", 302)
 		return
@@ -114,7 +114,7 @@ func (c *ProgramController) Create() {
 		return
 	}
 
-	if _, err := models.CreateProgram(userID.(int64), name, startDate, numPhases, weeksPerPhase, defaultRepMin, defaultRepMax); err != nil {
+	if _, err := Programs.Create(userID.(int64), name, startDate, numPhases, weeksPerPhase, defaultRepMin, defaultRepMax); err != nil {
 		renderForm("Something went wrong. Please try again.")
 		return
 	}
@@ -138,13 +138,13 @@ func (c *ProgramController) Show() {
 		return
 	}
 
-	program, err := models.GetProgramByID(id, userID.(int64))
+	program, err := Programs.GetByID(id, userID.(int64))
 	if err != nil {
 		c.Redirect("/programs", 302)
 		return
 	}
 
-	phases, err := models.GetPhasesByProgramID(id)
+	phases, err := Phases.GetByProgram(id)
 	if err != nil {
 		c.Redirect("/error", 302)
 		return
@@ -175,13 +175,13 @@ func (c *ProgramController) UpdatePhases() {
 		return
 	}
 
-	program, err := models.GetProgramByID(id, userID.(int64))
+	program, err := Programs.GetByID(id, userID.(int64))
 	if err != nil {
 		c.Redirect("/programs", 302)
 		return
 	}
 
-	phases, err := models.GetPhasesByProgramID(id)
+	phases, err := Phases.GetByProgram(id)
 	if err != nil {
 		c.Redirect("/error", 302)
 		return
@@ -196,8 +196,6 @@ func (c *ProgramController) UpdatePhases() {
 		c.TplName = "programs/show.tpl"
 	}
 
-	// Parse submitted rep ranges, building view phases with the entered values
-	// so the form can be re-shown with the user's input on error.
 	viewPhases := make([]*models.Phase, len(phases))
 	updates := make([]models.PhaseUpdate, len(phases))
 	for i, ph := range phases {
@@ -217,7 +215,7 @@ func (c *ProgramController) UpdatePhases() {
 		updates[i] = models.PhaseUpdate{PhaseNumber: ph.PhaseNumber, RepMin: repMin, RepMax: repMax}
 	}
 
-	if err := models.UpdatePhaseRepRanges(id, updates); err != nil {
+	if err := Phases.UpdateRepRanges(id, updates); err != nil {
 		renderShow(err.Error(), viewPhases)
 		return
 	}

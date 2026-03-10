@@ -1,7 +1,6 @@
 package controllers
 
 import (
-	"myGymPal/models"
 	"strings"
 
 	beego "github.com/beego/beego/v2/server/web"
@@ -31,7 +30,7 @@ func (c *AuthController) LoginPost() {
 	username := strings.TrimSpace(c.GetString("username"))
 	password := c.GetString("password")
 
-	user, err := models.GetUserByUsername(username)
+	user, err := Users.GetByUsername(username)
 	if err != nil || !user.CheckPassword(password) {
 		c.Data["Error"] = "Invalid username or password."
 		c.Data["Username"] = username
@@ -58,7 +57,6 @@ func (c *AuthController) RegisterPost() {
 	confirm := c.GetString("confirm_password")
 	weightUnit := "lb"
 
-	// Validate
 	if username == "" || password == "" {
 		c.Data["Error"] = "Username and password are required."
 		c.Data["Username"] = username
@@ -80,7 +78,7 @@ func (c *AuthController) RegisterPost() {
 		return
 	}
 
-	if _, err := models.CreateUser(username, password, weightUnit); err != nil {
+	if _, err := Users.Create(username, password, weightUnit); err != nil {
 		if strings.Contains(err.Error(), "unique") || strings.Contains(err.Error(), "duplicate") {
 			c.Data["Error"] = "That username is already taken."
 		} else {

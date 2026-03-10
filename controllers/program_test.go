@@ -1,15 +1,13 @@
 package controllers_test
 
 import (
+	"errors"
+	"fmt"
 	"net/http"
 	"net/url"
-	"strconv"
 	"testing"
 
-	"myGymPal/models"
-
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 // --- Programs list ---
@@ -21,8 +19,9 @@ func TestProgramsIndex_Unauthenticated(t *testing.T) {
 }
 
 func TestProgramsIndex_Empty(t *testing.T) {
-	cookies := loginAs(t, "prog_idx_empty", "password123")
-	t.Cleanup(func() { models.DeleteUserByUsername("prog_idx_empty") })
+	t.Cleanup(resetMocks)
+	setProgramsGetAllEmpty()
+	cookies := loginAs(t, "prog_idx_empty", "lb")
 
 	w := getPath("/programs", cookies)
 	assert.Equal(t, http.StatusOK, w.Code)
@@ -30,15 +29,9 @@ func TestProgramsIndex_Empty(t *testing.T) {
 }
 
 func TestProgramsIndex_ShowsPrograms(t *testing.T) {
-	cookies := loginAs(t, "prog_idx_list", "password123")
-	t.Cleanup(func() { models.DeleteUserByUsername("prog_idx_list") })
-
-	// Create a program directly via model so we can verify it appears.
-	user, err := models.GetUserByUsername("prog_idx_list")
-	require.NoError(t, err)
-	p, err := models.CreateProgram(user.ID, "My Test Program", testProgramDate, 4, 8, 10, 12)
-	require.NoError(t, err)
-	t.Cleanup(func() { models.DeleteProgram(p.ID, user.ID) })
+	t.Cleanup(resetMocks)
+	setProgramsGetAllWithOne(1, "My Test Program", 4, 8)
+	cookies := loginAs(t, "prog_idx_list", "lb")
 
 	w := getPath("/programs", cookies)
 	assert.Equal(t, http.StatusOK, w.Code)
@@ -55,8 +48,8 @@ func TestProgramsNew_Unauthenticated(t *testing.T) {
 }
 
 func TestProgramsNew_ShowsForm(t *testing.T) {
-	cookies := loginAs(t, "prog_new_form", "password123")
-	t.Cleanup(func() { models.DeleteUserByUsername("prog_new_form") })
+	t.Cleanup(resetMocks)
+	cookies := loginAs(t, "prog_new_form", "lb")
 
 	w := getPath("/programs/new", cookies)
 	assert.Equal(t, http.StatusOK, w.Code)
@@ -83,8 +76,9 @@ func TestProgramsCreate_Unauthenticated(t *testing.T) {
 }
 
 func TestProgramsCreate_Success(t *testing.T) {
-	cookies := loginAs(t, "prog_create_ok", "password123")
-	t.Cleanup(func() { models.DeleteUserByUsername("prog_create_ok") })
+	t.Cleanup(resetMocks)
+	captureProgramCreate()
+	cookies := loginAs(t, "prog_create_ok", "lb")
 
 	w := postForm("/programs", url.Values{
 		"name":            {"Hypertrophy Block"},
@@ -97,26 +91,20 @@ func TestProgramsCreate_Success(t *testing.T) {
 
 	assert.Equal(t, http.StatusFound, w.Code)
 	assert.Equal(t, "/programs", w.Header().Get("Location"))
+	assert.Equal(t, "Hypertrophy Block", lastProgramCreate.name)
+	assert.Equal(t, 4, lastProgramCreate.numPhases)
+	assert.Equal(t, 6, lastProgramCreate.weeksPerPhase)
 
-	// Follow the redirect — success message should appear on the programs page.
+	// Follow the redirect — success flash should appear.
 	allCookies := append(cookies, w.Result().Cookies()...)
 	w2 := getPath("/programs", allCookies)
 	assert.Equal(t, http.StatusOK, w2.Code)
 	assert.Contains(t, w2.Body.String(), "Program created.")
-
-	user, err := models.GetUserByUsername("prog_create_ok")
-	require.NoError(t, err)
-	programs, err := models.GetProgramsByUserID(user.ID)
-	require.NoError(t, err)
-	require.Len(t, programs, 1)
-	assert.Equal(t, "Hypertrophy Block", programs[0].Name)
-	assert.Equal(t, 4, programs[0].NumPhases)
-	assert.Equal(t, 6, programs[0].WeeksPerPhase)
 }
 
 func TestProgramsCreate_EmptyName(t *testing.T) {
-	cookies := loginAs(t, "prog_create_noname", "password123")
-	t.Cleanup(func() { models.DeleteUserByUsername("prog_create_noname") })
+	t.Cleanup(resetMocks)
+	cookies := loginAs(t, "prog_create_noname", "lb")
 
 	w := postForm("/programs", url.Values{
 		"name":            {""},
@@ -132,8 +120,8 @@ func TestProgramsCreate_EmptyName(t *testing.T) {
 }
 
 func TestProgramsCreate_InvalidDate(t *testing.T) {
-	cookies := loginAs(t, "prog_create_baddate", "password123")
-	t.Cleanup(func() { models.DeleteUserByUsername("prog_create_baddate") })
+	t.Cleanup(resetMocks)
+	cookies := loginAs(t, "prog_create_baddate", "lb")
 
 	w := postForm("/programs", url.Values{
 		"name":            {"My Program"},
@@ -149,8 +137,8 @@ func TestProgramsCreate_InvalidDate(t *testing.T) {
 }
 
 func TestProgramsCreate_InvalidPhases(t *testing.T) {
-	cookies := loginAs(t, "prog_create_badphases", "password123")
-	t.Cleanup(func() { models.DeleteUserByUsername("prog_create_badphases") })
+	t.Cleanup(resetMocks)
+	cookies := loginAs(t, "prog_create_badphases", "lb")
 
 	w := postForm("/programs", url.Values{
 		"name":            {"My Program"},
@@ -166,8 +154,8 @@ func TestProgramsCreate_InvalidPhases(t *testing.T) {
 }
 
 func TestProgramsCreate_InvalidDefaultRepMin(t *testing.T) {
-	cookies := loginAs(t, "prog_create_bad_repmin", "password123")
-	t.Cleanup(func() { models.DeleteUserByUsername("prog_create_bad_repmin") })
+	t.Cleanup(resetMocks)
+	cookies := loginAs(t, "prog_create_bad_repmin", "lb")
 
 	w := postForm("/programs", url.Values{
 		"name":            {"My Program"},
@@ -183,8 +171,8 @@ func TestProgramsCreate_InvalidDefaultRepMin(t *testing.T) {
 }
 
 func TestProgramsCreate_DefaultRepMaxLessThanMin(t *testing.T) {
-	cookies := loginAs(t, "prog_create_bad_repmax", "password123")
-	t.Cleanup(func() { models.DeleteUserByUsername("prog_create_bad_repmax") })
+	t.Cleanup(resetMocks)
+	cookies := loginAs(t, "prog_create_bad_repmax", "lb")
 
 	w := postForm("/programs", url.Values{
 		"name":            {"My Program"},
@@ -200,8 +188,8 @@ func TestProgramsCreate_DefaultRepMaxLessThanMin(t *testing.T) {
 }
 
 func TestProgramsCreate_InvalidWeeksPerPhase(t *testing.T) {
-	cookies := loginAs(t, "prog_create_badweeks", "password123")
-	t.Cleanup(func() { models.DeleteUserByUsername("prog_create_badweeks") })
+	t.Cleanup(resetMocks)
+	cookies := loginAs(t, "prog_create_badweeks", "lb")
 
 	w := postForm("/programs", url.Values{
 		"name":            {"My Program"},
@@ -225,32 +213,22 @@ func TestProgramShow_Unauthenticated(t *testing.T) {
 }
 
 func TestProgramShow_WrongUser(t *testing.T) {
-	loginAs(t, "prog_show_owner", "password123")
-	t.Cleanup(func() { models.DeleteUserByUsername("prog_show_owner") })
+	t.Cleanup(resetMocks)
+	setProgramGetByIDError(errors.New("not found"))
+	cookies := loginAs(t, "prog_show_other", "lb")
 
-	ownerUser, err := models.GetUserByUsername("prog_show_owner")
-	require.NoError(t, err)
-	p, err := models.CreateProgram(ownerUser.ID, "Owner Program", testProgramDate, 2, 8, 10, 12)
-	require.NoError(t, err)
-
-	other := loginAs(t, "prog_show_other", "password123")
-	t.Cleanup(func() { models.DeleteUserByUsername("prog_show_other") })
-
-	w := getPath("/programs/"+strconv.FormatInt(p.ID, 10), other)
+	w := getPath("/programs/1", cookies)
 	assert.Equal(t, http.StatusFound, w.Code)
 	assert.Equal(t, "/programs", w.Header().Get("Location"))
 }
 
 func TestProgramShow_ShowsPhases(t *testing.T) {
-	cookies := loginAs(t, "prog_show_phases", "password123")
-	t.Cleanup(func() { models.DeleteUserByUsername("prog_show_phases") })
+	t.Cleanup(resetMocks)
+	setProgramGetByID("Show Program", 3)
+	setPhasesGetByProgram(3)
+	cookies := loginAs(t, "prog_show_phases", "lb")
 
-	user, err := models.GetUserByUsername("prog_show_phases")
-	require.NoError(t, err)
-	p, err := models.CreateProgram(user.ID, "Show Program", testProgramDate, 3, 8, 10, 12)
-	require.NoError(t, err)
-
-	w := getPath("/programs/"+strconv.FormatInt(p.ID, 10), cookies)
+	w := getPath("/programs/1", cookies)
 	assert.Equal(t, http.StatusOK, w.Code)
 	body := w.Body.String()
 	assert.Contains(t, body, "Show Program")
@@ -270,41 +248,36 @@ func TestUpdatePhases_Unauthenticated(t *testing.T) {
 }
 
 func TestUpdatePhases_Success(t *testing.T) {
-	cookies := loginAs(t, "prog_update_phases_ok", "password123")
-	t.Cleanup(func() { models.DeleteUserByUsername("prog_update_phases_ok") })
+	t.Cleanup(resetMocks)
+	setProgramGetByID("Phase Update Program", 2)
+	setPhasesGetByProgram(2)
+	capturePhasesUpdateRepRanges()
+	cookies := loginAs(t, "prog_update_phases_ok", "lb")
 
-	user, err := models.GetUserByUsername("prog_update_phases_ok")
-	require.NoError(t, err)
-	p, err := models.CreateProgram(user.ID, "Phase Update Program", testProgramDate, 2, 8, 10, 12)
-	require.NoError(t, err)
-
-	w := postForm("/programs/"+strconv.FormatInt(p.ID, 10), url.Values{
+	w := postForm("/programs/1", url.Values{
 		"rep_min_1": {"10"}, "rep_max_1": {"12"},
 		"rep_min_2": {"8"}, "rep_max_2": {"10"},
 	}, cookies)
 
 	assert.Equal(t, http.StatusFound, w.Code)
-	assert.Equal(t, "/programs/"+strconv.FormatInt(p.ID, 10), w.Header().Get("Location"))
-
-	phases, err := models.GetPhasesByProgramID(p.ID)
-	require.NoError(t, err)
-	assert.Equal(t, 10, phases[0].RepMin)
-	assert.Equal(t, 12, phases[0].RepMax)
-	assert.Equal(t, 8, phases[1].RepMin)
-	assert.Equal(t, 10, phases[1].RepMax)
+	assert.Equal(t, fmt.Sprintf("/programs/%d", testProgramID), w.Header().Get("Location"))
+	repMin0, repMax0 := getLastPhaseUpdate(0)
+	repMin1, repMax1 := getLastPhaseUpdate(1)
+	assert.Equal(t, 10, repMin0)
+	assert.Equal(t, 12, repMax0)
+	assert.Equal(t, 8, repMin1)
+	assert.Equal(t, 10, repMax1)
 }
 
 func TestUpdatePhases_InvalidRange(t *testing.T) {
-	cookies := loginAs(t, "prog_update_phases_bad", "password123")
-	t.Cleanup(func() { models.DeleteUserByUsername("prog_update_phases_bad") })
-
-	user, err := models.GetUserByUsername("prog_update_phases_bad")
-	require.NoError(t, err)
-	p, err := models.CreateProgram(user.ID, "Bad Range Program", testProgramDate, 1, 8, 10, 12)
-	require.NoError(t, err)
+	t.Cleanup(resetMocks)
+	setProgramGetByID("Bad Range Program", 1)
+	setPhasesGetByProgram(1)
+	setPhasesUpdateRepRangesError(errors.New("rep_max must be at least rep_min"))
+	cookies := loginAs(t, "prog_update_phases_bad", "lb")
 
 	// max < min
-	w := postForm("/programs/"+strconv.FormatInt(p.ID, 10), url.Values{
+	w := postForm("/programs/1", url.Values{
 		"rep_min_1": {"12"}, "rep_max_1": {"8"},
 	}, cookies)
 
@@ -313,8 +286,8 @@ func TestUpdatePhases_InvalidRange(t *testing.T) {
 }
 
 func TestProgramsCreate_ReentersFormValues(t *testing.T) {
-	cookies := loginAs(t, "prog_create_reenter", "password123")
-	t.Cleanup(func() { models.DeleteUserByUsername("prog_create_reenter") })
+	t.Cleanup(resetMocks)
+	cookies := loginAs(t, "prog_create_reenter", "lb")
 
 	w := postForm("/programs", url.Values{
 		"name":            {"My Sticky Program"},

@@ -1,57 +1,13 @@
 package controllers_test
 
 import (
+	"errors"
 	"net/http"
-	"net/http/httptest"
 	"net/url"
-	"strings"
 	"testing"
 
-	"myGymPal/models"
-
-	beego "github.com/beego/beego/v2/server/web"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
-
-// postForm is a helper that submits a form POST and returns the response.
-func postForm(path string, data url.Values, cookies []*http.Cookie) *httptest.ResponseRecorder {
-	r, _ := http.NewRequest("POST", path, strings.NewReader(data.Encode()))
-	r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-	for _, c := range cookies {
-		r.AddCookie(c)
-	}
-	w := httptest.NewRecorder()
-	beego.BeeApp.Handlers.ServeHTTP(w, r)
-	return w
-}
-
-func getPath(path string, cookies []*http.Cookie) *httptest.ResponseRecorder {
-	r, _ := http.NewRequest("GET", path, nil)
-	for _, c := range cookies {
-		r.AddCookie(c)
-	}
-	w := httptest.NewRecorder()
-	beego.BeeApp.Handlers.ServeHTTP(w, r)
-	return w
-}
-
-// loginAs creates a user, logs in, and returns the session cookies.
-// The caller is responsible for cleanup via t.Cleanup.
-func loginAs(t *testing.T, username, password string) []*http.Cookie {
-	t.Helper()
-	// Remove any leftover user from a previous failed run before creating.
-	_ = models.DeleteUserByUsername(username)
-	_, err := models.CreateUser(username, password, "lb")
-	require.NoError(t, err)
-
-	w := postForm("/login", url.Values{
-		"username": {username},
-		"password": {password},
-	}, nil)
-	require.Equal(t, http.StatusFound, w.Code)
-	return w.Result().Cookies()
-}
 
 // --- Register ---
 
@@ -62,7 +18,7 @@ func TestRegisterPage(t *testing.T) {
 }
 
 func TestRegisterPost_Success(t *testing.T) {
-	t.Cleanup(func() { models.DeleteUserByUsername("test_reg_ok") })
+	t.Cleanup(resetMocks)
 
 	w := postForm("/register", url.Values{
 		"username":         {"test_reg_ok"},
@@ -119,9 +75,8 @@ func TestRegisterPost_PasswordMismatch(t *testing.T) {
 }
 
 func TestRegisterPost_DuplicateUsername(t *testing.T) {
-	_, err := models.CreateUser("test_dup_reg", "password123", "lb")
-	require.NoError(t, err)
-	t.Cleanup(func() { models.DeleteUserByUsername("test_dup_reg") })
+	t.Cleanup(resetMocks)
+	setCreateFnError(errors.New("unique constraint violated"))
 
 	w := postForm("/register", url.Values{
 		"username":         {"test_dup_reg"},
@@ -142,9 +97,8 @@ func TestLoginPage(t *testing.T) {
 }
 
 func TestLoginPost_Success(t *testing.T) {
-	_, err := models.CreateUser("test_login_ok", "password123", "lb")
-	require.NoError(t, err)
-	t.Cleanup(func() { models.DeleteUserByUsername("test_login_ok") })
+	t.Cleanup(resetMocks)
+	setGetByUsernameReturnsUser("lb")
 
 	w := postForm("/login", url.Values{
 		"username": {"test_login_ok"},
@@ -156,9 +110,8 @@ func TestLoginPost_Success(t *testing.T) {
 }
 
 func TestLoginPost_WrongPassword(t *testing.T) {
-	_, err := models.CreateUser("test_login_bad", "password123", "lb")
-	require.NoError(t, err)
-	t.Cleanup(func() { models.DeleteUserByUsername("test_login_bad") })
+	t.Cleanup(resetMocks)
+	setGetByUsernameReturnsUser("lb")
 
 	w := postForm("/login", url.Values{
 		"username": {"test_login_bad"},
@@ -170,6 +123,7 @@ func TestLoginPost_WrongPassword(t *testing.T) {
 }
 
 func TestLoginPost_UnknownUsername(t *testing.T) {
+	// Default mock returns "not found" error — no setup needed.
 	w := postForm("/login", url.Values{
 		"username": {"nobody_here"},
 		"password": {"password123"},
@@ -182,8 +136,8 @@ func TestLoginPost_UnknownUsername(t *testing.T) {
 // --- Logout ---
 
 func TestLogout(t *testing.T) {
-	cookies := loginAs(t, "test_logout", "password123")
-	t.Cleanup(func() { models.DeleteUserByUsername("test_logout") })
+	t.Cleanup(resetMocks)
+	cookies := loginAs(t, "test_logout", "lb")
 
 	w := getPath("/logout", cookies)
 	assert.Equal(t, http.StatusFound, w.Code)

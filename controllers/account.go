@@ -1,8 +1,6 @@
 package controllers
 
 import (
-	"myGymPal/models"
-
 	beego "github.com/beego/beego/v2/server/web"
 )
 
@@ -17,7 +15,7 @@ func (c *AccountController) Settings() {
 		return
 	}
 
-	user, err := models.GetUserByID(userID.(int64))
+	user, err := Users.GetByID(userID.(int64))
 	if err != nil {
 		c.Redirect("/error", 302)
 		return
@@ -42,7 +40,7 @@ func (c *AccountController) SettingsPost() {
 	}
 
 	unit := c.GetString("weight_unit")
-	if err := models.UpdateWeightUnit(userID.(int64), unit); err != nil {
+	if err := Users.UpdateWeightUnit(userID.(int64), unit); err != nil {
 		c.Data["LoggedIn"] = true
 		c.Data["ActivePage"] = "settings"
 		c.Data["Error"] = "Invalid weight unit."
