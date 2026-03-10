@@ -47,6 +47,15 @@ func (c *SessionController) Create() {
 		return
 	}
 
+	// Copy template exercises into the new session if a template was selected.
+	if templateID, err := strconv.ParseInt(c.GetString("template_id"), 10, 64); err == nil && templateID > 0 {
+		if _, exercises, err := Templates.GetByID(templateID); err == nil {
+			for _, ex := range exercises {
+				SessionExercises.Create(session.ID, ex.Name, ex.IsBodyweight, ex.GoalWeight, ex.WeightUnit)
+			}
+		}
+	}
+
 	c.Redirect(fmt.Sprintf("/sessions/%d", session.ID), 302)
 }
 

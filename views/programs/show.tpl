@@ -24,8 +24,16 @@
                     &middot; {{.Program.WeeksPerPhase}} week{{if gt .Program.WeeksPerPhase 1}}s{{end}}/phase
                 </p>
             </div>
-            <form method="POST" action="/programs/{{.Program.ID}}/sessions" class="ms-3 flex-shrink-0">
-                <button type="submit" class="btn btn-dark btn-sm">Start Workout</button>
+            <form method="POST" action="/programs/{{.Program.ID}}/sessions" class="ms-3 flex-shrink-0 text-end">
+                {{if .Templates}}
+                <select name="template_id" class="form-select form-select-sm mb-1">
+                    <option value="">No template</option>
+                    {{range .Templates}}
+                    <option value="{{.ID}}">{{.Name}}</option>
+                    {{end}}
+                </select>
+                {{end}}
+                <button type="submit" class="btn btn-dark btn-sm w-100">Start Workout</button>
             </form>
         </div>
     </div>

@@ -73,7 +73,7 @@
 
 ~~**US-18** — As a user, I want to start a new workout session within my training program so that the correct phase, week, and workout number are set automatically.~~
 
-**US-19** — As a user, I want the session to be pre-filled from the associated template so that I only need to log what I actually did.
+~~**US-19** — As a user, I want the session to be pre-filled from the associated template so that I only need to log what I actually did.~~
 
 **US-20** — As a user, I want the session form to be easy to use on a phone so that I can log sets quickly between exercises at the gym.
 

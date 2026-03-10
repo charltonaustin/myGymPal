@@ -195,10 +195,10 @@ func (m *mockPhaseRepo) UpdateRepRanges(programID int64, updates []models.PhaseU
 }
 
 type mockSessionExerciseRepo struct {
-	CreateFn             func(sessionID int64, name string, isBodyweight bool, goalWeight float64, weightUnit string) (*models.SessionExercise, error)
-	GetBySessionFn       func(sessionID int64) ([]*models.SessionExerciseView, error)
-	GetByIDFn            func(exerciseID int64) (*models.SessionExercise, error)
-	LogSetFn             func(exerciseID int64, setNumber int, actualWeight float64, weightUnit string, actualReps int) (*models.SessionSet, error)
+	CreateFn              func(sessionID int64, name string, isBodyweight bool, goalWeight float64, weightUnit string) (*models.SessionExercise, error)
+	GetBySessionFn        func(sessionID int64) ([]*models.SessionExerciseView, error)
+	GetByIDFn             func(exerciseID int64) (*models.SessionExercise, error)
+	LogSetFn              func(exerciseID int64, setNumber int, actualWeight float64, weightUnit string, actualReps int) (*models.SessionSet, error)
 	CountSetsByExerciseFn func(exerciseID int64) (int, error)
 }
 
@@ -279,6 +279,7 @@ func resetMocks() {
 		weightUnit   string
 		actualReps   int
 	}{}
+	sessionExerciseCreateNames = nil
 }
 
 // setGetByUsernameReturnsUser makes mockUsers return a test user for any username lookup.
@@ -524,6 +525,18 @@ var lastLogSet struct {
 	actualWeight float64
 	weightUnit   string
 	actualReps   int
+}
+
+// sessionExerciseCreateNames captures exercise names from captureSessionExerciseCreates.
+var sessionExerciseCreateNames []string
+
+// captureSessionExerciseCreates records the name of each exercise created.
+func captureSessionExerciseCreates() {
+	sessionExerciseCreateNames = nil
+	mockSessionExercises.CreateFn = func(sessionID int64, name string, isBodyweight bool, goalWeight float64, weightUnit string) (*models.SessionExercise, error) {
+		sessionExerciseCreateNames = append(sessionExerciseCreateNames, name)
+		return &models.SessionExercise{ID: testExerciseID, SessionID: sessionID, Name: name, IsBodyweight: isBodyweight, GoalWeight: goalWeight, WeightUnit: weightUnit}, nil
+	}
 }
 
 // setSessionExerciseGetBySessionWithOne makes GetBySession return a single exercise with no sets.

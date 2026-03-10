@@ -67,6 +67,35 @@ func TestSessionCreate_DeloadWeekFlagged(t *testing.T) {
 	assert.Equal(t, 8, lastSessionCreate.weekNumber)
 }
 
+func TestSessionCreate_NoTemplateSkipsCopy(t *testing.T) {
+	t.Cleanup(resetMocks)
+	setProgramGetByIDWithDates("My Program", 4, 8, testProgramDate)
+	captureSessionCreate()
+	captureSessionExerciseCreates()
+	cookies := loginAs(t, "session_create_notmpl", "lb")
+
+	w := postForm("/programs/1/sessions", url.Values{}, cookies)
+	assert.Equal(t, http.StatusFound, w.Code)
+	assert.Len(t, sessionExerciseCreateNames, 0)
+}
+
+func TestSessionCreate_CopiesTemplateExercises(t *testing.T) {
+	t.Cleanup(resetMocks)
+	setProgramGetByIDWithDates("My Program", 4, 8, testProgramDate)
+	captureSessionCreate()
+	setTemplateGetByID(testTemplateID, "Upper Body A", "Upper", 3)
+	captureSessionExerciseCreates()
+	cookies := loginAs(t, "session_create_tmpl", "lb")
+
+	w := postForm("/programs/1/sessions", url.Values{
+		"template_id": {fmt.Sprintf("%d", testTemplateID)},
+	}, cookies)
+	assert.Equal(t, http.StatusFound, w.Code)
+	assert.Len(t, sessionExerciseCreateNames, 3)
+	assert.Equal(t, "Exercise 1", sessionExerciseCreateNames[0])
+	assert.Equal(t, "Exercise 3", sessionExerciseCreateNames[2])
+}
+
 // --- Show session ---
 
 func TestSessionShow_Unauthenticated(t *testing.T) {

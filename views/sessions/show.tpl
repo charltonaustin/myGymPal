@@ -60,9 +60,9 @@
             <form method="POST" action="/sessions/{{$.Session.ID}}/exercises/{{.Exercise.ID}}/sets" class="d-flex gap-2 align-items-end">
                 <div>
                     <label class="form-label small mb-1">Weight</label>
-                    <div class="input-group input-group-sm" style="width: 130px;">
+                    <div class="input-group input-group-sm" style="width: 160px;">
                         <input type="number" name="actual_weight" class="form-control" placeholder="0" min="0" step="0.5">
-                        <select name="weight_unit" class="form-select" style="max-width: 60px;">
+                        <select name="weight_unit" class="form-select" style="max-width: 90px;">
                             <option value="lb" {{if eq $.WeightUnit "lb"}}selected{{end}}>lb</option>
                             <option value="kg" {{if eq $.WeightUnit "kg"}}selected{{end}}>kg</option>
                         </select>
