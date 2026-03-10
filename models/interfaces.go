@@ -21,3 +21,9 @@ type PhaseRepository interface {
 	GetByProgram(programID int64) ([]*Phase, error)
 	UpdateRepRanges(programID int64, updates []PhaseUpdate) error
 }
+
+type TemplateRepository interface {
+	Create(name, focus string, exercises []TemplateExerciseInput) (*Template, error)
+	GetAll() ([]*Template, error)
+	GetByID(id int64) (*Template, []*TemplateExercise, error)
+}

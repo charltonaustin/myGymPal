@@ -41,7 +41,7 @@
 
 ~~**US-06** — As a user, I want each phase in my program to contain a user defined amount of weeks with a default of 8 so that my training follows a consistent cycle.~~
 
-**US-07** — As a user, I want to define a rep range (min and max) per phase (e.g. 10–12 for Phase 3, 8–10 for Phase 4) so that the target reps automatically adjust as I move through the program.
+~~**US-07** — As a user, I want to define a rep range (min and max) per phase (e.g. 10–12 for Phase 3, 8–10 for Phase 4) so that the target reps automatically adjust as I move through the program.~~
 
 **US-08** — As a user, I want week 8 of each phase to be automatically designated as a deload week so that recovery is built into my program.
 

@@ -2,6 +2,7 @@ package controllers_test
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -17,6 +18,7 @@ import (
 
 const testUserID = int64(42)
 const testProgramID = int64(1)
+const testTemplateID = int64(10)
 
 var testPasswordHash string
 
@@ -113,6 +115,33 @@ type mockPhaseRepo struct {
 	UpdateRepRangesFn func(programID int64, updates []models.PhaseUpdate) error
 }
 
+type mockTemplateRepo struct {
+	CreateFn  func(name, focus string, exercises []models.TemplateExerciseInput) (*models.Template, error)
+	GetAllFn  func() ([]*models.Template, error)
+	GetByIDFn func(id int64) (*models.Template, []*models.TemplateExercise, error)
+}
+
+func (m *mockTemplateRepo) Create(name, focus string, exercises []models.TemplateExerciseInput) (*models.Template, error) {
+	if m.CreateFn != nil {
+		return m.CreateFn(name, focus, exercises)
+	}
+	return &models.Template{ID: testTemplateID, Name: name, Focus: focus}, nil
+}
+
+func (m *mockTemplateRepo) GetAll() ([]*models.Template, error) {
+	if m.GetAllFn != nil {
+		return m.GetAllFn()
+	}
+	return nil, nil
+}
+
+func (m *mockTemplateRepo) GetByID(id int64) (*models.Template, []*models.TemplateExercise, error) {
+	if m.GetByIDFn != nil {
+		return m.GetByIDFn(id)
+	}
+	return nil, nil, errors.New("not found")
+}
+
 func (m *mockPhaseRepo) GetByProgram(programID int64) ([]*models.Phase, error) {
 	if m.GetByProgramFn != nil {
 		return m.GetByProgramFn(programID)
@@ -130,21 +159,28 @@ func (m *mockPhaseRepo) UpdateRepRanges(programID int64, updates []models.PhaseU
 // --- Global mock instances ---
 
 var (
-	mockUsers    = &mockUserRepo{}
-	mockPrograms = &mockProgramRepo{}
-	mockPhases   = &mockPhaseRepo{}
+	mockUsers     = &mockUserRepo{}
+	mockPrograms  = &mockProgramRepo{}
+	mockPhases    = &mockPhaseRepo{}
+	mockTemplates = &mockTemplateRepo{}
 )
 
 func resetMocks() {
 	*mockUsers = mockUserRepo{}
 	*mockPrograms = mockProgramRepo{}
 	*mockPhases = mockPhaseRepo{}
+	*mockTemplates = mockTemplateRepo{}
 	lastProgramCreate = struct {
 		name          string
 		numPhases     int
 		weeksPerPhase int
 	}{}
 	lastPhaseUpdates = nil
+	lastTemplateCreate = struct {
+		name        string
+		focus       string
+		numExercises int
+	}{}
 }
 
 // setGetByUsernameReturnsUser makes mockUsers return a test user for any username lookup.
@@ -247,6 +283,73 @@ func getLastPhaseUpdate(i int) (repMin, repMax int) {
 func setPhasesUpdateRepRangesError(err error) {
 	mockPhases.UpdateRepRangesFn = func(programID int64, updates []models.PhaseUpdate) error {
 		return err
+	}
+}
+
+// --- Template mock helpers ---
+
+// setTemplatesGetAllEmpty makes GetAll return an empty slice.
+func setTemplatesGetAllEmpty() {
+	mockTemplates.GetAllFn = func() ([]*models.Template, error) {
+		return []*models.Template{}, nil
+	}
+}
+
+// setTemplatesGetAllWithOne makes GetAll return a single template.
+func setTemplatesGetAllWithOne(id int64, name, focus string) {
+	mockTemplates.GetAllFn = func() ([]*models.Template, error) {
+		return []*models.Template{
+			{ID: id, Name: name, Focus: focus},
+		}, nil
+	}
+}
+
+// setTemplateGetByIDError makes GetByID return an error.
+func setTemplateGetByIDError(err error) {
+	mockTemplates.GetByIDFn = func(id int64) (*models.Template, []*models.TemplateExercise, error) {
+		return nil, nil, err
+	}
+}
+
+// setTemplateGetByID makes GetByID return a template with n exercises.
+func setTemplateGetByID(id int64, name, focus string, numExercises int) {
+	mockTemplates.GetByIDFn = func(_ int64) (*models.Template, []*models.TemplateExercise, error) {
+		exercises := make([]*models.TemplateExercise, numExercises)
+		for i := range exercises {
+			exercises[i] = &models.TemplateExercise{
+				ID:         int64(i + 1),
+				TemplateID: id,
+				Name:       "Exercise " + fmt.Sprintf("%d", i+1),
+				RepMin:     8,
+				RepMax:     12,
+				SortOrder:  i,
+			}
+		}
+		return &models.Template{ID: id, Name: name, Focus: focus}, exercises, nil
+	}
+}
+
+// lastTemplateCreate holds args captured by captureTemplateCreate.
+var lastTemplateCreate struct {
+	name         string
+	focus        string
+	numExercises int
+}
+
+// captureTemplateCreate makes CreateFn capture the call args and return a valid template.
+func captureTemplateCreate() {
+	mockTemplates.CreateFn = func(name, focus string, exercises []models.TemplateExerciseInput) (*models.Template, error) {
+		lastTemplateCreate.name = name
+		lastTemplateCreate.focus = focus
+		lastTemplateCreate.numExercises = len(exercises)
+		return &models.Template{ID: testTemplateID, Name: name, Focus: focus}, nil
+	}
+}
+
+// setTemplateCreateError makes CreateFn return an error.
+func setTemplateCreateError(err error) {
+	mockTemplates.CreateFn = func(name, focus string, exercises []models.TemplateExerciseInput) (*models.Template, error) {
+		return nil, err
 	}
 }
 

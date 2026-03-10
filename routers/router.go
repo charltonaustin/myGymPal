@@ -11,6 +11,7 @@ func Register() {
 	controllers.Users = models.NewUserRepository()
 	controllers.Programs = models.NewProgramRepository()
 	controllers.Phases = models.NewPhaseRepository()
+	controllers.Templates = models.NewTemplateRepository()
 
 	// PWA assets (must be served from root path for correct service worker scope)
 	beego.Router("/sw.js", &controllers.PWAController{}, "get:ServiceWorker")
@@ -33,4 +34,9 @@ func Register() {
 	beego.Router("/programs", &controllers.ProgramController{}, "get:Index;post:Create")
 	beego.Router("/programs/new", &controllers.ProgramController{}, "get:New")
 	beego.Router("/programs/:id", &controllers.ProgramController{}, "get:Show;post:UpdatePhases")
+
+	// Templates
+	beego.Router("/templates", &controllers.TemplateController{}, "get:Index")
+	beego.Router("/templates/new", &controllers.TemplateController{}, "get:New;post:Create")
+	beego.Router("/templates/:id", &controllers.TemplateController{}, "get:Show")
 }

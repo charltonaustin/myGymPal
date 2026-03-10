@@ -23,5 +23,6 @@ func TestMain(m *testing.M) {
 	controllers.Users = mockUsers
 	controllers.Programs = mockPrograms
 	controllers.Phases = mockPhases
+	controllers.Templates = mockTemplates
 	os.Exit(m.Run())
 }
