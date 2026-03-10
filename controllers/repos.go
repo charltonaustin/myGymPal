@@ -10,4 +10,5 @@ var (
 	Programs  models.ProgramRepository
 	Phases    models.PhaseRepository
 	Templates models.TemplateRepository
+	Sessions  models.SessionRepository
 )

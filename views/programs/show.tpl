@@ -15,12 +15,19 @@
 <main class="container mt-4" style="max-width: 600px;">
     <div class="mb-4">
         <a href="/programs" class="text-muted small">&larr; Programs</a>
-        <h1 class="h4 fw-bold mt-1 mb-1">{{.Program.Name}}</h1>
-        <p class="text-muted small mb-0">
-            Starts {{.Program.StartDate.Format "Jan 2, 2006"}}
-            &middot; {{.Program.NumPhases}} phase{{if gt .Program.NumPhases 1}}s{{end}}
-            &middot; {{.Program.WeeksPerPhase}} week{{if gt .Program.WeeksPerPhase 1}}s{{end}}/phase
-        </p>
+        <div class="d-flex align-items-start justify-content-between mt-1">
+            <div>
+                <h1 class="h4 fw-bold mb-1">{{.Program.Name}}</h1>
+                <p class="text-muted small mb-0">
+                    Starts {{.Program.StartDate.Format "Jan 2, 2006"}}
+                    &middot; {{.Program.NumPhases}} phase{{if gt .Program.NumPhases 1}}s{{end}}
+                    &middot; {{.Program.WeeksPerPhase}} week{{if gt .Program.WeeksPerPhase 1}}s{{end}}/phase
+                </p>
+            </div>
+            <form method="POST" action="/programs/{{.Program.ID}}/sessions" class="ms-3 flex-shrink-0">
+                <button type="submit" class="btn btn-dark btn-sm">Start Workout</button>
+            </form>
+        </div>
     </div>
 
     {{if .Success}}

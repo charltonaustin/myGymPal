@@ -27,3 +27,9 @@ type TemplateRepository interface {
 	GetAll() ([]*Template, error)
 	GetByID(id int64) (*Template, []*TemplateExercise, error)
 }
+
+type SessionRepository interface {
+	Create(programID, userID int64, phaseNumber, weekNumber, workoutNumber int, isDeload bool, date time.Time) (*Session, error)
+	CountByProgram(programID int64) (int, error)
+	GetByID(id, userID int64) (*Session, error)
+}

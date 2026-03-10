@@ -19,6 +19,7 @@ import (
 const testUserID = int64(42)
 const testProgramID = int64(1)
 const testTemplateID = int64(10)
+const testSessionID = int64(99)
 
 var testPasswordHash string
 
@@ -115,6 +116,33 @@ type mockPhaseRepo struct {
 	UpdateRepRangesFn func(programID int64, updates []models.PhaseUpdate) error
 }
 
+type mockSessionRepo struct {
+	CreateFn         func(programID, userID int64, phaseNumber, weekNumber, workoutNumber int, isDeload bool, date time.Time) (*models.Session, error)
+	CountByProgramFn func(programID int64) (int, error)
+	GetByIDFn        func(id, userID int64) (*models.Session, error)
+}
+
+func (m *mockSessionRepo) Create(programID, userID int64, phaseNumber, weekNumber, workoutNumber int, isDeload bool, date time.Time) (*models.Session, error) {
+	if m.CreateFn != nil {
+		return m.CreateFn(programID, userID, phaseNumber, weekNumber, workoutNumber, isDeload, date)
+	}
+	return &models.Session{ID: testSessionID, ProgramID: programID, UserID: userID, PhaseNumber: phaseNumber, WeekNumber: weekNumber, WorkoutNumber: workoutNumber, IsDeload: isDeload}, nil
+}
+
+func (m *mockSessionRepo) CountByProgram(programID int64) (int, error) {
+	if m.CountByProgramFn != nil {
+		return m.CountByProgramFn(programID)
+	}
+	return 0, nil
+}
+
+func (m *mockSessionRepo) GetByID(id, userID int64) (*models.Session, error) {
+	if m.GetByIDFn != nil {
+		return m.GetByIDFn(id, userID)
+	}
+	return nil, errors.New("not found")
+}
+
 type mockTemplateRepo struct {
 	CreateFn  func(name, focus string, exercises []models.TemplateExerciseInput) (*models.Template, error)
 	GetAllFn  func() ([]*models.Template, error)
@@ -162,6 +190,7 @@ var (
 	mockUsers     = &mockUserRepo{}
 	mockPrograms  = &mockProgramRepo{}
 	mockPhases    = &mockPhaseRepo{}
+	mockSessions  = &mockSessionRepo{}
 	mockTemplates = &mockTemplateRepo{}
 )
 
@@ -169,6 +198,7 @@ func resetMocks() {
 	*mockUsers = mockUserRepo{}
 	*mockPrograms = mockProgramRepo{}
 	*mockPhases = mockPhaseRepo{}
+	*mockSessions = mockSessionRepo{}
 	*mockTemplates = mockTemplateRepo{}
 	lastProgramCreate = struct {
 		name          string
@@ -177,9 +207,15 @@ func resetMocks() {
 	}{}
 	lastPhaseUpdates = nil
 	lastTemplateCreate = struct {
-		name        string
-		focus       string
+		name         string
+		focus        string
 		numExercises int
+	}{}
+	lastSessionCreate = struct {
+		phaseNumber   int
+		weekNumber    int
+		workoutNumber int
+		isDeload      bool
 	}{}
 }
 
@@ -283,6 +319,70 @@ func getLastPhaseUpdate(i int) (repMin, repMax int) {
 func setPhasesUpdateRepRangesError(err error) {
 	mockPhases.UpdateRepRangesFn = func(programID int64, updates []models.PhaseUpdate) error {
 		return err
+	}
+}
+
+// --- Session mock helpers ---
+
+// lastSessionCreate holds args captured by captureSessionCreate.
+var lastSessionCreate struct {
+	phaseNumber   int
+	weekNumber    int
+	workoutNumber int
+	isDeload      bool
+}
+
+// captureSessionCreate makes CreateFn capture the call args and return a valid session.
+func captureSessionCreate() {
+	mockSessions.CreateFn = func(programID, userID int64, phaseNumber, weekNumber, workoutNumber int, isDeload bool, date time.Time) (*models.Session, error) {
+		lastSessionCreate.phaseNumber = phaseNumber
+		lastSessionCreate.weekNumber = weekNumber
+		lastSessionCreate.workoutNumber = workoutNumber
+		lastSessionCreate.isDeload = isDeload
+		return &models.Session{ID: testSessionID, ProgramID: programID, UserID: userID, PhaseNumber: phaseNumber, WeekNumber: weekNumber, WorkoutNumber: workoutNumber, IsDeload: isDeload}, nil
+	}
+}
+
+// setSessionCountByProgram makes CountByProgram return a fixed count.
+func setSessionCountByProgram(count int) {
+	mockSessions.CountByProgramFn = func(programID int64) (int, error) {
+		return count, nil
+	}
+}
+
+// setSessionGetByIDError makes GetByID return an error.
+func setSessionGetByIDError(err error) {
+	mockSessions.GetByIDFn = func(id, userID int64) (*models.Session, error) {
+		return nil, err
+	}
+}
+
+// setSessionGetByID makes GetByID return a session with the given values.
+func setSessionGetByID(phaseNumber, weekNumber, workoutNumber int, isDeload bool) {
+	mockSessions.GetByIDFn = func(id, userID int64) (*models.Session, error) {
+		return &models.Session{
+			ID:            id,
+			UserID:        userID,
+			ProgramID:     testProgramID,
+			PhaseNumber:   phaseNumber,
+			WeekNumber:    weekNumber,
+			WorkoutNumber: workoutNumber,
+			IsDeload:      isDeload,
+		}, nil
+	}
+}
+
+// setProgramGetByIDWithDates makes GetByID return a program with StartDate and WeeksPerPhase set.
+func setProgramGetByIDWithDates(name string, numPhases, weeksPerPhase int, startDate time.Time) {
+	mockPrograms.GetByIDFn = func(id, userID int64) (*models.Program, error) {
+		return &models.Program{
+			ID:            id,
+			UserID:        userID,
+			Name:          name,
+			NumPhases:     numPhases,
+			WeeksPerPhase: weeksPerPhase,
+			StartDate:     startDate,
+		}, nil
 	}
 }
 

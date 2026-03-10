@@ -55,7 +55,7 @@
 
 ## Workout Templates
 
-**US-12** — As a user, I want to create a workout template with a name, focus (e.g. "Upper Body A"), and a list of exercises (with target weights and rep ranges) so that I can reuse it without re-entering everything each session.
+~~**US-12** — As a user, I want to create a workout template with a name, focus (e.g. "Upper Body A"), and a list of exercises (with target weights and rep ranges) so that I can reuse it without re-entering everything each session.~~
 
 **US-13** — As a user, I want to define abs, cardio, and stretch blocks in my template so that the full structure of my session is captured.
 
@@ -71,7 +71,7 @@
 
 ## Workout Sessions
 
-**US-18** — As a user, I want to start a new workout session within my training program so that the correct phase, week, and workout number are set automatically.
+~~**US-18** — As a user, I want to start a new workout session within my training program so that the correct phase, week, and workout number are set automatically.~~
 
 **US-19** — As a user, I want the session to be pre-filled from the associated template so that I only need to log what I actually did.
 
