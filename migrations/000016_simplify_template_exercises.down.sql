@@ -1,0 +1,5 @@
+ALTER TABLE template_exercises
+    ADD COLUMN goal_weight NUMERIC(8,2) NOT NULL DEFAULT 0,
+    ADD COLUMN weight_unit VARCHAR(8) NOT NULL DEFAULT 'lb',
+    ADD COLUMN rep_min INT NOT NULL DEFAULT 1,
+    ADD COLUMN rep_max INT NOT NULL DEFAULT 1;

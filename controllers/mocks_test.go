@@ -10,10 +10,11 @@ import (
 	"testing"
 	"time"
 
+	"myGymPal/models"
+
 	beego "github.com/beego/beego/v2/server/web"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/crypto/bcrypt"
-	"myGymPal/models"
 )
 
 const testUserID = int64(42)
@@ -606,8 +607,6 @@ func setTemplateGetByID(id int64, name, focus string, numExercises int) {
 				ID:         int64(i + 1),
 				TemplateID: id,
 				Name:       "Exercise " + fmt.Sprintf("%d", i+1),
-				RepMin:     8,
-				RepMax:     12,
 				SortOrder:  i,
 			}
 		}

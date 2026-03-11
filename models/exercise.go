@@ -2,6 +2,7 @@ package models
 
 import (
 	"errors"
+	"strings"
 	"time"
 
 	"github.com/beego/beego/v2/client/orm"
@@ -25,6 +26,7 @@ func init() {
 }
 
 func CreateExercise(userID int64, name string, isBodyweight bool, goalWeight float64, weightUnit string) (*Exercise, error) {
+	name = strings.ToLower(strings.TrimSpace(name))
 	if name == "" {
 		return nil, errors.New("exercise name is required")
 	}
@@ -63,15 +65,19 @@ func GetExerciseByID(id, userID int64) (*Exercise, error) {
 
 func GetExerciseByName(userID int64, name string) (*Exercise, error) {
 	o := orm.NewOrm()
-	ex := &Exercise{}
-	err := o.QueryTable(&Exercise{}).Filter("UserID", userID).Filter("Name", name).One(ex)
-	if err != nil {
+	var exercises []*Exercise
+	_, err := o.Raw(
+		"SELECT * FROM exercises WHERE user_id = ? AND LOWER(TRIM(name)) = LOWER(TRIM(?)) LIMIT 1",
+		userID, name,
+	).QueryRows(&exercises)
+	if err != nil || len(exercises) == 0 {
 		return nil, errors.New("not found")
 	}
-	return ex, nil
+	return exercises[0], nil
 }
 
 func UpdateExercise(id, userID int64, name string, isBodyweight bool, goalWeight float64, weightUnit string) (*Exercise, error) {
+	name = strings.ToLower(strings.TrimSpace(name))
 	if name == "" {
 		return nil, errors.New("exercise name is required")
 	}

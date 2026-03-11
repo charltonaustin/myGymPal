@@ -35,13 +35,7 @@
             {{range .Exercises}}
             <li class="list-group-item">
                 <div class="fw-semibold">{{.Name}}</div>
-                <div class="text-muted small">
-                    {{if .IsBodyweight}}
-                        Bodyweight &middot; {{.RepMin}}–{{.RepMax}} reps
-                    {{else}}
-                        {{if gt .GoalWeight 0.0}}{{printf "%g" .GoalWeight}} {{.WeightUnit}} &middot; {{end}}{{.RepMin}}–{{.RepMax}} reps
-                    {{end}}
-                </div>
+                {{if .IsBodyweight}}<div class="text-muted small">Bodyweight</div>{{end}}
             </li>
             {{end}}
         </ul>

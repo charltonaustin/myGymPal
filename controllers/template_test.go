@@ -58,18 +58,7 @@ func TestTemplatesNew_ShowsForm(t *testing.T) {
 	assert.Contains(t, body, `name="name"`)
 	assert.Contains(t, body, `name="focus"`)
 	assert.Contains(t, body, `name="exercise_name_0"`)
-	assert.Contains(t, body, `name="rep_min_0"`)
-	assert.Contains(t, body, `name="rep_max_0"`)
-	assert.Contains(t, body, "lb")
-}
-
-func TestTemplatesNew_ShowsKgUnit(t *testing.T) {
-	t.Cleanup(resetMocks)
-	cookies := loginAs(t, "tmpl_new_form_kg", "kg")
-
-	w := getPath("/templates/new", cookies)
-	assert.Equal(t, http.StatusOK, w.Code)
-	assert.Contains(t, w.Body.String(), "kg")
+	assert.Contains(t, body, `name="is_bodyweight_0"`)
 }
 
 // --- Create template ---
@@ -79,8 +68,6 @@ func TestTemplatesCreate_Unauthenticated(t *testing.T) {
 		"name":            {"Test"},
 		"exercise_count":  {"1"},
 		"exercise_name_0": {"Bench Press"},
-		"rep_min_0":       {"8"},
-		"rep_max_0":       {"10"},
 	}, nil)
 	assert.Equal(t, http.StatusFound, w.Code)
 	assert.Equal(t, "/login", w.Header().Get("Location"))
@@ -96,9 +83,6 @@ func TestTemplatesCreate_Success(t *testing.T) {
 		"focus":           {"Chest & Shoulders"},
 		"exercise_count":  {"1"},
 		"exercise_name_0": {"Bench Press"},
-		"goal_weight_0":   {"60"},
-		"rep_min_0":       {"8"},
-		"rep_max_0":       {"10"},
 	}, cookies)
 
 	assert.Equal(t, http.StatusFound, w.Code)
@@ -118,8 +102,6 @@ func TestTemplatesCreate_BodyweightExercise(t *testing.T) {
 		"exercise_count":  {"1"},
 		"exercise_name_0": {"Pull-ups"},
 		"is_bodyweight_0": {"on"},
-		"rep_min_0":       {"8"},
-		"rep_max_0":       {"12"},
 	}, cookies)
 
 	assert.Equal(t, http.StatusFound, w.Code)
@@ -134,8 +116,6 @@ func TestTemplatesCreate_EmptyName(t *testing.T) {
 		"name":            {""},
 		"exercise_count":  {"1"},
 		"exercise_name_0": {"Bench Press"},
-		"rep_min_0":       {"8"},
-		"rep_max_0":       {"10"},
 	}, cookies)
 
 	assert.Equal(t, http.StatusOK, w.Code)
@@ -156,26 +136,9 @@ func TestTemplatesCreate_NoExercises(t *testing.T) {
 	assert.Contains(t, w.Body.String(), "exercise")
 }
 
-func TestTemplatesCreate_InvalidRepRange(t *testing.T) {
-	t.Cleanup(resetMocks)
-	setTemplateCreateError(errors.New("rep_max must be at least rep_min"))
-	cookies := loginAs(t, "tmpl_create_badrange", "lb")
-
-	w := postForm("/templates/new", url.Values{
-		"name":            {"My Template"},
-		"exercise_count":  {"1"},
-		"exercise_name_0": {"Bench Press"},
-		"rep_min_0":       {"12"},
-		"rep_max_0":       {"8"},
-	}, cookies)
-
-	assert.Equal(t, http.StatusOK, w.Code)
-	assert.Contains(t, w.Body.String(), "rep_max")
-}
-
 func TestTemplatesCreate_ReentersFormValues(t *testing.T) {
 	t.Cleanup(resetMocks)
-	setTemplateCreateError(errors.New("rep_max must be at least rep_min"))
+	setTemplateCreateError(errors.New("exercise name is required"))
 	cookies := loginAs(t, "tmpl_create_reenter", "lb")
 
 	w := postForm("/templates/new", url.Values{
@@ -183,8 +146,6 @@ func TestTemplatesCreate_ReentersFormValues(t *testing.T) {
 		"focus":           {"Legs"},
 		"exercise_count":  {"1"},
 		"exercise_name_0": {"Squat"},
-		"rep_min_0":       {"5"},
-		"rep_max_0":       {"3"},
 	}, cookies)
 
 	assert.Equal(t, http.StatusOK, w.Code)

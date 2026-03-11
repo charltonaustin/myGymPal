@@ -64,57 +64,18 @@
                         required
                     >
                 </div>
-                <div class="form-check mb-2">
-                    <input
-                        type="checkbox"
-                        class="form-check-input bw-check"
-                        name="is_bodyweight_{{$i}}"
-                        id="bw_{{$i}}"
-                        {{if $ex.IsBodyweight}}checked{{end}}
-                    >
-                    <label class="form-check-label" for="bw_{{$i}}">Bodyweight exercise</label>
-                </div>
-                <div class="weight-row mb-2 {{if $ex.IsBodyweight}}d-none{{end}}">
-                    <div class="input-group input-group-sm">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div class="form-check mb-0">
                         <input
-                            type="number"
-                            class="form-control"
-                            name="goal_weight_{{$i}}"
-                            value="{{$ex.GoalWeight}}"
-                            placeholder="Goal weight"
-                            min="0"
-                            step="0.5"
+                            type="checkbox"
+                            class="form-check-input bw-check"
+                            name="is_bodyweight_{{$i}}"
+                            id="bw_{{$i}}"
+                            {{if $ex.IsBodyweight}}checked{{end}}
                         >
-                        <select name="weight_unit_{{$i}}" class="form-select" style="max-width: 72px;">
-                            <option value="lb" {{if eq $ex.WeightUnit "lb"}}selected{{end}}>lb</option>
-                            <option value="kg" {{if eq $ex.WeightUnit "kg"}}selected{{end}}>kg</option>
-                        </select>
+                        <label class="form-check-label" for="bw_{{$i}}">Bodyweight</label>
                     </div>
-                </div>
-                <div class="d-flex align-items-center gap-2">
-                    <input
-                        type="number"
-                        class="form-control form-control-sm"
-                        name="rep_min_{{$i}}"
-                        value="{{$ex.RepMin}}"
-                        placeholder="Min"
-                        min="1"
-                        required
-                        style="max-width: 90px;"
-                    >
-                    <span class="text-muted">–</span>
-                    <input
-                        type="number"
-                        class="form-control form-control-sm"
-                        name="rep_max_{{$i}}"
-                        value="{{$ex.RepMax}}"
-                        placeholder="Max"
-                        min="1"
-                        required
-                        style="max-width: 90px;"
-                    >
-                    <span class="text-muted small">reps</span>
-                    <button type="button" class="btn btn-sm btn-outline-danger ms-auto remove-exercise">Remove</button>
+                    <button type="button" class="btn btn-sm btn-outline-danger remove-exercise">Remove</button>
                 </div>
             </div>
             {{end}}
@@ -130,16 +91,13 @@
         </div>
     </form>
 
-    <datalist id="exercise-list">
-    </datalist>
+    <datalist id="exercise-list"></datalist>
 </main>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
     const alertEl = document.getElementById('error-alert');
     if (alertEl) setTimeout(() => alertEl.remove(), 4000);
-
-    const weightUnit = "{{.WeightUnit}}";
 
     // Exercise library for autocomplete
     const exerciseLibraryArr = {{.ExerciseLibraryJSON}};
@@ -156,31 +114,16 @@
         const entry = exerciseLibrary[nameVal];
         if (!entry) return;
         const bwCheck = row.querySelector('.bw-check');
-        const weightRow = row.querySelector('.weight-row');
-        const goalWeightInput = row.querySelector('[name^="goal_weight_"]');
-        const weightUnitSelect = row.querySelector('[name^="weight_unit_"]');
-        if (bwCheck) {
-            bwCheck.checked = entry.isBodyweight;
-            if (weightRow) weightRow.classList.toggle('d-none', entry.isBodyweight);
-        }
-        if (goalWeightInput && !entry.isBodyweight) goalWeightInput.value = entry.goalWeight;
-        if (weightUnitSelect && !entry.isBodyweight) weightUnitSelect.value = entry.weightUnit;
+        if (bwCheck) bwCheck.checked = entry.isBodyweight;
     }
+
     let exerciseCount = parseInt(document.getElementById('exercise_count').value, 10);
 
     function bindRow(row) {
-        const bwCheck = row.querySelector('.bw-check');
-        const weightRow = row.querySelector('.weight-row');
-        bwCheck.addEventListener('change', () => {
-            weightRow.classList.toggle('d-none', bwCheck.checked);
-        });
-        row.querySelector('.remove-exercise').addEventListener('click', () => {
-            row.remove();
-        });
+        row.querySelector('.remove-exercise').addEventListener('click', () => row.remove());
         const nameInput = row.querySelector('[name^="exercise_name_"]');
         if (nameInput) {
             nameInput.addEventListener('change', () => autofillFromLibrary(row, nameInput.value));
-            nameInput.addEventListener('input', () => autofillFromLibrary(row, nameInput.value));
         }
     }
 
@@ -197,25 +140,12 @@
             <div class="mb-2">
                 <input type="text" class="form-control" name="exercise_name_${i}" placeholder="Exercise name" list="exercise-list" required>
             </div>
-            <div class="form-check mb-2">
-                <input type="checkbox" class="form-check-input bw-check" name="is_bodyweight_${i}" id="bw_${i}">
-                <label class="form-check-label" for="bw_${i}">Bodyweight exercise</label>
-            </div>
-            <div class="weight-row mb-2">
-                <div class="input-group input-group-sm">
-                    <input type="number" class="form-control" name="goal_weight_${i}" placeholder="Goal weight" min="0" step="0.5">
-                    <select name="weight_unit_${i}" class="form-select" style="max-width: 72px;">
-                        <option value="lb" ${weightUnit === 'lb' ? 'selected' : ''}>lb</option>
-                        <option value="kg" ${weightUnit === 'kg' ? 'selected' : ''}>kg</option>
-                    </select>
+            <div class="d-flex align-items-center justify-content-between">
+                <div class="form-check mb-0">
+                    <input type="checkbox" class="form-check-input bw-check" name="is_bodyweight_${i}" id="bw_${i}">
+                    <label class="form-check-label" for="bw_${i}">Bodyweight</label>
                 </div>
-            </div>
-            <div class="d-flex align-items-center gap-2">
-                <input type="number" class="form-control form-control-sm" name="rep_min_${i}" placeholder="Min" min="1" required style="max-width: 90px;">
-                <span class="text-muted">–</span>
-                <input type="number" class="form-control form-control-sm" name="rep_max_${i}" placeholder="Max" min="1" required style="max-width: 90px;">
-                <span class="text-muted small">reps</span>
-                <button type="button" class="btn btn-sm btn-outline-danger ms-auto remove-exercise">Remove</button>
+                <button type="button" class="btn btn-sm btn-outline-danger remove-exercise">Remove</button>
             </div>
         `;
         document.getElementById('exercises-container').appendChild(row);

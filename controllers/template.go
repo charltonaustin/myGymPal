@@ -14,10 +14,6 @@ func exercisesToForms(exercises []*models.TemplateExercise) []exerciseForm {
 		forms[i] = exerciseForm{
 			Name:         ex.Name,
 			IsBodyweight: ex.IsBodyweight,
-			GoalWeight:   fmt.Sprintf("%g", ex.GoalWeight),
-			WeightUnit:   ex.WeightUnit,
-			RepMin:       strconv.Itoa(ex.RepMin),
-			RepMax:       strconv.Itoa(ex.RepMax),
 		}
 	}
 	return forms
@@ -31,10 +27,6 @@ type TemplateController struct {
 type exerciseForm struct {
 	Name         string
 	IsBodyweight bool
-	GoalWeight   string
-	WeightUnit   string
-	RepMin       string
-	RepMax       string
 }
 
 func (c *TemplateController) Index() {
@@ -68,16 +60,9 @@ func (c *TemplateController) New() {
 		return
 	}
 
-	user, err := Users.GetByID(userID.(int64))
-	if err != nil {
-		c.Redirect("/error", 302)
-		return
-	}
-
 	c.Data["LoggedIn"] = true
 	c.Data["ActivePage"] = "templates"
-	c.Data["WeightUnit"] = user.WeightUnit
-	c.Data["Exercises"] = []exerciseForm{{WeightUnit: user.WeightUnit}}
+	c.Data["Exercises"] = []exerciseForm{{}}
 	c.Data["ExerciseLibraryJSON"] = exerciseLibraryJSON(userID.(int64))
 	c.TplName = "templates/new.tpl"
 }
@@ -87,12 +72,6 @@ func (c *TemplateController) Create() {
 	if userID == nil {
 		c.Redirect("/login", 302)
 		return
-	}
-
-	user, userErr := Users.GetByID(userID.(int64))
-	weightUnit := "lb"
-	if userErr == nil {
-		weightUnit = user.WeightUnit
 	}
 
 	name := c.GetString("name")
@@ -105,36 +84,13 @@ func (c *TemplateController) Create() {
 	for i := 0; i < count; i++ {
 		exName := c.GetString(fmt.Sprintf("exercise_name_%d", i))
 		if exName == "" {
-			continue // skip removed rows
+			continue
 		}
 		isBodyweight := c.GetString(fmt.Sprintf("is_bodyweight_%d", i)) != ""
-		goalWeightStr := c.GetString(fmt.Sprintf("goal_weight_%d", i))
-		exWeightUnit := c.GetString(fmt.Sprintf("weight_unit_%d", i))
-		if exWeightUnit == "" {
-			exWeightUnit = weightUnit
-		}
-		repMinStr := c.GetString(fmt.Sprintf("rep_min_%d", i))
-		repMaxStr := c.GetString(fmt.Sprintf("rep_max_%d", i))
-
-		goalWeight, _ := strconv.ParseFloat(goalWeightStr, 64)
-		repMin, _ := strconv.Atoi(repMinStr)
-		repMax, _ := strconv.Atoi(repMaxStr)
-
-		forms = append(forms, exerciseForm{
-			Name:         exName,
-			IsBodyweight: isBodyweight,
-			GoalWeight:   goalWeightStr,
-			WeightUnit:   exWeightUnit,
-			RepMin:       repMinStr,
-			RepMax:       repMaxStr,
-		})
+		forms = append(forms, exerciseForm{Name: exName, IsBodyweight: isBodyweight})
 		inputs = append(inputs, models.TemplateExerciseInput{
 			Name:         exName,
 			IsBodyweight: isBodyweight,
-			GoalWeight:   goalWeight,
-			WeightUnit:   exWeightUnit,
-			RepMin:       repMin,
-			RepMax:       repMax,
 			SortOrder:    len(inputs),
 		})
 	}
@@ -145,7 +101,6 @@ func (c *TemplateController) Create() {
 		c.Data["Error"] = errMsg
 		c.Data["Name"] = name
 		c.Data["Focus"] = focus
-		c.Data["WeightUnit"] = weightUnit
 		c.Data["Exercises"] = forms
 		c.Data["ExerciseLibraryJSON"] = exerciseLibraryJSON(userID.(int64))
 		c.TplName = "templates/new.tpl"
@@ -192,14 +147,8 @@ func (c *TemplateController) Show() {
 		c.Data["Success"] = msg
 	}
 
-	weightUnit := "lb"
-	if user, err := Users.GetByID(userID.(int64)); err == nil {
-		weightUnit = user.WeightUnit
-	}
-
 	c.Data["LoggedIn"] = true
 	c.Data["ActivePage"] = "templates"
-	c.Data["WeightUnit"] = weightUnit
 	c.Data["Template"] = tmpl
 	c.Data["Exercises"] = exercises
 	c.TplName = "templates/show.tpl"
@@ -224,14 +173,8 @@ func (c *TemplateController) Edit() {
 		return
 	}
 
-	weightUnit := "lb"
-	if user, err := Users.GetByID(userID.(int64)); err == nil {
-		weightUnit = user.WeightUnit
-	}
-
 	c.Data["LoggedIn"] = true
 	c.Data["ActivePage"] = "templates"
-	c.Data["WeightUnit"] = weightUnit
 	c.Data["Template"] = tmpl
 	c.Data["Name"] = tmpl.Name
 	c.Data["Focus"] = tmpl.Focus
@@ -259,12 +202,6 @@ func (c *TemplateController) Update() {
 		return
 	}
 
-	user, userErr := Users.GetByID(userID.(int64))
-	weightUnit := "lb"
-	if userErr == nil {
-		weightUnit = user.WeightUnit
-	}
-
 	name := c.GetString("name")
 	focus := c.GetString("focus")
 	countStr := c.GetString("exercise_count")
@@ -278,33 +215,10 @@ func (c *TemplateController) Update() {
 			continue
 		}
 		isBodyweight := c.GetString(fmt.Sprintf("is_bodyweight_%d", i)) != ""
-		goalWeightStr := c.GetString(fmt.Sprintf("goal_weight_%d", i))
-		exWeightUnit := c.GetString(fmt.Sprintf("weight_unit_%d", i))
-		if exWeightUnit == "" {
-			exWeightUnit = weightUnit
-		}
-		repMinStr := c.GetString(fmt.Sprintf("rep_min_%d", i))
-		repMaxStr := c.GetString(fmt.Sprintf("rep_max_%d", i))
-
-		goalWeight, _ := strconv.ParseFloat(goalWeightStr, 64)
-		repMin, _ := strconv.Atoi(repMinStr)
-		repMax, _ := strconv.Atoi(repMaxStr)
-
-		forms = append(forms, exerciseForm{
-			Name:         exName,
-			IsBodyweight: isBodyweight,
-			GoalWeight:   goalWeightStr,
-			WeightUnit:   exWeightUnit,
-			RepMin:       repMinStr,
-			RepMax:       repMaxStr,
-		})
+		forms = append(forms, exerciseForm{Name: exName, IsBodyweight: isBodyweight})
 		inputs = append(inputs, models.TemplateExerciseInput{
 			Name:         exName,
 			IsBodyweight: isBodyweight,
-			GoalWeight:   goalWeight,
-			WeightUnit:   exWeightUnit,
-			RepMin:       repMin,
-			RepMax:       repMax,
 			SortOrder:    len(inputs),
 		})
 	}
@@ -316,7 +230,6 @@ func (c *TemplateController) Update() {
 		c.Data["Template"] = tmpl
 		c.Data["Name"] = name
 		c.Data["Focus"] = focus
-		c.Data["WeightUnit"] = weightUnit
 		c.Data["Exercises"] = forms
 		c.Data["ExerciseLibraryJSON"] = exerciseLibraryJSON(userID.(int64))
 		c.TplName = "templates/edit.tpl"

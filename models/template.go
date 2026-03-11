@@ -2,6 +2,7 @@ package models
 
 import (
 	"errors"
+	"strings"
 	"time"
 
 	"github.com/beego/beego/v2/client/orm"
@@ -20,15 +21,11 @@ func (t *Template) TableName() string {
 }
 
 type TemplateExercise struct {
-	ID           int64   `orm:"column(id);auto;pk"`
-	TemplateID   int64   `orm:"column(template_id)"`
-	Name         string  `orm:"column(name)"`
-	IsBodyweight bool    `orm:"column(is_bodyweight)"`
-	GoalWeight   float64 `orm:"column(goal_weight)"`
-	WeightUnit   string  `orm:"column(weight_unit)"`
-	RepMin       int     `orm:"column(rep_min)"`
-	RepMax       int     `orm:"column(rep_max)"`
-	SortOrder    int     `orm:"column(sort_order)"`
+	ID           int64  `orm:"column(id);auto;pk"`
+	TemplateID   int64  `orm:"column(template_id)"`
+	Name         string `orm:"column(name)"`
+	IsBodyweight bool   `orm:"column(is_bodyweight)"`
+	SortOrder    int    `orm:"column(sort_order)"`
 }
 
 func (e *TemplateExercise) TableName() string {
@@ -38,10 +35,6 @@ func (e *TemplateExercise) TableName() string {
 type TemplateExerciseInput struct {
 	Name         string
 	IsBodyweight bool
-	GoalWeight   float64
-	WeightUnit   string
-	RepMin       int
-	RepMax       int
 	SortOrder    int
 }
 
@@ -56,18 +49,10 @@ func CreateTemplate(name, focus string, exercises []TemplateExerciseInput) (*Tem
 	if len(exercises) == 0 {
 		return nil, errors.New("at least one exercise is required")
 	}
-	for _, ex := range exercises {
-		if ex.Name == "" {
+	for i, ex := range exercises {
+		exercises[i].Name = strings.ToLower(strings.TrimSpace(ex.Name))
+		if exercises[i].Name == "" {
 			return nil, errors.New("exercise name is required")
-		}
-		if ex.RepMin <= 0 {
-			return nil, errors.New("rep_min must be greater than 0")
-		}
-		if ex.RepMax < ex.RepMin {
-			return nil, errors.New("rep_max must be at least rep_min")
-		}
-		if !ex.IsBodyweight && ex.GoalWeight < 0 {
-			return nil, errors.New("goal weight must be 0 or greater")
 		}
 	}
 
@@ -88,10 +73,6 @@ func CreateTemplate(name, focus string, exercises []TemplateExerciseInput) (*Tem
 			TemplateID:   t.ID,
 			Name:         ex.Name,
 			IsBodyweight: ex.IsBodyweight,
-			GoalWeight:   ex.GoalWeight,
-			WeightUnit:   ex.WeightUnit,
-			RepMin:       ex.RepMin,
-			RepMax:       ex.RepMax,
 			SortOrder:    ex.SortOrder,
 		}
 		if _, err := tx.Insert(e); err != nil {
@@ -126,18 +107,10 @@ func UpdateTemplate(id int64, name, focus string, exercises []TemplateExerciseIn
 	if len(exercises) == 0 {
 		return nil, errors.New("at least one exercise is required")
 	}
-	for _, ex := range exercises {
-		if ex.Name == "" {
+	for i, ex := range exercises {
+		exercises[i].Name = strings.ToLower(strings.TrimSpace(ex.Name))
+		if exercises[i].Name == "" {
 			return nil, errors.New("exercise name is required")
-		}
-		if ex.RepMin <= 0 {
-			return nil, errors.New("rep_min must be greater than 0")
-		}
-		if ex.RepMax < ex.RepMin {
-			return nil, errors.New("rep_max must be at least rep_min")
-		}
-		if !ex.IsBodyweight && ex.GoalWeight < 0 {
-			return nil, errors.New("goal weight must be 0 or greater")
 		}
 	}
 
@@ -169,10 +142,6 @@ func UpdateTemplate(id int64, name, focus string, exercises []TemplateExerciseIn
 			TemplateID:   id,
 			Name:         ex.Name,
 			IsBodyweight: ex.IsBodyweight,
-			GoalWeight:   ex.GoalWeight,
-			WeightUnit:   ex.WeightUnit,
-			RepMin:       ex.RepMin,
-			RepMax:       ex.RepMax,
 			SortOrder:    ex.SortOrder,
 		}
 		if _, err := tx.Insert(e); err != nil {

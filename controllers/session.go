@@ -120,8 +120,18 @@ func (c *SessionController) Create() {
 					}
 				}
 			}
+			defaultUnit := "lb"
+			if user, err := Users.GetByID(userID.(int64)); err == nil {
+				defaultUnit = user.WeightUnit
+			}
 			for _, ex := range exercises {
-				SessionExercises.Create(session.ID, ex.Name, ex.IsBodyweight, ex.GoalWeight, ex.WeightUnit, goalReps)
+				goalWeight := 0.0
+				weightUnit := defaultUnit
+				if libEx, err := Exercises.GetByName(userID.(int64), ex.Name); err == nil {
+					goalWeight = libEx.GoalWeight
+					weightUnit = libEx.WeightUnit
+				}
+				SessionExercises.Create(session.ID, ex.Name, ex.IsBodyweight, goalWeight, weightUnit, goalReps)
 			}
 		}
 	}
@@ -189,6 +199,15 @@ func (c *SessionController) Show() {
 	exercises, err := SessionExercises.GetBySession(id)
 	if err != nil {
 		exercises = []*models.SessionExerciseView{}
+	}
+
+	// Enrich goal weight/unit from the exercise library so the session always
+	// reflects the current goal even if it was created before the library existed.
+	for _, ev := range exercises {
+		if libEx, err := Exercises.GetByName(userID.(int64), ev.Exercise.Name); err == nil {
+			ev.Exercise.GoalWeight = libEx.GoalWeight
+			ev.Exercise.WeightUnit = libEx.WeightUnit
+		}
 	}
 
 	user, err := Users.GetByID(userID.(int64))

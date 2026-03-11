@@ -2,6 +2,7 @@ package models
 
 import (
 	"errors"
+	"strings"
 
 	"github.com/beego/beego/v2/client/orm"
 )
@@ -45,6 +46,7 @@ func init() {
 }
 
 func CreateSessionExercise(sessionID int64, name string, isBodyweight bool, goalWeight float64, weightUnit string, goalReps int) (*SessionExercise, error) {
+	name = strings.ToLower(strings.TrimSpace(name))
 	o := orm.NewOrm()
 	n, _ := o.QueryTable(&SessionExercise{}).Filter("SessionID", sessionID).Count()
 	e := &SessionExercise{
