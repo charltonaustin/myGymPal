@@ -64,12 +64,13 @@ func TestProgramsNew_ShowsForm(t *testing.T) {
 
 func TestProgramsCreate_Unauthenticated(t *testing.T) {
 	w := postForm("/programs", url.Values{
-		"name":            {"Test"},
-		"start_date":      {"2025-01-06"},
-		"num_phases":      {"4"},
-		"weeks_per_phase": {"8"},
-		"default_rep_min": {"10"},
-		"default_rep_max": {"12"},
+		"name":              {"Test"},
+		"start_date":        {"2025-01-06"},
+		"num_phases":        {"4"},
+		"weeks_per_phase":   {"8"},
+		"workouts_per_week": {"4"},
+		"default_rep_min":   {"10"},
+		"default_rep_max":   {"12"},
 	}, nil)
 	assert.Equal(t, http.StatusFound, w.Code)
 	assert.Equal(t, "/login", w.Header().Get("Location"))
@@ -81,12 +82,13 @@ func TestProgramsCreate_Success(t *testing.T) {
 	cookies := loginAs(t, "prog_create_ok", "lb")
 
 	w := postForm("/programs", url.Values{
-		"name":            {"Hypertrophy Block"},
-		"start_date":      {"2025-01-06"},
-		"num_phases":      {"4"},
-		"weeks_per_phase": {"6"},
-		"default_rep_min": {"10"},
-		"default_rep_max": {"12"},
+		"name":              {"Hypertrophy Block"},
+		"start_date":        {"2025-01-06"},
+		"num_phases":        {"4"},
+		"weeks_per_phase":   {"6"},
+		"workouts_per_week": {"5"},
+		"default_rep_min":   {"10"},
+		"default_rep_max":   {"12"},
 	}, cookies)
 
 	assert.Equal(t, http.StatusFound, w.Code)
@@ -94,6 +96,7 @@ func TestProgramsCreate_Success(t *testing.T) {
 	assert.Equal(t, "Hypertrophy Block", lastProgramCreate.name)
 	assert.Equal(t, 4, lastProgramCreate.numPhases)
 	assert.Equal(t, 6, lastProgramCreate.weeksPerPhase)
+	assert.Equal(t, 5, lastProgramCreate.workoutsPerWeek)
 
 	// Follow the redirect — success flash should appear.
 	allCookies := append(cookies, w.Result().Cookies()...)
@@ -107,12 +110,13 @@ func TestProgramsCreate_EmptyName(t *testing.T) {
 	cookies := loginAs(t, "prog_create_noname", "lb")
 
 	w := postForm("/programs", url.Values{
-		"name":            {""},
-		"start_date":      {"2025-01-06"},
-		"num_phases":      {"4"},
-		"weeks_per_phase": {"8"},
-		"default_rep_min": {"10"},
-		"default_rep_max": {"12"},
+		"name":              {""},
+		"start_date":        {"2025-01-06"},
+		"num_phases":        {"4"},
+		"weeks_per_phase":   {"8"},
+		"workouts_per_week": {"4"},
+		"default_rep_min":   {"10"},
+		"default_rep_max":   {"12"},
 	}, cookies)
 
 	assert.Equal(t, http.StatusOK, w.Code)
@@ -124,12 +128,13 @@ func TestProgramsCreate_InvalidDate(t *testing.T) {
 	cookies := loginAs(t, "prog_create_baddate", "lb")
 
 	w := postForm("/programs", url.Values{
-		"name":            {"My Program"},
-		"start_date":      {"not-a-date"},
-		"num_phases":      {"4"},
-		"weeks_per_phase": {"8"},
-		"default_rep_min": {"10"},
-		"default_rep_max": {"12"},
+		"name":              {"My Program"},
+		"start_date":        {"not-a-date"},
+		"num_phases":        {"4"},
+		"weeks_per_phase":   {"8"},
+		"workouts_per_week": {"4"},
+		"default_rep_min":   {"10"},
+		"default_rep_max":   {"12"},
 	}, cookies)
 
 	assert.Equal(t, http.StatusOK, w.Code)
@@ -141,12 +146,31 @@ func TestProgramsCreate_InvalidPhases(t *testing.T) {
 	cookies := loginAs(t, "prog_create_badphases", "lb")
 
 	w := postForm("/programs", url.Values{
-		"name":            {"My Program"},
-		"start_date":      {"2025-01-06"},
-		"num_phases":      {"0"},
-		"weeks_per_phase": {"8"},
-		"default_rep_min": {"10"},
-		"default_rep_max": {"12"},
+		"name":              {"My Program"},
+		"start_date":        {"2025-01-06"},
+		"num_phases":        {"0"},
+		"weeks_per_phase":   {"8"},
+		"workouts_per_week": {"4"},
+		"default_rep_min":   {"10"},
+		"default_rep_max":   {"12"},
+	}, cookies)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	assert.Contains(t, w.Body.String(), "positive")
+}
+
+func TestProgramsCreate_InvalidWorkoutsPerWeek(t *testing.T) {
+	t.Cleanup(resetMocks)
+	cookies := loginAs(t, "prog_create_badwpw", "lb")
+
+	w := postForm("/programs", url.Values{
+		"name":              {"My Program"},
+		"start_date":        {"2025-01-06"},
+		"num_phases":        {"4"},
+		"weeks_per_phase":   {"8"},
+		"workouts_per_week": {"0"},
+		"default_rep_min":   {"10"},
+		"default_rep_max":   {"12"},
 	}, cookies)
 
 	assert.Equal(t, http.StatusOK, w.Code)
@@ -158,12 +182,13 @@ func TestProgramsCreate_InvalidDefaultRepMin(t *testing.T) {
 	cookies := loginAs(t, "prog_create_bad_repmin", "lb")
 
 	w := postForm("/programs", url.Values{
-		"name":            {"My Program"},
-		"start_date":      {"2025-01-06"},
-		"num_phases":      {"4"},
-		"weeks_per_phase": {"8"},
-		"default_rep_min": {"0"},
-		"default_rep_max": {"12"},
+		"name":              {"My Program"},
+		"start_date":        {"2025-01-06"},
+		"num_phases":        {"4"},
+		"weeks_per_phase":   {"8"},
+		"workouts_per_week": {"4"},
+		"default_rep_min":   {"0"},
+		"default_rep_max":   {"12"},
 	}, cookies)
 
 	assert.Equal(t, http.StatusOK, w.Code)
@@ -175,12 +200,13 @@ func TestProgramsCreate_DefaultRepMaxLessThanMin(t *testing.T) {
 	cookies := loginAs(t, "prog_create_bad_repmax", "lb")
 
 	w := postForm("/programs", url.Values{
-		"name":            {"My Program"},
-		"start_date":      {"2025-01-06"},
-		"num_phases":      {"4"},
-		"weeks_per_phase": {"8"},
-		"default_rep_min": {"12"},
-		"default_rep_max": {"8"},
+		"name":              {"My Program"},
+		"start_date":        {"2025-01-06"},
+		"num_phases":        {"4"},
+		"weeks_per_phase":   {"8"},
+		"workouts_per_week": {"4"},
+		"default_rep_min":   {"12"},
+		"default_rep_max":   {"8"},
 	}, cookies)
 
 	assert.Equal(t, http.StatusOK, w.Code)
@@ -192,12 +218,13 @@ func TestProgramsCreate_InvalidWeeksPerPhase(t *testing.T) {
 	cookies := loginAs(t, "prog_create_badweeks", "lb")
 
 	w := postForm("/programs", url.Values{
-		"name":            {"My Program"},
-		"start_date":      {"2025-01-06"},
-		"num_phases":      {"4"},
-		"weeks_per_phase": {"0"},
-		"default_rep_min": {"10"},
-		"default_rep_max": {"12"},
+		"name":              {"My Program"},
+		"start_date":        {"2025-01-06"},
+		"num_phases":        {"4"},
+		"weeks_per_phase":   {"0"},
+		"workouts_per_week": {"4"},
+		"default_rep_min":   {"10"},
+		"default_rep_max":   {"12"},
 	}, cookies)
 
 	assert.Equal(t, http.StatusOK, w.Code)
@@ -345,12 +372,13 @@ func TestProgramsCreate_ReentersFormValues(t *testing.T) {
 	cookies := loginAs(t, "prog_create_reenter", "lb")
 
 	w := postForm("/programs", url.Values{
-		"name":            {"My Sticky Program"},
-		"start_date":      {"2025-03-01"},
-		"num_phases":      {"0"},
-		"weeks_per_phase": {"10"},
-		"default_rep_min": {"8"},
-		"default_rep_max": {"12"},
+		"name":              {"My Sticky Program"},
+		"start_date":        {"2025-03-01"},
+		"num_phases":        {"0"},
+		"weeks_per_phase":   {"10"},
+		"workouts_per_week": {"3"},
+		"default_rep_min":   {"8"},
+		"default_rep_max":   {"12"},
 	}, cookies)
 
 	assert.Equal(t, http.StatusOK, w.Code)
@@ -358,4 +386,5 @@ func TestProgramsCreate_ReentersFormValues(t *testing.T) {
 	assert.Contains(t, body, "My Sticky Program")
 	assert.Contains(t, body, "2025-03-01")
 	assert.Contains(t, body, "10")
+	assert.Contains(t, body, "3")
 }

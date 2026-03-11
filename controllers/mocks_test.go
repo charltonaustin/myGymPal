@@ -79,17 +79,17 @@ func (m *mockUserRepo) DeleteByUsername(username string) error {
 }
 
 type mockProgramRepo struct {
-	CreateFn       func(userID int64, name string, startDate time.Time, numPhases, weeksPerPhase, defaultRepMin, defaultRepMax int) (*models.Program, error)
+	CreateFn       func(userID int64, name string, startDate time.Time, numPhases, weeksPerPhase, workoutsPerWeek, defaultRepMin, defaultRepMax int) (*models.Program, error)
 	GetAllByUserFn func(userID int64) ([]*models.Program, error)
 	GetByIDFn      func(id, userID int64) (*models.Program, error)
 	DeleteFn       func(id, userID int64) error
 }
 
-func (m *mockProgramRepo) Create(userID int64, name string, startDate time.Time, numPhases, weeksPerPhase, defaultRepMin, defaultRepMax int) (*models.Program, error) {
+func (m *mockProgramRepo) Create(userID int64, name string, startDate time.Time, numPhases, weeksPerPhase, workoutsPerWeek, defaultRepMin, defaultRepMax int) (*models.Program, error) {
 	if m.CreateFn != nil {
-		return m.CreateFn(userID, name, startDate, numPhases, weeksPerPhase, defaultRepMin, defaultRepMax)
+		return m.CreateFn(userID, name, startDate, numPhases, weeksPerPhase, workoutsPerWeek, defaultRepMin, defaultRepMax)
 	}
-	return &models.Program{ID: testProgramID, UserID: userID, Name: name, NumPhases: numPhases, WeeksPerPhase: weeksPerPhase}, nil
+	return &models.Program{ID: testProgramID, UserID: userID, Name: name, NumPhases: numPhases, WeeksPerPhase: weeksPerPhase, WorkoutsPerWeek: workoutsPerWeek}, nil
 }
 
 func (m *mockProgramRepo) GetAllByUser(userID int64) ([]*models.Program, error) {
@@ -272,9 +272,10 @@ func resetMocks() {
 	*mockTemplates = mockTemplateRepo{}
 	*mockSessionExercises = mockSessionExerciseRepo{}
 	lastProgramCreate = struct {
-		name          string
-		numPhases     int
-		weeksPerPhase int
+		name            string
+		numPhases       int
+		weeksPerPhase   int
+		workoutsPerWeek int
 	}{}
 	lastPhaseUpdates = nil
 	lastTemplateCreate = struct {
@@ -363,18 +364,20 @@ func setPhasesGetByProgram(count int) {
 
 // lastProgramCreate holds args captured by captureProgramCreate.
 var lastProgramCreate struct {
-	name          string
-	numPhases     int
-	weeksPerPhase int
+	name            string
+	numPhases       int
+	weeksPerPhase   int
+	workoutsPerWeek int
 }
 
 // captureProgramCreate makes CreateFn capture the call args and return a valid program.
 func captureProgramCreate() {
-	mockPrograms.CreateFn = func(userID int64, name string, startDate time.Time, numPhases, weeksPerPhase, defaultRepMin, defaultRepMax int) (*models.Program, error) {
+	mockPrograms.CreateFn = func(userID int64, name string, startDate time.Time, numPhases, weeksPerPhase, workoutsPerWeek, defaultRepMin, defaultRepMax int) (*models.Program, error) {
 		lastProgramCreate.name = name
 		lastProgramCreate.numPhases = numPhases
 		lastProgramCreate.weeksPerPhase = weeksPerPhase
-		return &models.Program{ID: testProgramID, UserID: userID, Name: name, NumPhases: numPhases, WeeksPerPhase: weeksPerPhase}, nil
+		lastProgramCreate.workoutsPerWeek = workoutsPerWeek
+		return &models.Program{ID: testProgramID, UserID: userID, Name: name, NumPhases: numPhases, WeeksPerPhase: weeksPerPhase, WorkoutsPerWeek: workoutsPerWeek}, nil
 	}
 }
 
@@ -468,16 +471,18 @@ func setSessionGetByID(phaseNumber, weekNumber, workoutNumber int, isDeload bool
 	}
 }
 
-// setProgramGetByIDWithDates makes GetByID return a program with StartDate and WeeksPerPhase set.
+// setProgramGetByIDWithDates makes GetByID return a program with StartDate, WeeksPerPhase,
+// and WorkoutsPerWeek (defaulting to 4) set.
 func setProgramGetByIDWithDates(name string, numPhases, weeksPerPhase int, startDate time.Time) {
 	mockPrograms.GetByIDFn = func(id, userID int64) (*models.Program, error) {
 		return &models.Program{
-			ID:            id,
-			UserID:        userID,
-			Name:          name,
-			NumPhases:     numPhases,
-			WeeksPerPhase: weeksPerPhase,
-			StartDate:     startDate,
+			ID:              id,
+			UserID:          userID,
+			Name:            name,
+			NumPhases:       numPhases,
+			WeeksPerPhase:   weeksPerPhase,
+			WorkoutsPerWeek: 4,
+			StartDate:       startDate,
 		}, nil
 	}
 }

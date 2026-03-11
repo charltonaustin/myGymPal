@@ -11,7 +11,7 @@ type UserRepository interface {
 }
 
 type ProgramRepository interface {
-	Create(userID int64, name string, startDate time.Time, numPhases, weeksPerPhase, defaultRepMin, defaultRepMax int) (*Program, error)
+	Create(userID int64, name string, startDate time.Time, numPhases, weeksPerPhase, workoutsPerWeek, defaultRepMin, defaultRepMax int) (*Program, error)
 	GetAllByUser(userID int64) ([]*Program, error)
 	GetByID(id, userID int64) (*Program, error)
 	Delete(id, userID int64) error

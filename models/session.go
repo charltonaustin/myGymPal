@@ -46,6 +46,24 @@ func CalculatePhaseAndWeek(now, startDate time.Time, weeksPerPhase int) (phase, 
 	return
 }
 
+// CalculateNextSession returns the 1-indexed phase, week (within phase), workout number
+// (within week), and deload flag for the next session to be created, based on how many
+// sessions already exist for the program.
+func CalculateNextSession(sessionCount, weeksPerPhase, workoutsPerWeek int) (phase, week, workoutNumber int, isDeload bool) {
+	if weeksPerPhase <= 0 {
+		weeksPerPhase = 8
+	}
+	if workoutsPerWeek <= 0 {
+		workoutsPerWeek = 4
+	}
+	totalWeeks := sessionCount / workoutsPerWeek
+	phase = totalWeeks/weeksPerPhase + 1
+	week = totalWeeks%weeksPerPhase + 1
+	workoutNumber = sessionCount%workoutsPerWeek + 1
+	isDeload = week == weeksPerPhase
+	return
+}
+
 func CreateSession(programID, userID int64, phaseNumber, weekNumber, workoutNumber int, isDeload bool, date time.Time) (*Session, error) {
 	o := orm.NewOrm()
 	s := &Session{

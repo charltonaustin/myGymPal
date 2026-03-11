@@ -75,6 +75,20 @@
         </div>
 
         <div class="mb-3">
+            <label for="workouts_per_week" class="form-label">Workouts per Week</label>
+            <input
+                type="number"
+                class="form-control"
+                id="workouts_per_week"
+                name="workouts_per_week"
+                value="{{.WorkoutsPerWeek}}"
+                min="1"
+                required
+            >
+            <div class="invalid-feedback">Enter a number of workouts (at least 1).</div>
+        </div>
+
+        <div class="mb-3">
             <label class="form-label">Default Rep Range</label>
             <div class="d-flex align-items-center gap-2">
                 <input

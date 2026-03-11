@@ -47,6 +47,7 @@ func (c *ProgramController) New() {
 	c.Data["LoggedIn"] = true
 	c.Data["ActivePage"] = "programs"
 	c.Data["WeeksPerPhase"] = "8"
+	c.Data["WorkoutsPerWeek"] = "4"
 	c.Data["DefaultRepMin"] = ""
 	c.Data["DefaultRepMax"] = ""
 	c.TplName = "programs/new.tpl"
@@ -63,6 +64,7 @@ func (c *ProgramController) Create() {
 	startDateStr := c.GetString("start_date")
 	numPhasesStr := c.GetString("num_phases")
 	weeksPerPhaseStr := c.GetString("weeks_per_phase")
+	workoutsPerWeekStr := c.GetString("workouts_per_week")
 	defaultRepMinStr := c.GetString("default_rep_min")
 	defaultRepMaxStr := c.GetString("default_rep_max")
 
@@ -74,6 +76,7 @@ func (c *ProgramController) Create() {
 		c.Data["StartDate"] = startDateStr
 		c.Data["NumPhases"] = numPhasesStr
 		c.Data["WeeksPerPhase"] = weeksPerPhaseStr
+		c.Data["WorkoutsPerWeek"] = workoutsPerWeekStr
 		c.Data["DefaultRepMin"] = defaultRepMinStr
 		c.Data["DefaultRepMax"] = defaultRepMaxStr
 		c.TplName = "programs/new.tpl"
@@ -102,6 +105,12 @@ func (c *ProgramController) Create() {
 		return
 	}
 
+	workoutsPerWeek, err := strconv.Atoi(workoutsPerWeekStr)
+	if err != nil || workoutsPerWeek <= 0 {
+		renderForm("Workouts per week must be a positive number.")
+		return
+	}
+
 	defaultRepMin, err := strconv.Atoi(defaultRepMinStr)
 	if err != nil || defaultRepMin <= 0 {
 		renderForm("Default min reps must be a positive number.")
@@ -114,7 +123,7 @@ func (c *ProgramController) Create() {
 		return
 	}
 
-	if _, err := Programs.Create(userID.(int64), name, startDate, numPhases, weeksPerPhase, defaultRepMin, defaultRepMax); err != nil {
+	if _, err := Programs.Create(userID.(int64), name, startDate, numPhases, weeksPerPhase, workoutsPerWeek, defaultRepMin, defaultRepMax); err != nil {
 		renderForm("Something went wrong. Please try again.")
 		return
 	}

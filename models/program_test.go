@@ -22,7 +22,7 @@ func testUserForProgram(t *testing.T, username string) *User {
 func TestCreateProgram_Success(t *testing.T) {
 	u := testUserForProgram(t, "prog_create_ok")
 
-	p, err := CreateProgram(u.ID, "Hypertrophy Block", testStartDate, 4, 8, 10, 12)
+	p, err := CreateProgram(u.ID, "Hypertrophy Block", testStartDate, 4, 8, 4, 10, 12)
 	require.NoError(t, err)
 	t.Cleanup(func() { DeleteProgram(p.ID, u.ID) })
 
@@ -36,44 +36,44 @@ func TestCreateProgram_Success(t *testing.T) {
 func TestCreateProgram_EmptyName(t *testing.T) {
 	u := testUserForProgram(t, "prog_empty_name")
 
-	_, err := CreateProgram(u.ID, "", testStartDate, 4, 8, 10, 12)
+	_, err := CreateProgram(u.ID, "", testStartDate, 4, 8, 4, 10, 12)
 	assert.Error(t, err)
 }
 
 func TestCreateProgram_ZeroPhases(t *testing.T) {
 	u := testUserForProgram(t, "prog_zero_phases")
 
-	_, err := CreateProgram(u.ID, "Bad Program", testStartDate, 0, 8, 10, 12)
+	_, err := CreateProgram(u.ID, "Bad Program", testStartDate, 0, 8, 4, 10, 12)
 	assert.Error(t, err)
 }
 
 func TestCreateProgram_NegativePhases(t *testing.T) {
 	u := testUserForProgram(t, "prog_neg_phases")
 
-	_, err := CreateProgram(u.ID, "Bad Program", testStartDate, -1, 8, 10, 12)
+	_, err := CreateProgram(u.ID, "Bad Program", testStartDate, -1, 8, 4, 10, 12)
 	assert.Error(t, err)
 }
 
 func TestCreateProgram_ZeroWeeksPerPhase(t *testing.T) {
 	u := testUserForProgram(t, "prog_zero_weeks")
 
-	_, err := CreateProgram(u.ID, "Bad Program", testStartDate, 4, 0, 10, 12)
+	_, err := CreateProgram(u.ID, "Bad Program", testStartDate, 4, 0, 4, 10, 12)
 	assert.Error(t, err)
 }
 
 func TestCreateProgram_NegativeWeeksPerPhase(t *testing.T) {
 	u := testUserForProgram(t, "prog_neg_weeks")
 
-	_, err := CreateProgram(u.ID, "Bad Program", testStartDate, 4, -1, 10, 12)
+	_, err := CreateProgram(u.ID, "Bad Program", testStartDate, 4, -1, 4, 10, 12)
 	assert.Error(t, err)
 }
 
 func TestGetProgramsByUserID(t *testing.T) {
 	u := testUserForProgram(t, "prog_list_user")
 
-	p1, err := CreateProgram(u.ID, "Program A", testStartDate, 3, 8, 10, 12)
+	p1, err := CreateProgram(u.ID, "Program A", testStartDate, 3, 8, 4, 10, 12)
 	require.NoError(t, err)
-	p2, err := CreateProgram(u.ID, "Program B", testStartDate.AddDate(0, 0, 7), 2, 8, 10, 12)
+	p2, err := CreateProgram(u.ID, "Program B", testStartDate.AddDate(0, 0, 7), 2, 8, 4, 10, 12)
 	require.NoError(t, err)
 	t.Cleanup(func() {
 		DeleteProgram(p1.ID, u.ID)
@@ -89,7 +89,7 @@ func TestGetProgramsByUserID_OtherUsersNotIncluded(t *testing.T) {
 	u1 := testUserForProgram(t, "prog_isolation_u1")
 	u2 := testUserForProgram(t, "prog_isolation_u2")
 
-	p, err := CreateProgram(u1.ID, "U1 Program", testStartDate, 2, 8, 10, 12)
+	p, err := CreateProgram(u1.ID, "U1 Program", testStartDate, 2, 8, 4, 10, 12)
 	require.NoError(t, err)
 	t.Cleanup(func() { DeleteProgram(p.ID, u1.ID) })
 
@@ -101,7 +101,7 @@ func TestGetProgramsByUserID_OtherUsersNotIncluded(t *testing.T) {
 func TestGetProgramByID_Found(t *testing.T) {
 	u := testUserForProgram(t, "prog_get_by_id")
 
-	p, err := CreateProgram(u.ID, "My Program", testStartDate, 5, 8, 10, 12)
+	p, err := CreateProgram(u.ID, "My Program", testStartDate, 5, 8, 4, 10, 12)
 	require.NoError(t, err)
 	t.Cleanup(func() { DeleteProgram(p.ID, u.ID) })
 
@@ -115,7 +115,7 @@ func TestGetProgramByID_WrongUser(t *testing.T) {
 	u1 := testUserForProgram(t, "prog_wrong_user_u1")
 	u2 := testUserForProgram(t, "prog_wrong_user_u2")
 
-	p, err := CreateProgram(u1.ID, "U1 Program", testStartDate, 2, 8, 10, 12)
+	p, err := CreateProgram(u1.ID, "U1 Program", testStartDate, 2, 8, 4, 10, 12)
 	require.NoError(t, err)
 	t.Cleanup(func() { DeleteProgram(p.ID, u1.ID) })
 
@@ -126,7 +126,7 @@ func TestGetProgramByID_WrongUser(t *testing.T) {
 func TestDeleteProgram(t *testing.T) {
 	u := testUserForProgram(t, "prog_delete")
 
-	p, err := CreateProgram(u.ID, "To Delete", testStartDate, 1, 8, 10, 12)
+	p, err := CreateProgram(u.ID, "To Delete", testStartDate, 1, 8, 4, 10, 12)
 	require.NoError(t, err)
 
 	require.NoError(t, DeleteProgram(p.ID, u.ID))
@@ -140,7 +140,7 @@ func TestDeleteProgram_WrongUser(t *testing.T) {
 	u1 := testUserForProgram(t, "prog_del_wrong_u1")
 	u2 := testUserForProgram(t, "prog_del_wrong_u2")
 
-	p, err := CreateProgram(u1.ID, "Protected", testStartDate, 2, 8, 10, 12)
+	p, err := CreateProgram(u1.ID, "Protected", testStartDate, 2, 8, 4, 10, 12)
 	require.NoError(t, err)
 	t.Cleanup(func() { DeleteProgram(p.ID, u1.ID) })
 

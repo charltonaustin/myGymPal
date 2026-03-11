@@ -32,14 +32,13 @@ func (c *SessionController) New() {
 		return
 	}
 
-	now := time.Now().UTC()
-	phase, week, _ := models.CalculatePhaseAndWeek(now, program.StartDate, program.WeeksPerPhase)
-
 	count, err := Sessions.CountByProgram(programID)
 	if err != nil {
 		c.Redirect("/error", 302)
 		return
 	}
+
+	phase, week, workoutNum, _ := models.CalculateNextSession(count, program.WeeksPerPhase, program.WorkoutsPerWeek)
 
 	templates, _ := Templates.GetAll()
 
@@ -48,7 +47,7 @@ func (c *SessionController) New() {
 	c.Data["Program"] = program
 	c.Data["PhaseNumber"] = phase
 	c.Data["WeekNumber"] = week
-	c.Data["WorkoutNumber"] = count + 1
+	c.Data["WorkoutNumber"] = workoutNum
 	c.Data["Templates"] = templates
 	c.TplName = "sessions/new.tpl"
 }

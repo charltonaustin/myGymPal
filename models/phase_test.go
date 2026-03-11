@@ -19,7 +19,7 @@ func testUserForPhase(t *testing.T, username string) *User {
 func TestCreateProgram_CreatesPhases(t *testing.T) {
 	u := testUserForPhase(t, "phase_created")
 
-	p, err := CreateProgram(u.ID, "Block A", testStartDate, 3, 8, 10, 12)
+	p, err := CreateProgram(u.ID, "Block A", testStartDate, 3, 8, 4, 10, 12)
 	require.NoError(t, err)
 
 	phases, err := GetPhasesByProgramID(p.ID)
@@ -36,7 +36,7 @@ func TestCreateProgram_CreatesPhases(t *testing.T) {
 func TestGetPhasesByProgramID(t *testing.T) {
 	u := testUserForPhase(t, "phase_list")
 
-	p, err := CreateProgram(u.ID, "Block B", testStartDate, 4, 8, 10, 12)
+	p, err := CreateProgram(u.ID, "Block B", testStartDate, 4, 8, 4, 10, 12)
 	require.NoError(t, err)
 
 	phases, err := GetPhasesByProgramID(p.ID)
@@ -47,7 +47,7 @@ func TestGetPhasesByProgramID(t *testing.T) {
 func TestUpdatePhaseRepRanges_Success(t *testing.T) {
 	u := testUserForPhase(t, "phase_update_ok")
 
-	p, err := CreateProgram(u.ID, "Block C", testStartDate, 2, 8, 10, 12)
+	p, err := CreateProgram(u.ID, "Block C", testStartDate, 2, 8, 4, 10, 12)
 	require.NoError(t, err)
 
 	updates := []PhaseUpdate{
@@ -67,7 +67,7 @@ func TestUpdatePhaseRepRanges_Success(t *testing.T) {
 func TestUpdatePhaseRepRanges_ZeroMin(t *testing.T) {
 	u := testUserForPhase(t, "phase_update_zero_min")
 
-	p, err := CreateProgram(u.ID, "Block D", testStartDate, 1, 8, 10, 12)
+	p, err := CreateProgram(u.ID, "Block D", testStartDate, 1, 8, 4, 10, 12)
 	require.NoError(t, err)
 
 	err = UpdatePhaseRepRanges(p.ID, []PhaseUpdate{{PhaseNumber: 1, RepMin: 0, RepMax: 10}})
@@ -77,7 +77,7 @@ func TestUpdatePhaseRepRanges_ZeroMin(t *testing.T) {
 func TestUpdatePhaseRepRanges_MaxLessThanMin(t *testing.T) {
 	u := testUserForPhase(t, "phase_update_bad_range")
 
-	p, err := CreateProgram(u.ID, "Block E", testStartDate, 1, 8, 10, 12)
+	p, err := CreateProgram(u.ID, "Block E", testStartDate, 1, 8, 4, 10, 12)
 	require.NoError(t, err)
 
 	err = UpdatePhaseRepRanges(p.ID, []PhaseUpdate{{PhaseNumber: 1, RepMin: 12, RepMax: 10}})
@@ -87,7 +87,7 @@ func TestUpdatePhaseRepRanges_MaxLessThanMin(t *testing.T) {
 func TestDeleteProgram_CascadesPhases(t *testing.T) {
 	u := testUserForPhase(t, "phase_cascade")
 
-	p, err := CreateProgram(u.ID, "Block F", testStartDate, 3, 8, 10, 12)
+	p, err := CreateProgram(u.ID, "Block F", testStartDate, 3, 8, 4, 10, 12)
 	require.NoError(t, err)
 
 	require.NoError(t, DeleteProgram(p.ID, u.ID))
