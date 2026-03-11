@@ -232,6 +232,7 @@ type mockSessionExerciseRepo struct {
 	GetByIDFn             func(exerciseID int64) (*models.SessionExercise, error)
 	LogSetFn              func(exerciseID int64, setNumber int, actualWeight float64, weightUnit string, actualReps int) (*models.SessionSet, error)
 	CountSetsByExerciseFn func(exerciseID int64) (int, error)
+	DeleteSetFn           func(setID int64) error
 }
 
 func (m *mockSessionExerciseRepo) Create(sessionID int64, name string, isBodyweight bool, goalWeight float64, weightUnit string, goalReps int) (*models.SessionExercise, error) {
@@ -267,6 +268,13 @@ func (m *mockSessionExerciseRepo) CountSetsByExercise(exerciseID int64) (int, er
 		return m.CountSetsByExerciseFn(exerciseID)
 	}
 	return 0, nil
+}
+
+func (m *mockSessionExerciseRepo) DeleteSet(setID int64) error {
+	if m.DeleteSetFn != nil {
+		return m.DeleteSetFn(setID)
+	}
+	return nil
 }
 
 // --- Global mock instances ---

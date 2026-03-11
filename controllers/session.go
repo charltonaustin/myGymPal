@@ -317,18 +317,63 @@ func (c *SessionController) LogSet() {
 		return
 	}
 
-	_, err = SessionExercises.LogSet(exerciseID, count+1, actualWeight, weightUnit, actualReps)
+	set, err := SessionExercises.LogSet(exerciseID, count+1, actualWeight, weightUnit, actualReps)
 	if err != nil {
 		c.Redirect(fmt.Sprintf("/sessions/%d", sessionID), 302)
 		return
 	}
 
-	// AJAX callers send this header and expect 204 No Content so they can
-	// update the DOM without causing a page navigation.
+	// AJAX callers get JSON back so the client can render the new row with a delete button.
 	if c.Ctx.Request.Header.Get("X-Requested-With") == "XMLHttpRequest" {
-		c.Ctx.ResponseWriter.WriteHeader(204)
+		c.Data["json"] = map[string]interface{}{
+			"id":         set.ID,
+			"set_number": set.SetNumber,
+		}
+		c.ServeJSON()
 		return
 	}
 
+	c.Redirect(fmt.Sprintf("/sessions/%d", sessionID), 302)
+}
+
+func (c *SessionController) DeleteSet() {
+	userID := c.GetSession("user_id")
+	if userID == nil {
+		c.Redirect("/login", 302)
+		return
+	}
+
+	sessionID, err := strconv.ParseInt(c.Ctx.Input.Param(":id"), 10, 64)
+	if err != nil {
+		c.Redirect("/programs", 302)
+		return
+	}
+
+	exerciseID, err := strconv.ParseInt(c.Ctx.Input.Param(":eid"), 10, 64)
+	if err != nil {
+		c.Redirect(fmt.Sprintf("/sessions/%d", sessionID), 302)
+		return
+	}
+
+	setID, err := strconv.ParseInt(c.Ctx.Input.Param(":sid"), 10, 64)
+	if err != nil {
+		c.Redirect(fmt.Sprintf("/sessions/%d", sessionID), 302)
+		return
+	}
+
+	// Verify session ownership.
+	if _, err := Sessions.GetByID(sessionID, userID.(int64)); err != nil {
+		c.Redirect("/programs", 302)
+		return
+	}
+
+	// Verify the exercise belongs to this session.
+	exercise, err := SessionExercises.GetByID(exerciseID)
+	if err != nil || exercise.SessionID != sessionID {
+		c.Redirect(fmt.Sprintf("/sessions/%d", sessionID), 302)
+		return
+	}
+
+	SessionExercises.DeleteSet(setID)
 	c.Redirect(fmt.Sprintf("/sessions/%d", sessionID), 302)
 }

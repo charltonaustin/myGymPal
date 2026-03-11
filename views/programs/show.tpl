@@ -63,7 +63,7 @@
     <p class="text-muted small">No workouts yet. Start one above.</p>
     {{end}}
 
-        <h2 class="h6 fw-semibold text-uppercase text-muted mb-3">Rep Ranges by Phase</h2>
+        <h2 class="h6 fw-semibold text-uppercase text-muted mt-5 mb-3">Rep Ranges by Phase</h2>
 
         <form method="POST" action="/programs/{{.Program.ID}}" data-offline-sync>
             <div class="card">

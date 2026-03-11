@@ -1,6 +1,8 @@
 package models
 
 import (
+	"errors"
+
 	"github.com/beego/beego/v2/client/orm"
 )
 
@@ -100,4 +102,25 @@ func CountSetsByExercise(exerciseID int64) (int, error) {
 	o := orm.NewOrm()
 	n, err := o.QueryTable(&SessionSet{}).Filter("SessionExerciseID", exerciseID).Count()
 	return int(n), err
+}
+
+func DeleteSessionSet(setID int64) error {
+	o := orm.NewOrm()
+	s := &SessionSet{ID: setID}
+	if err := o.Read(s); err != nil {
+		return errors.New("not found")
+	}
+	tx, err := o.Begin()
+	if err != nil {
+		return err
+	}
+	if _, err := tx.Raw("DELETE FROM session_sets WHERE id = ?", setID).Exec(); err != nil {
+		tx.Rollback()
+		return err
+	}
+	if _, err := tx.Raw("UPDATE session_sets SET set_number = set_number - 1 WHERE session_exercise_id = ? AND set_number > ?", s.SessionExerciseID, s.SetNumber).Exec(); err != nil {
+		tx.Rollback()
+		return err
+	}
+	return tx.Commit()
 }

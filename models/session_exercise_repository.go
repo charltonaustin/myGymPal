@@ -25,3 +25,7 @@ func (r *ormSessionExerciseRepository) LogSet(exerciseID int64, setNumber int, a
 func (r *ormSessionExerciseRepository) CountSetsByExercise(exerciseID int64) (int, error) {
 	return CountSetsByExercise(exerciseID)
 }
+
+func (r *ormSessionExerciseRepository) DeleteSet(setID int64) error {
+	return DeleteSessionSet(setID)
+}

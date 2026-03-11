@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Session #{{.Session.WorkoutNumber}} — My Gym Pal</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
     <link rel="manifest" href="/manifest.json">
 </head>
 <body>
@@ -27,6 +28,7 @@
     </div>
 
     {{range .Exercises}}
+    {{$exID := .Exercise.ID}}
     <div class="card mb-3">
         <div class="card-body pb-2">
             <div class="d-flex align-items-baseline justify-content-between mb-2">
@@ -48,6 +50,7 @@
                         <th class="text-muted fw-normal small ps-0">Set</th>
                         <th class="text-muted fw-normal small">Weight</th>
                         <th class="text-muted fw-normal small">Reps</th>
+                        <th></th>
                     </tr>
                 </thead>
                 <tbody>
@@ -56,6 +59,11 @@
                         <td class="ps-0">{{.SetNumber}}</td>
                         <td>{{.ActualWeight}} {{.WeightUnit}}</td>
                         <td>{{.ActualReps}}</td>
+                        <td class="text-end">
+                            <form method="POST" action="/sessions/{{$.Session.ID}}/exercises/{{$exID}}/sets/{{.ID}}/delete" class="d-inline">
+                                <button type="submit" class="btn btn-link btn-sm text-danger p-0" title="Delete set"><i class="bi bi-trash"></i></button>
+                            </form>
+                        </td>
                     </tr>
                     {{end}}
                 </tbody>
@@ -119,7 +127,7 @@ document.querySelectorAll('.log-set-form').forEach(form => {
         const unit   = formData.get('weight_unit')   || 'lb';
         const reps   = formData.get('actual_reps')   || '0';
 
-        let ok = false;
+        let data = null;
         try {
             const res = await fetch(form.action, {
                 method: 'POST',
@@ -129,12 +137,9 @@ document.querySelectorAll('.log-set-form').forEach(form => {
                 },
                 body: new URLSearchParams(formData),
             });
-            ok = res.ok;
+            if (!res.ok) { form.submit(); return; }
+            data = await res.json();
         } catch {
-            // ignore
-        }
-        if (!ok) {
-            // Network failure or server error — fall back to normal submit.
             form.submit();
             return;
         }
@@ -150,17 +155,30 @@ document.querySelectorAll('.log-set-form').forEach(form => {
                 '<th class="text-muted fw-normal small ps-0">Set</th>' +
                 '<th class="text-muted fw-normal small">Weight</th>' +
                 '<th class="text-muted fw-normal small">Reps</th>' +
+                '<th></th>' +
                 '</tr></thead><tbody></tbody>';
             form.before(table);
         }
 
+        // Extract exercise and session IDs from the form action URL.
+        const parts   = form.action.split('/');
+        const sessIdx = parts.indexOf('sessions');
+        const sessID  = parts[sessIdx + 1];
+        const exIdx   = parts.indexOf('exercises');
+        const exID    = parts[exIdx + 1];
+
         const tbody  = table.querySelector('tbody');
-        const setNum = tbody.querySelectorAll('tr').length + 1;
+        const setNum = data.set_number;
+        const setID  = data.id;
+        const deleteAction = `/sessions/${sessID}/exercises/${exID}/sets/${setID}/delete`;
         const row    = document.createElement('tr');
         row.innerHTML =
             `<td class="ps-0">${setNum}</td>` +
             `<td>${weight} ${unit}</td>` +
-            `<td>${reps}</td>`;
+            `<td>${reps}</td>` +
+            `<td class="text-end"><form method="POST" action="${deleteAction}" class="d-inline">` +
+            `<button type="submit" class="btn btn-link btn-sm text-danger p-0" title="Delete set"><i class="bi bi-trash"></i></button>` +
+            `</form></td>`;
         tbody.appendChild(row);
     });
 });

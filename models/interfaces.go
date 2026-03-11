@@ -45,4 +45,5 @@ type SessionExerciseRepository interface {
 	GetByID(exerciseID int64) (*SessionExercise, error)
 	LogSet(exerciseID int64, setNumber int, actualWeight float64, weightUnit string, actualReps int) (*SessionSet, error)
 	CountSetsByExercise(exerciseID int64) (int, error)
+	DeleteSet(setID int64) error
 }
