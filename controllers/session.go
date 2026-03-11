@@ -246,6 +246,8 @@ func (c *SessionController) AddExercise() {
 		return
 	}
 
+	isBodyweight := c.GetString("is_bodyweight") != ""
+
 	weightUnit := c.GetString("weight_unit")
 	if weightUnit != "kg" {
 		weightUnit = "lb"
@@ -254,7 +256,7 @@ func (c *SessionController) AddExercise() {
 	goalWeightStr := c.GetString("goal_weight")
 	goalWeight, _ := strconv.ParseFloat(goalWeightStr, 64)
 
-	_, err = SessionExercises.Create(sessionID, name, false, goalWeight, weightUnit, 0)
+	_, err = SessionExercises.Create(sessionID, name, isBodyweight, goalWeight, weightUnit, 0)
 	if err != nil {
 		c.Redirect(fmt.Sprintf("/sessions/%d", sessionID), 302)
 		return
@@ -321,6 +323,14 @@ func (c *SessionController) LogSet() {
 	if err != nil {
 		c.Redirect(fmt.Sprintf("/sessions/%d", sessionID), 302)
 		return
+	}
+
+	// After 3rd set at or above goal reps, update the exercise library entry.
+	newCount := count + 1
+	if newCount >= 3 && actualReps >= exercise.GoalReps {
+		if ex, err := Exercises.GetByName(userID.(int64), exercise.Name); err == nil {
+			Exercises.UpdateGoalWeight(ex.ID, actualWeight)
+		}
 	}
 
 	// AJAX callers get JSON back so the client can render the new row with a delete button.

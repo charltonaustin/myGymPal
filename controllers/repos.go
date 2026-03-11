@@ -12,4 +12,5 @@ var (
 	Templates        models.TemplateRepository
 	Sessions         models.SessionRepository
 	SessionExercises models.SessionExerciseRepository
+	Exercises        models.ExerciseRepository
 )

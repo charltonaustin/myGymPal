@@ -91,33 +91,40 @@
     </div>
     {{end}}
 
-    <div class="card mt-4">
-        <div class="card-body">
-            <h2 class="h6 fw-semibold mb-3">Add Exercise</h2>
-            <form method="POST" action="/sessions/{{.Session.ID}}/exercises">
-                <div class="mb-2">
-                    <input type="text" name="name" class="form-control form-control-sm" placeholder="Exercise name" required>
+    <h2 class="h6 fw-semibold text-uppercase text-muted mt-4 mb-3">Add Exercise</h2>
+    <form method="POST" action="/sessions/{{.Session.ID}}/exercises">
+        <div class="card mb-3 p-3">
+            <div class="mb-2">
+                <input type="text" name="name" class="form-control" placeholder="Exercise name" required>
+            </div>
+            <div class="form-check mb-2">
+                <input type="checkbox" class="form-check-input add-ex-bw-check" name="is_bodyweight" id="add_ex_bw">
+                <label class="form-check-label" for="add_ex_bw">Bodyweight exercise</label>
+            </div>
+            <div class="add-ex-weight-row">
+                <div class="input-group input-group-sm">
+                    <input type="number" name="goal_weight" class="form-control" placeholder="Goal weight" min="0" step="0.5">
+                    <select name="weight_unit" class="form-select" style="max-width: 72px;">
+                        <option value="lb" {{if eq .WeightUnit "lb"}}selected{{end}}>lb</option>
+                        <option value="kg" {{if eq .WeightUnit "kg"}}selected{{end}}>kg</option>
+                    </select>
                 </div>
-                <div class="d-flex gap-2 align-items-end">
-                    <div>
-                        <label class="form-label small mb-1">Goal Weight</label>
-                        <div class="input-group input-group-sm" style="width: 150px;">
-                            <input type="number" name="goal_weight" class="form-control" placeholder="0" min="0" step="0.5">
-                            <select name="weight_unit" class="form-select" style="max-width: 60px;">
-                                <option value="lb" {{if eq .WeightUnit "lb"}}selected{{end}}>lb</option>
-                                <option value="kg" {{if eq .WeightUnit "kg"}}selected{{end}}>kg</option>
-                            </select>
-                        </div>
-                    </div>
-                    <button type="submit" class="btn btn-dark btn-sm">Add</button>
-                </div>
-            </form>
+            </div>
         </div>
-    </div>
+        <button type="submit" class="btn btn-dark btn-sm mb-4">Add Exercise</button>
+    </form>
 </main>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
+const addExBwCheck = document.querySelector('.add-ex-bw-check');
+const addExWeightRow = document.querySelector('.add-ex-weight-row');
+if (addExBwCheck) {
+    addExBwCheck.addEventListener('change', () => {
+        addExWeightRow.classList.toggle('d-none', addExBwCheck.checked);
+    });
+}
+
 document.querySelectorAll('.log-set-form').forEach(form => {
     form.addEventListener('submit', async e => {
         e.preventDefault();

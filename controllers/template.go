@@ -78,6 +78,7 @@ func (c *TemplateController) New() {
 	c.Data["ActivePage"] = "templates"
 	c.Data["WeightUnit"] = user.WeightUnit
 	c.Data["Exercises"] = []exerciseForm{{WeightUnit: user.WeightUnit}}
+	c.Data["ExerciseLibraryJSON"] = exerciseLibraryJSON(userID.(int64))
 	c.TplName = "templates/new.tpl"
 }
 
@@ -146,6 +147,7 @@ func (c *TemplateController) Create() {
 		c.Data["Focus"] = focus
 		c.Data["WeightUnit"] = weightUnit
 		c.Data["Exercises"] = forms
+		c.Data["ExerciseLibraryJSON"] = exerciseLibraryJSON(userID.(int64))
 		c.TplName = "templates/new.tpl"
 	}
 
@@ -234,6 +236,7 @@ func (c *TemplateController) Edit() {
 	c.Data["Name"] = tmpl.Name
 	c.Data["Focus"] = tmpl.Focus
 	c.Data["Exercises"] = exercisesToForms(exercises)
+	c.Data["ExerciseLibraryJSON"] = exerciseLibraryJSON(userID.(int64))
 	c.TplName = "templates/edit.tpl"
 }
 
@@ -315,6 +318,7 @@ func (c *TemplateController) Update() {
 		c.Data["Focus"] = focus
 		c.Data["WeightUnit"] = weightUnit
 		c.Data["Exercises"] = forms
+		c.Data["ExerciseLibraryJSON"] = exerciseLibraryJSON(userID.(int64))
 		c.TplName = "templates/edit.tpl"
 	}
 

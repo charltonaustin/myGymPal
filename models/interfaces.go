@@ -39,6 +39,16 @@ type SessionRepository interface {
 	Delete(id, userID int64) error
 }
 
+type ExerciseRepository interface {
+	Create(userID int64, name string, isBodyweight bool, goalWeight float64, weightUnit string) (*Exercise, error)
+	GetAllByUser(userID int64) ([]*Exercise, error)
+	GetByID(id, userID int64) (*Exercise, error)
+	GetByName(userID int64, name string) (*Exercise, error)
+	Update(id, userID int64, name string, isBodyweight bool, goalWeight float64, weightUnit string) (*Exercise, error)
+	UpdateGoalWeight(id int64, goalWeight float64) error
+	Delete(id, userID int64) error
+}
+
 type SessionExerciseRepository interface {
 	Create(sessionID int64, name string, isBodyweight bool, goalWeight float64, weightUnit string, goalReps int) (*SessionExercise, error)
 	GetBySession(sessionID int64) ([]*SessionExerciseView, error)

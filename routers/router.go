@@ -14,6 +14,7 @@ func Register() {
 	controllers.Templates = models.NewTemplateRepository()
 	controllers.Sessions = models.NewSessionRepository()
 	controllers.SessionExercises = models.NewSessionExerciseRepository()
+	controllers.Exercises = models.NewExerciseRepository()
 
 	// PWA assets (must be served from root path for correct service worker scope)
 	beego.Router("/sw.js", &controllers.PWAController{}, "get:ServiceWorker")
@@ -47,6 +48,12 @@ func Register() {
 	beego.Router("/sessions/:id/exercises", &controllers.SessionController{}, "post:AddExercise")
 	beego.Router("/sessions/:id/exercises/:eid/sets", &controllers.SessionController{}, "post:LogSet")
 	beego.Router("/sessions/:id/exercises/:eid/sets/:sid/delete", &controllers.SessionController{}, "post:DeleteSet")
+
+	// Exercises
+	beego.Router("/exercises", &controllers.ExerciseController{}, "get:Index")
+	beego.Router("/exercises/new", &controllers.ExerciseController{}, "get:New;post:Create")
+	beego.Router("/exercises/:id/edit", &controllers.ExerciseController{}, "get:Edit;post:Update")
+	beego.Router("/exercises/:id/delete", &controllers.ExerciseController{}, "post:Delete")
 
 	// Templates
 	beego.Router("/templates", &controllers.TemplateController{}, "get:Index")

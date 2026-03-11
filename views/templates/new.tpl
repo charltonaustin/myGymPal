@@ -60,6 +60,7 @@
                         name="exercise_name_{{$i}}"
                         value="{{$ex.Name}}"
                         placeholder="Exercise name"
+                        list="exercise-list"
                         required
                     >
                 </div>
@@ -128,6 +129,9 @@
             <a href="/templates" class="btn btn-outline-secondary">Cancel</a>
         </div>
     </form>
+
+    <datalist id="exercise-list">
+    </datalist>
 </main>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
@@ -136,6 +140,32 @@
     if (alertEl) setTimeout(() => alertEl.remove(), 4000);
 
     const weightUnit = "{{.WeightUnit}}";
+
+    // Exercise library for autocomplete
+    const exerciseLibraryArr = {{.ExerciseLibraryJSON}};
+    const exerciseLibrary = {};
+    const datalist = document.getElementById('exercise-list');
+    exerciseLibraryArr.forEach(ex => {
+        exerciseLibrary[ex.name] = ex;
+        const opt = document.createElement('option');
+        opt.value = ex.name;
+        datalist.appendChild(opt);
+    });
+
+    function autofillFromLibrary(row, nameVal) {
+        const entry = exerciseLibrary[nameVal];
+        if (!entry) return;
+        const bwCheck = row.querySelector('.bw-check');
+        const weightRow = row.querySelector('.weight-row');
+        const goalWeightInput = row.querySelector('[name^="goal_weight_"]');
+        const weightUnitSelect = row.querySelector('[name^="weight_unit_"]');
+        if (bwCheck) {
+            bwCheck.checked = entry.isBodyweight;
+            if (weightRow) weightRow.classList.toggle('d-none', entry.isBodyweight);
+        }
+        if (goalWeightInput && !entry.isBodyweight) goalWeightInput.value = entry.goalWeight;
+        if (weightUnitSelect && !entry.isBodyweight) weightUnitSelect.value = entry.weightUnit;
+    }
     let exerciseCount = parseInt(document.getElementById('exercise_count').value, 10);
 
     function bindRow(row) {
@@ -147,6 +177,11 @@
         row.querySelector('.remove-exercise').addEventListener('click', () => {
             row.remove();
         });
+        const nameInput = row.querySelector('[name^="exercise_name_"]');
+        if (nameInput) {
+            nameInput.addEventListener('change', () => autofillFromLibrary(row, nameInput.value));
+            nameInput.addEventListener('input', () => autofillFromLibrary(row, nameInput.value));
+        }
     }
 
     document.querySelectorAll('.exercise-row').forEach(bindRow);
@@ -160,7 +195,7 @@
         row.dataset.index = i;
         row.innerHTML = `
             <div class="mb-2">
-                <input type="text" class="form-control" name="exercise_name_${i}" placeholder="Exercise name" required>
+                <input type="text" class="form-control" name="exercise_name_${i}" placeholder="Exercise name" list="exercise-list" required>
             </div>
             <div class="form-check mb-2">
                 <input type="checkbox" class="form-check-input bw-check" name="is_bodyweight_${i}" id="bw_${i}">
