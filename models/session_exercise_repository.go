@@ -6,8 +6,8 @@ func NewSessionExerciseRepository() SessionExerciseRepository {
 	return &ormSessionExerciseRepository{}
 }
 
-func (r *ormSessionExerciseRepository) Create(sessionID int64, name string, isBodyweight bool, goalWeight float64, weightUnit string) (*SessionExercise, error) {
-	return CreateSessionExercise(sessionID, name, isBodyweight, goalWeight, weightUnit)
+func (r *ormSessionExerciseRepository) Create(sessionID int64, name string, isBodyweight bool, goalWeight float64, weightUnit string, goalReps int) (*SessionExercise, error) {
+	return CreateSessionExercise(sessionID, name, isBodyweight, goalWeight, weightUnit, goalReps)
 }
 
 func (r *ormSessionExerciseRepository) GetBySession(sessionID int64) ([]*SessionExerciseView, error) {

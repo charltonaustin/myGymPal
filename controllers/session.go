@@ -101,8 +101,19 @@ func (c *SessionController) Create() {
 	// Copy template exercises into the new session if a template was selected.
 	if templateID, err := strconv.ParseInt(c.GetString("template_id"), 10, 64); err == nil && templateID > 0 {
 		if _, exercises, err := Templates.GetByID(templateID); err == nil {
+			// Determine the rep minimum for the session's phase so it can be
+			// stored as the goal reps on each exercise.
+			goalReps := 0
+			if phases, err := Phases.GetByProgram(programID); err == nil {
+				for _, ph := range phases {
+					if ph.PhaseNumber == phaseNumber {
+						goalReps = ph.RepMin
+						break
+					}
+				}
+			}
 			for _, ex := range exercises {
-				SessionExercises.Create(session.ID, ex.Name, ex.IsBodyweight, ex.GoalWeight, ex.WeightUnit)
+				SessionExercises.Create(session.ID, ex.Name, ex.IsBodyweight, ex.GoalWeight, ex.WeightUnit, goalReps)
 			}
 		}
 	}
@@ -178,12 +189,26 @@ func (c *SessionController) Show() {
 		weightUnit = user.WeightUnit
 	}
 
+	// Find the rep range for the session's phase.
+	phaseRepMin, phaseRepMax := 0, 0
+	if phases, err := Phases.GetByProgram(session.ProgramID); err == nil {
+		for _, ph := range phases {
+			if ph.PhaseNumber == session.PhaseNumber {
+				phaseRepMin = ph.RepMin
+				phaseRepMax = ph.RepMax
+				break
+			}
+		}
+	}
+
 	c.Data["LoggedIn"] = true
 	c.Data["ActivePage"] = "programs"
 	c.Data["Session"] = session
 	c.Data["Program"] = program
 	c.Data["Exercises"] = exercises
 	c.Data["WeightUnit"] = weightUnit
+	c.Data["PhaseRepMin"] = phaseRepMin
+	c.Data["PhaseRepMax"] = phaseRepMax
 	c.TplName = "sessions/show.tpl"
 }
 
@@ -221,7 +246,7 @@ func (c *SessionController) AddExercise() {
 	goalWeightStr := c.GetString("goal_weight")
 	goalWeight, _ := strconv.ParseFloat(goalWeightStr, 64)
 
-	_, err = SessionExercises.Create(sessionID, name, false, goalWeight, weightUnit)
+	_, err = SessionExercises.Create(sessionID, name, false, goalWeight, weightUnit, 0)
 	if err != nil {
 		c.Redirect(fmt.Sprintf("/sessions/%d", sessionID), 302)
 		return

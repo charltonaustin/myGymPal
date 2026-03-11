@@ -31,9 +31,14 @@
         <div class="card-body pb-2">
             <div class="d-flex align-items-baseline justify-content-between mb-2">
                 <h2 class="h6 fw-semibold mb-0">{{.Exercise.Name}}</h2>
+                <span class="text-muted small">
                 {{if gt .Exercise.GoalWeight 0.0}}
-                <span class="text-muted small">Goal: {{.Exercise.GoalWeight}} {{.Exercise.WeightUnit}}</span>
+                Goal: {{.Exercise.GoalWeight}} {{.Exercise.WeightUnit}}
                 {{end}}
+                {{if and (gt $.PhaseRepMin 0) (gt $.PhaseRepMax 0)}}
+                {{$.PhaseRepMin}}–{{$.PhaseRepMax}} reps
+                {{end}}
+                </span>
             </div>
 
             {{if .Sets}}
@@ -61,7 +66,7 @@
                 <div>
                     <label class="form-label small mb-1">Weight</label>
                     <div class="input-group input-group-sm" style="width: 160px;">
-                        <input type="number" name="actual_weight" class="form-control" placeholder="0" min="0" step="0.5">
+                        <input type="number" name="actual_weight" class="form-control" placeholder="0" min="0" step="0.5"{{if gt .Exercise.GoalWeight 0.0}} value="{{.Exercise.GoalWeight}}"{{end}}>
                         <select name="weight_unit" class="form-select" style="max-width: 90px;">
                             <option value="lb" {{if eq $.WeightUnit "lb"}}selected{{end}}>lb</option>
                             <option value="kg" {{if eq $.WeightUnit "kg"}}selected{{end}}>kg</option>
@@ -70,7 +75,7 @@
                 </div>
                 <div>
                     <label class="form-label small mb-1">Reps</label>
-                    <input type="number" name="actual_reps" class="form-control form-control-sm" placeholder="0" min="1" required style="width: 70px;">
+                    <input type="number" name="actual_reps" class="form-control form-control-sm" placeholder="0" min="1" required style="width: 70px;"{{if gt .Exercise.GoalReps 0}} value="{{.Exercise.GoalReps}}"{{end}}>
                 </div>
                 <button type="submit" class="btn btn-dark btn-sm mb-0">+ Set</button>
             </form>

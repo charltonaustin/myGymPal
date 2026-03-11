@@ -11,6 +11,7 @@ type SessionExercise struct {
 	IsBodyweight bool    `orm:"column(is_bodyweight)"`
 	GoalWeight   float64 `orm:"column(goal_weight)"`
 	WeightUnit   string  `orm:"column(weight_unit)"`
+	GoalReps     int     `orm:"column(goal_reps)"`
 	SortOrder    int     `orm:"column(sort_order)"`
 }
 
@@ -41,7 +42,7 @@ func init() {
 	orm.RegisterModel(&SessionExercise{}, &SessionSet{})
 }
 
-func CreateSessionExercise(sessionID int64, name string, isBodyweight bool, goalWeight float64, weightUnit string) (*SessionExercise, error) {
+func CreateSessionExercise(sessionID int64, name string, isBodyweight bool, goalWeight float64, weightUnit string, goalReps int) (*SessionExercise, error) {
 	o := orm.NewOrm()
 	n, _ := o.QueryTable(&SessionExercise{}).Filter("SessionID", sessionID).Count()
 	e := &SessionExercise{
@@ -50,6 +51,7 @@ func CreateSessionExercise(sessionID int64, name string, isBodyweight bool, goal
 		IsBodyweight: isBodyweight,
 		GoalWeight:   goalWeight,
 		WeightUnit:   weightUnit,
+		GoalReps:     goalReps,
 		SortOrder:    int(n),
 	}
 	_, err := o.Insert(e)

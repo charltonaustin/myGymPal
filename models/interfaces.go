@@ -38,7 +38,7 @@ type SessionRepository interface {
 }
 
 type SessionExerciseRepository interface {
-	Create(sessionID int64, name string, isBodyweight bool, goalWeight float64, weightUnit string) (*SessionExercise, error)
+	Create(sessionID int64, name string, isBodyweight bool, goalWeight float64, weightUnit string, goalReps int) (*SessionExercise, error)
 	GetBySession(sessionID int64) ([]*SessionExerciseView, error)
 	GetByID(exerciseID int64) (*SessionExercise, error)
 	LogSet(exerciseID int64, setNumber int, actualWeight float64, weightUnit string, actualReps int) (*SessionSet, error)

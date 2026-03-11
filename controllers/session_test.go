@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"myGymPal/models"
 )
 
 // --- Create session ---
@@ -141,6 +142,32 @@ func TestSessionCreate_CopiesTemplateExercises(t *testing.T) {
 	assert.Equal(t, "Exercise 3", sessionExerciseCreateNames[2])
 }
 
+func TestSessionCreate_SetsGoalRepsFromPhase(t *testing.T) {
+	t.Cleanup(resetMocks)
+	setProgramGetByIDWithDates("My Program", 4, 8, testProgramDate)
+	captureSessionCreate()
+	setTemplateGetByID(testTemplateID, "Upper Body A", "Upper", 2)
+	setPhasesGetByProgram(4) // phases 1–4 all have RepMin=10
+	var capturedGoalReps []int
+	mockSessionExercises.CreateFn = func(sessionID int64, name string, isBodyweight bool, goalWeight float64, weightUnit string, goalReps int) (*models.SessionExercise, error) {
+		capturedGoalReps = append(capturedGoalReps, goalReps)
+		return &models.SessionExercise{ID: testExerciseID, SessionID: sessionID, Name: name, GoalReps: goalReps}, nil
+	}
+	cookies := loginAs(t, "session_create_goalreps", "lb")
+
+	w := postForm("/programs/1/sessions", url.Values{
+		"phase_number":   {"1"},
+		"week_number":    {"1"},
+		"workout_number": {"1"},
+		"template_id":    {fmt.Sprintf("%d", testTemplateID)},
+	}, cookies)
+	assert.Equal(t, http.StatusFound, w.Code)
+	assert.Len(t, capturedGoalReps, 2)
+	// setPhasesGetByProgram gives RepMin=10 for all phases
+	assert.Equal(t, 10, capturedGoalReps[0])
+	assert.Equal(t, 10, capturedGoalReps[1])
+}
+
 // --- New session form ---
 
 func TestSessionNew_Unauthenticated(t *testing.T) {
@@ -241,6 +268,39 @@ func TestSessionShow_ShowsExercises(t *testing.T) {
 	w := getPath("/sessions/99", cookies)
 	assert.Equal(t, http.StatusOK, w.Code)
 	assert.Contains(t, w.Body.String(), "Bench Press")
+}
+
+func TestSessionShow_ShowsPhaseRepRange(t *testing.T) {
+	t.Cleanup(resetMocks)
+	setSessionGetByID(2, 1, 1, false) // phase 2
+	setProgramGetByID("My Program", 4)
+	setPhasesGetByProgram(4) // all phases RepMin=10, RepMax=12
+	setSessionExerciseGetBySessionWithOne("Bench Press", "lb")
+	cookies := loginAs(t, "session_show_reprange", "lb")
+
+	w := getPath("/sessions/99", cookies)
+	assert.Equal(t, http.StatusOK, w.Code)
+	assert.Contains(t, w.Body.String(), "10–12 reps")
+}
+
+func TestSessionShow_DefaultsWeightAndReps(t *testing.T) {
+	t.Cleanup(resetMocks)
+	setSessionGetByID(1, 1, 1, false)
+	setProgramGetByID("My Program", 4)
+	mockSessionExercises.GetBySessionFn = func(sessionID int64) ([]*models.SessionExerciseView, error) {
+		ex := &models.SessionExercise{
+			ID: testExerciseID, SessionID: sessionID,
+			Name: "Squat", GoalWeight: 135, WeightUnit: "lb", GoalReps: 10,
+		}
+		return []*models.SessionExerciseView{{Exercise: ex}}, nil
+	}
+	cookies := loginAs(t, "session_show_defaults", "lb")
+
+	w := getPath("/sessions/99", cookies)
+	assert.Equal(t, http.StatusOK, w.Code)
+	body := w.Body.String()
+	assert.Contains(t, body, `value="135"`)
+	assert.Contains(t, body, `value="10"`)
 }
 
 // --- Add exercise ---
