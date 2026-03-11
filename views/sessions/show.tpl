@@ -62,7 +62,7 @@
             </table>
             {{end}}
 
-            <form method="POST" action="/sessions/{{$.Session.ID}}/exercises/{{.Exercise.ID}}/sets" class="d-flex gap-2 align-items-end">
+            <form method="POST" action="/sessions/{{$.Session.ID}}/exercises/{{.Exercise.ID}}/sets" class="d-flex gap-2 align-items-end log-set-form">
                 <div>
                     <label class="form-label small mb-1">Weight</label>
                     <div class="input-group input-group-sm" style="width: 160px;">
@@ -109,6 +109,62 @@
 </main>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+document.querySelectorAll('.log-set-form').forEach(form => {
+    form.addEventListener('submit', async e => {
+        e.preventDefault();
+
+        const formData = new FormData(form);
+        const weight = formData.get('actual_weight') || '0';
+        const unit   = formData.get('weight_unit')   || 'lb';
+        const reps   = formData.get('actual_reps')   || '0';
+
+        let ok = false;
+        try {
+            const res = await fetch(form.action, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+                body: new URLSearchParams(formData),
+            });
+            ok = res.ok;
+        } catch {
+            // ignore
+        }
+        if (!ok) {
+            // Network failure or server error — fall back to normal submit.
+            form.submit();
+            return;
+        }
+
+        // Find or create the sets table inside this card.
+        const cardBody = form.closest('.card-body');
+        let table = cardBody.querySelector('table');
+        if (!table) {
+            table = document.createElement('table');
+            table.className = 'table table-sm mb-2';
+            table.innerHTML =
+                '<thead><tr>' +
+                '<th class="text-muted fw-normal small ps-0">Set</th>' +
+                '<th class="text-muted fw-normal small">Weight</th>' +
+                '<th class="text-muted fw-normal small">Reps</th>' +
+                '</tr></thead><tbody></tbody>';
+            form.before(table);
+        }
+
+        const tbody  = table.querySelector('tbody');
+        const setNum = tbody.querySelectorAll('tr').length + 1;
+        const row    = document.createElement('tr');
+        row.innerHTML =
+            `<td class="ps-0">${setNum}</td>` +
+            `<td>${weight} ${unit}</td>` +
+            `<td>${reps}</td>`;
+        tbody.appendChild(row);
+    });
+});
+</script>
 <script>if ('serviceWorker' in navigator) { navigator.serviceWorker.register('/sw.js').catch(console.error); }</script>
 </body>
 </html>

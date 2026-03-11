@@ -315,5 +315,12 @@ func (c *SessionController) LogSet() {
 		return
 	}
 
+	// AJAX callers send this header and expect 204 No Content so they can
+	// update the DOM without causing a page navigation.
+	if c.Ctx.Request.Header.Get("X-Requested-With") == "XMLHttpRequest" {
+		c.Ctx.ResponseWriter.WriteHeader(204)
+		return
+	}
+
 	c.Redirect(fmt.Sprintf("/sessions/%d", sessionID), 302)
 }
