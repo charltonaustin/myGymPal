@@ -30,6 +30,7 @@ func Register() {
 	// App
 	beego.Router("/dashboard", &controllers.DashboardController{})
 	beego.Router("/settings", &controllers.AccountController{}, "get:Settings;post:SettingsPost")
+	beego.Router("/account/delete", &controllers.AccountController{}, "post:DeleteAccount")
 	beego.Router("/error", &controllers.ErrorController{})
 
 	// Programs

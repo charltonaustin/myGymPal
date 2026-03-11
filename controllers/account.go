@@ -32,6 +32,29 @@ func (c *AccountController) Settings() {
 	c.TplName = "settings.tpl"
 }
 
+func (c *AccountController) DeleteAccount() {
+	userID := c.GetSession("user_id")
+	if userID == nil {
+		c.Redirect("/login", 302)
+		return
+	}
+
+	if err := Users.DeleteByID(userID.(int64)); err != nil {
+		c.Data["LoggedIn"] = true
+		c.Data["ActivePage"] = "settings"
+		c.Data["Error"] = "Failed to delete account. Please try again."
+		user, _ := Users.GetByID(userID.(int64))
+		if user != nil {
+			c.Data["WeightUnit"] = user.WeightUnit
+		}
+		c.TplName = "settings.tpl"
+		return
+	}
+
+	c.DestroySession()
+	c.Redirect("/login", 302)
+}
+
 func (c *AccountController) SettingsPost() {
 	userID := c.GetSession("user_id")
 	if userID == nil {

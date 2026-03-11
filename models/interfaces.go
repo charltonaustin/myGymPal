@@ -8,6 +8,7 @@ type UserRepository interface {
 	GetByID(id int64) (*User, error)
 	UpdateWeightUnit(userID int64, unit string) error
 	DeleteByUsername(username string) error
+	DeleteByID(id int64) error
 }
 
 type ProgramRepository interface {

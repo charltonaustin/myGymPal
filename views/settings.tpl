@@ -39,7 +39,38 @@
 
         <button type="submit" class="btn btn-primary">Save Settings</button>
     </form>
+
+    <hr class="my-5">
+
+    <div class="mb-4">
+        <h2 class="h6 fw-semibold text-uppercase text-muted mb-1">Danger Zone</h2>
+        <p class="text-muted small mb-3">This will permanently delete your account and all associated data including programs, sessions, and workout history. This cannot be undone.</p>
+        <button type="button" class="btn btn-outline-danger btn-sm" data-bs-toggle="modal" data-bs-target="#deleteAccountModal">
+            Delete Account
+        </button>
+    </div>
 </main>
+
+<div class="modal fade" id="deleteAccountModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Delete Account</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete your account? This will permanently remove all your programs, sessions, and workout history.</p>
+                <p class="fw-semibold mb-0">This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form method="post" action="/account/delete">
+                    <button type="submit" class="btn btn-danger">Yes, Delete Everything</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>

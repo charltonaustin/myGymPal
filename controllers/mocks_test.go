@@ -41,6 +41,7 @@ type mockUserRepo struct {
 	GetByIDFn          func(id int64) (*models.User, error)
 	UpdateWeightUnitFn func(userID int64, unit string) error
 	DeleteByUsernameFn func(username string) error
+	DeleteByIDFn       func(id int64) error
 }
 
 func (m *mockUserRepo) Create(username, password, weightUnit string) (*models.User, error) {
@@ -74,6 +75,13 @@ func (m *mockUserRepo) UpdateWeightUnit(userID int64, unit string) error {
 func (m *mockUserRepo) DeleteByUsername(username string) error {
 	if m.DeleteByUsernameFn != nil {
 		return m.DeleteByUsernameFn(username)
+	}
+	return nil
+}
+
+func (m *mockUserRepo) DeleteByID(id int64) error {
+	if m.DeleteByIDFn != nil {
+		return m.DeleteByIDFn(id)
 	}
 	return nil
 }

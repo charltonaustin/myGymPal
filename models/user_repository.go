@@ -25,3 +25,7 @@ func (r *ormUserRepository) UpdateWeightUnit(userID int64, unit string) error {
 func (r *ormUserRepository) DeleteByUsername(username string) error {
 	return DeleteUserByUsername(username)
 }
+
+func (r *ormUserRepository) DeleteByID(id int64) error {
+	return DeleteUserByID(id)
+}

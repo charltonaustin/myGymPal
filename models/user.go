@@ -85,3 +85,9 @@ func DeleteUserByUsername(username string) error {
 	_, err := o.QueryTable(&User{}).Filter("Username", username).Delete()
 	return err
 }
+
+func DeleteUserByID(id int64) error {
+	o := orm.NewOrm()
+	_, err := o.QueryTable(&User{}).Filter("ID", id).Delete()
+	return err
+}
