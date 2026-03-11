@@ -49,6 +49,7 @@ func Register() {
 	// Templates
 	beego.Router("/templates", &controllers.TemplateController{}, "get:Index")
 	beego.Router("/templates/new", &controllers.TemplateController{}, "get:New;post:Create")
-	beego.Router("/templates/:id", &controllers.TemplateController{}, "get:Show")
+	beego.Router("/templates/:id", &controllers.TemplateController{}, "get:Show;post:Update")
+	beego.Router("/templates/:id/edit", &controllers.TemplateController{}, "get:Edit")
 	beego.Router("/templates/:id/delete", &controllers.TemplateController{}, "post:Delete")
 }

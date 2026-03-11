@@ -119,6 +119,74 @@ func DeleteTemplate(id int64) error {
 	return err
 }
 
+func UpdateTemplate(id int64, name, focus string, exercises []TemplateExerciseInput) (*Template, error) {
+	if name == "" {
+		return nil, errors.New("template name is required")
+	}
+	if len(exercises) == 0 {
+		return nil, errors.New("at least one exercise is required")
+	}
+	for _, ex := range exercises {
+		if ex.Name == "" {
+			return nil, errors.New("exercise name is required")
+		}
+		if ex.RepMin <= 0 {
+			return nil, errors.New("rep_min must be greater than 0")
+		}
+		if ex.RepMax < ex.RepMin {
+			return nil, errors.New("rep_max must be at least rep_min")
+		}
+		if !ex.IsBodyweight && ex.GoalWeight < 0 {
+			return nil, errors.New("goal weight must be 0 or greater")
+		}
+	}
+
+	o := orm.NewOrm()
+	t := &Template{ID: id}
+	if err := o.Read(t); err != nil {
+		return nil, errors.New("not found")
+	}
+	t.Name = name
+	t.Focus = focus
+
+	tx, err := o.Begin()
+	if err != nil {
+		return nil, err
+	}
+
+	if _, err := tx.Update(t); err != nil {
+		tx.Rollback()
+		return nil, err
+	}
+
+	if _, err := tx.Raw("DELETE FROM template_exercises WHERE template_id = ?", id).Exec(); err != nil {
+		tx.Rollback()
+		return nil, err
+	}
+
+	for _, ex := range exercises {
+		e := &TemplateExercise{
+			TemplateID:   id,
+			Name:         ex.Name,
+			IsBodyweight: ex.IsBodyweight,
+			GoalWeight:   ex.GoalWeight,
+			WeightUnit:   ex.WeightUnit,
+			RepMin:       ex.RepMin,
+			RepMax:       ex.RepMax,
+			SortOrder:    ex.SortOrder,
+		}
+		if _, err := tx.Insert(e); err != nil {
+			tx.Rollback()
+			return nil, err
+		}
+	}
+
+	if err := tx.Commit(); err != nil {
+		return nil, err
+	}
+	return t, nil
+}
+
 func GetTemplateByID(id int64) (*Template, []*TemplateExercise, error) {
 	o := orm.NewOrm()
 	t := &Template{ID: id}

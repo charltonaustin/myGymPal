@@ -163,6 +163,7 @@ func (m *mockSessionRepo) Delete(id, userID int64) error {
 
 type mockTemplateRepo struct {
 	CreateFn  func(name, focus string, exercises []models.TemplateExerciseInput) (*models.Template, error)
+	UpdateFn  func(id int64, name, focus string, exercises []models.TemplateExerciseInput) (*models.Template, error)
 	GetAllFn  func() ([]*models.Template, error)
 	GetByIDFn func(id int64) (*models.Template, []*models.TemplateExercise, error)
 	DeleteFn  func(id int64) error
@@ -187,6 +188,13 @@ func (m *mockTemplateRepo) GetByID(id int64) (*models.Template, []*models.Templa
 		return m.GetByIDFn(id)
 	}
 	return nil, nil, errors.New("not found")
+}
+
+func (m *mockTemplateRepo) Update(id int64, name, focus string, exercises []models.TemplateExerciseInput) (*models.Template, error) {
+	if m.UpdateFn != nil {
+		return m.UpdateFn(id, name, focus, exercises)
+	}
+	return &models.Template{ID: id, Name: name, Focus: focus}, nil
 }
 
 func (m *mockTemplateRepo) Delete(id int64) error {

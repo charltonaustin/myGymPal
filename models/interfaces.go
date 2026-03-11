@@ -24,6 +24,7 @@ type PhaseRepository interface {
 
 type TemplateRepository interface {
 	Create(name, focus string, exercises []TemplateExerciseInput) (*Template, error)
+	Update(id int64, name, focus string, exercises []TemplateExerciseInput) (*Template, error)
 	GetAll() ([]*Template, error)
 	GetByID(id int64) (*Template, []*TemplateExercise, error)
 	Delete(id int64) error

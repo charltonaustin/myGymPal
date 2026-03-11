@@ -14,8 +14,13 @@
 <main class="container mt-4" style="max-width: 600px;">
     <div class="mb-4">
         <a href="/templates" class="text-muted small">&larr; Templates</a>
-        <h1 class="h4 fw-bold mt-1 mb-1">{{.Template.Name}}</h1>
-        {{if .Template.Focus}}<p class="text-muted small mb-0">{{.Template.Focus}}</p>{{end}}
+        <div class="d-flex align-items-center justify-content-between mt-1">
+            <div>
+                <h1 class="h4 fw-bold mb-1">{{.Template.Name}}</h1>
+                {{if .Template.Focus}}<p class="text-muted small mb-0">{{.Template.Focus}}</p>{{end}}
+            </div>
+            <a href="/templates/{{.Template.ID}}/edit" class="btn btn-outline-secondary btn-sm">Edit</a>
+        </div>
     </div>
 
     {{if .Success}}
