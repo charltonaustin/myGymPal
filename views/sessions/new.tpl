@@ -63,6 +63,17 @@
             </div>
         </div>
 
+        <div class="mb-3">
+            <label class="form-label fw-semibold">Date</label>
+            <input
+                type="date"
+                class="form-control"
+                name="date"
+                value="{{.DefaultDate}}"
+                required
+            >
+        </div>
+
         {{if .Templates}}
         <div class="mb-3">
             <label class="form-label fw-semibold">Template</label>

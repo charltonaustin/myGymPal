@@ -36,51 +36,6 @@
     <div class="alert alert-danger">{{.Error}}</div>
     {{end}}
 
-    <h2 class="h6 fw-semibold text-uppercase text-muted mb-3">Rep Ranges by Phase</h2>
-
-    <form method="POST" action="/programs/{{.Program.ID}}" data-offline-sync>
-        <div class="card">
-            <ul class="list-group list-group-flush">
-                {{range .Phases}}
-                <li class="list-group-item">
-                    <div class="d-flex align-items-center gap-3">
-                        <span class="fw-semibold" style="min-width: 64px;">Phase {{.PhaseNumber}}</span>
-                        <div class="d-flex align-items-center gap-2 flex-grow-1">
-                            <input
-                                type="number"
-                                class="form-control form-control-sm phase-min"
-                                name="rep_min_{{.PhaseNumber}}"
-                                value="{{if gt .RepMin 0}}{{.RepMin}}{{end}}"
-                                placeholder="Min"
-                                min="1"
-                                required
-                                style="max-width: 80px;"
-                            >
-                            <span class="text-muted">–</span>
-                            <input
-                                type="number"
-                                class="form-control form-control-sm phase-max"
-                                name="rep_max_{{.PhaseNumber}}"
-                                value="{{if gt .RepMax 0}}{{.RepMax}}{{end}}"
-                                placeholder="Max"
-                                min="1"
-                                required
-                                style="max-width: 80px;"
-                            >
-                            <span class="text-muted small">reps</span>
-                        </div>
-                        <button type="button" class="btn btn-outline-secondary btn-sm copy-to-all" title="Copy to all phases"><i class="bi bi-copy"></i></button>
-                    </div>
-                </li>
-                {{end}}
-            </ul>
-        </div>
-
-        <div class="mt-3">
-            <button type="submit" class="btn btn-dark btn-sm">Save Rep Ranges</button>
-        </div>
-    </form>
-
     <h2 class="h6 fw-semibold text-uppercase text-muted mt-4 mb-3">Workout History</h2>
 
     {{if .Sessions}}
@@ -107,6 +62,51 @@
     {{else}}
     <p class="text-muted small">No workouts yet. Start one above.</p>
     {{end}}
+
+        <h2 class="h6 fw-semibold text-uppercase text-muted mb-3">Rep Ranges by Phase</h2>
+
+        <form method="POST" action="/programs/{{.Program.ID}}" data-offline-sync>
+            <div class="card">
+                <ul class="list-group list-group-flush">
+                    {{range .Phases}}
+                    <li class="list-group-item">
+                        <div class="d-flex align-items-center gap-3">
+                            <span class="fw-semibold" style="min-width: 64px;">Phase {{.PhaseNumber}}</span>
+                            <div class="d-flex align-items-center gap-2 flex-grow-1">
+                                <input
+                                    type="number"
+                                    class="form-control form-control-sm phase-min"
+                                    name="rep_min_{{.PhaseNumber}}"
+                                    value="{{if gt .RepMin 0}}{{.RepMin}}{{end}}"
+                                    placeholder="Min"
+                                    min="1"
+                                    required
+                                    style="max-width: 80px;"
+                                >
+                                <span class="text-muted">–</span>
+                                <input
+                                    type="number"
+                                    class="form-control form-control-sm phase-max"
+                                    name="rep_max_{{.PhaseNumber}}"
+                                    value="{{if gt .RepMax 0}}{{.RepMax}}{{end}}"
+                                    placeholder="Max"
+                                    min="1"
+                                    required
+                                    style="max-width: 80px;"
+                                >
+                                <span class="text-muted small">reps</span>
+                            </div>
+                            <button type="button" class="btn btn-outline-secondary btn-sm copy-to-all" title="Copy to all phases"><i class="bi bi-copy"></i></button>
+                        </div>
+                    </li>
+                    {{end}}
+                </ul>
+            </div>
+
+            <div class="mt-3">
+                <button type="submit" class="btn btn-dark btn-sm">Save Rep Ranges</button>
+            </div>
+        </form>
 </main>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>

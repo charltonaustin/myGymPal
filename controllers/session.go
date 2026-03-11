@@ -49,6 +49,7 @@ func (c *SessionController) New() {
 	c.Data["WeekNumber"] = week
 	c.Data["WorkoutNumber"] = workoutNum
 	c.Data["Templates"] = templates
+	c.Data["DefaultDate"] = time.Now().Format("2006-01-02")
 	c.TplName = "sessions/new.tpl"
 }
 
@@ -90,9 +91,16 @@ func (c *SessionController) Create() {
 	}
 
 	isDeload := weekNumber == program.WeeksPerPhase
-	now := time.Now().UTC()
 
-	session, err := Sessions.Create(programID, userID.(int64), phaseNumber, weekNumber, workoutNumber, isDeload, now.Truncate(24*time.Hour))
+	dateStr := c.GetString("date")
+	sessionDate, err := time.Parse("2006-01-02", dateStr)
+	if err != nil {
+		sessionDate = time.Now().UTC().Truncate(24 * time.Hour)
+	} else {
+		sessionDate = sessionDate.UTC()
+	}
+
+	session, err := Sessions.Create(programID, userID.(int64), phaseNumber, weekNumber, workoutNumber, isDeload, sessionDate)
 	if err != nil {
 		c.Redirect("/error", 302)
 		return
