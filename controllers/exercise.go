@@ -6,6 +6,7 @@ import (
 	"html/template"
 	"strconv"
 
+	"github.com/beego/beego/v2/core/logs"
 	beego "github.com/beego/beego/v2/server/web"
 )
 
@@ -22,6 +23,7 @@ func (c *ExerciseController) Index() {
 
 	exercises, err := Exercises.GetAllByUser(userID.(int64))
 	if err != nil {
+		logs.Error("ExerciseController.Index: GetAllByUser: %v", err)
 		c.Redirect("/error", 302)
 		return
 	}
@@ -95,6 +97,7 @@ func (c *ExerciseController) Create() {
 	}
 
 	if _, err := Exercises.Create(userID.(int64), name, isBodyweight, goalWeight, exWeightUnit); err != nil {
+		logs.Error("ExerciseController.Create: %v", err)
 		renderForm(err.Error())
 		return
 	}
@@ -192,6 +195,7 @@ func (c *ExerciseController) Update() {
 	}
 
 	if _, err := Exercises.Update(id, userID.(int64), name, isBodyweight, goalWeight, exWeightUnit); err != nil {
+		logs.Error("ExerciseController.Update: %v", err)
 		renderForm(err.Error())
 		return
 	}

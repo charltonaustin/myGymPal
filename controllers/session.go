@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/beego/beego/v2/core/logs"
 	beego "github.com/beego/beego/v2/server/web"
 )
 
@@ -34,6 +35,7 @@ func (c *SessionController) New() {
 
 	count, err := Sessions.CountByProgram(programID)
 	if err != nil {
+		logs.Error("SessionController.New: CountByProgram: %v", err)
 		c.Redirect("/error", 302)
 		return
 	}
@@ -102,6 +104,7 @@ func (c *SessionController) Create() {
 
 	session, err := Sessions.Create(programID, userID.(int64), phaseNumber, weekNumber, workoutNumber, isDeload, sessionDate)
 	if err != nil {
+		logs.Error("SessionController.Create: %v", err)
 		c.Redirect("/error", 302)
 		return
 	}
@@ -334,12 +337,14 @@ func (c *SessionController) LogSet() {
 
 	count, err := SessionExercises.CountSetsByExercise(exerciseID)
 	if err != nil {
+		logs.Error("SessionController.LogSet: CountSetsByExercise: %v", err)
 		c.Redirect(fmt.Sprintf("/sessions/%d", sessionID), 302)
 		return
 	}
 
 	set, err := SessionExercises.LogSet(exerciseID, count+1, actualWeight, weightUnit, actualReps)
 	if err != nil {
+		logs.Error("SessionController.LogSet: LogSet: %v", err)
 		c.Redirect(fmt.Sprintf("/sessions/%d", sessionID), 302)
 		return
 	}

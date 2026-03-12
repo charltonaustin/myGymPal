@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/beego/beego/v2/core/logs"
 	beego "github.com/beego/beego/v2/server/web"
 )
 
@@ -22,6 +23,7 @@ func (c *ProgramController) Index() {
 
 	programs, err := Programs.GetAllByUser(userID.(int64))
 	if err != nil {
+		logs.Error("ProgramController.Index: GetAllByUser: %v", err)
 		c.Redirect("/error", 302)
 		return
 	}
@@ -124,6 +126,7 @@ func (c *ProgramController) Create() {
 	}
 
 	if _, err := Programs.Create(userID.(int64), name, startDate, numPhases, weeksPerPhase, workoutsPerWeek, defaultRepMin, defaultRepMax); err != nil {
+		logs.Error("ProgramController.Create: %v", err)
 		renderForm("Something went wrong. Please try again.")
 		return
 	}
@@ -155,6 +158,7 @@ func (c *ProgramController) Show() {
 
 	phases, err := Phases.GetByProgram(id)
 	if err != nil {
+		logs.Error("ProgramController.Show: GetByProgram: %v", err)
 		c.Redirect("/error", 302)
 		return
 	}
@@ -221,6 +225,7 @@ func (c *ProgramController) UpdatePhases() {
 
 	phases, err := Phases.GetByProgram(id)
 	if err != nil {
+		logs.Error("ProgramController.UpdatePhases: GetByProgram: %v", err)
 		c.Redirect("/error", 302)
 		return
 	}

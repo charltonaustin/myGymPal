@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Usage: ./bin/deploy <remote_user> <server-ip>
+if [ $# -lt 2 ]; then
+    echo "Usage: $0 <remote_user_name> <server-ip>" >&2
+    exit 1
+fi
+
+REMOTE_USER="$1"
+SERVER="$2"
+REMOTE_DIR="/opt/mygympal"
+BINARY_NAME="mygympal"
+SERVICE_NAME="mygympal"
+
+echo "==> Building binary for Linux (amd64)..."
+GOOS=linux GOARCH=amd64 go build -o "bin/$BINARY_NAME" .
+
+echo "==> Copying binary to $REMOTE_USER@$SERVER:$REMOTE_DIR/..."
+scp "bin/$BINARY_NAME" "$REMOTE_USER@$SERVER:$REMOTE_DIR/$BINARY_NAME.new"
+
+echo "==> Syncing views, static assets, and migrations..."
+rsync -az --delete views/      "$REMOTE_USER@$SERVER:$REMOTE_DIR/views/"
+rsync -az --delete static/     "$REMOTE_USER@$SERVER:$REMOTE_DIR/static/"
+rsync -az --delete migrations/ "$REMOTE_USER@$SERVER:$REMOTE_DIR/migrations/"
+
+echo "==> Swapping binary and restarting service..."
+ssh "$REMOTE_USER@$SERVER" bash <<EOF
+    set -e
+    mv "$REMOTE_DIR/$BINARY_NAME" "$REMOTE_DIR/$BINARY_NAME.old"
+    mv "$REMOTE_DIR/$BINARY_NAME.new" "$REMOTE_DIR/$BINARY_NAME"
+    chmod +x "$REMOTE_DIR/$BINARY_NAME"
+    systemctl restart "$SERVICE_NAME"
+    systemctl is-active "$SERVICE_NAME"
+EOF
+
+echo "==> Deploy complete. Migrations will run automatically on startup."
