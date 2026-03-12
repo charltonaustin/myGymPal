@@ -36,6 +36,7 @@ type SessionRepository interface {
 	CountByProgram(programID int64) (int, error)
 	GetByID(id, userID int64) (*Session, error)
 	GetByProgram(programID int64) ([]*Session, error)
+	GetRecentByUser(userID int64, limit int) ([]*RecentSession, error)
 	Delete(id, userID int64) error
 }
 

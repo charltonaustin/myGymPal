@@ -24,6 +24,10 @@ func (r *ormSessionRepository) GetByProgram(programID int64) ([]*Session, error)
 	return GetSessionsByProgram(programID)
 }
 
+func (r *ormSessionRepository) GetRecentByUser(userID int64, limit int) ([]*RecentSession, error) {
+	return GetRecentSessionsByUser(userID, limit)
+}
+
 func (r *ormSessionRepository) Delete(id, userID int64) error {
 	return DeleteSession(id, userID)
 }

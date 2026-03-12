@@ -7,13 +7,15 @@ type DashboardController struct {
 }
 
 func (c *DashboardController) Get() {
-	username := c.GetSession("user_id")
-	if username == nil {
+	userID := c.GetSession("user_id")
+	if userID == nil {
 		c.Redirect("/login", 302)
 		return
 	}
+	recent, _ := Sessions.GetRecentByUser(userID.(int64), 10)
 	c.Data["LoggedIn"] = true
 	c.Data["ActivePage"] = "dashboard"
 	c.Data["Username"] = c.GetSession("username")
+	c.Data["RecentSessions"] = recent
 	c.TplName = "dashboard.tpl"
 }

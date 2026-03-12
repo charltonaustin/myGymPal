@@ -128,11 +128,12 @@ type mockPhaseRepo struct {
 }
 
 type mockSessionRepo struct {
-	CreateFn         func(programID, userID int64, phaseNumber, weekNumber, workoutNumber int, isDeload bool, date time.Time) (*models.Session, error)
-	CountByProgramFn func(programID int64) (int, error)
-	GetByIDFn        func(id, userID int64) (*models.Session, error)
-	GetByProgramFn   func(programID int64) ([]*models.Session, error)
-	DeleteFn         func(id, userID int64) error
+	CreateFn            func(programID, userID int64, phaseNumber, weekNumber, workoutNumber int, isDeload bool, date time.Time) (*models.Session, error)
+	CountByProgramFn    func(programID int64) (int, error)
+	GetByIDFn           func(id, userID int64) (*models.Session, error)
+	GetByProgramFn      func(programID int64) ([]*models.Session, error)
+	GetRecentByUserFn   func(userID int64, limit int) ([]*models.RecentSession, error)
+	DeleteFn            func(id, userID int64) error
 }
 
 func (m *mockSessionRepo) Create(programID, userID int64, phaseNumber, weekNumber, workoutNumber int, isDeload bool, date time.Time) (*models.Session, error) {
@@ -161,6 +162,13 @@ func (m *mockSessionRepo) GetByProgram(programID int64) ([]*models.Session, erro
 		return m.GetByProgramFn(programID)
 	}
 	return []*models.Session{}, nil
+}
+
+func (m *mockSessionRepo) GetRecentByUser(userID int64, limit int) ([]*models.RecentSession, error) {
+	if m.GetRecentByUserFn != nil {
+		return m.GetRecentByUserFn(userID, limit)
+	}
+	return []*models.RecentSession{}, nil
 }
 
 func (m *mockSessionRepo) Delete(id, userID int64) error {

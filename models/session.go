@@ -105,6 +105,31 @@ func DeleteSession(id, userID int64) error {
 	return err
 }
 
+// RecentSession bundles a session with its program name for dashboard display.
+type RecentSession struct {
+	ID            int64     `orm:"column(id)"`
+	ProgramID     int64     `orm:"column(program_id)"`
+	PhaseNumber   int       `orm:"column(phase_number)"`
+	WeekNumber    int       `orm:"column(week_number)"`
+	WorkoutNumber int       `orm:"column(workout_number)"`
+	IsDeload      bool      `orm:"column(is_deload)"`
+	Date          time.Time `orm:"column(date)"`
+	ProgramName   string    `orm:"column(program_name)"`
+}
+
+func GetRecentSessionsByUser(userID int64, limit int) ([]*RecentSession, error) {
+	o := orm.NewOrm()
+	var rows []*RecentSession
+	_, err := o.Raw(`
+		SELECT s.*, p.name AS program_name
+		FROM sessions s
+		JOIN programs p ON p.id = s.program_id
+		WHERE s.user_id = ?
+		ORDER BY s.date DESC, s.id DESC
+		LIMIT ?`, userID, limit).QueryRows(&rows)
+	return rows, err
+}
+
 func GetSessionByID(id, userID int64) (*Session, error) {
 	o := orm.NewOrm()
 	s := &Session{ID: id}
