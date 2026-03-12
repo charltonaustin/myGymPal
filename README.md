@@ -1,8 +1,11 @@
 # My Gym Pal
 
-A mobile-friendly web app for tracking gym workouts. Log exercises, track weight progression, and manage training programs across phases and weeks.
+A mobile-friendly web app for tracking gym workouts. Log exercises, track weight progression, and manage training
+programs across phases and weeks.
 
 Built with Go, Beego v2, and PostgreSQL.
+
+Try it at https://my-gym-pal.org/
 
 ---
 
@@ -55,38 +58,8 @@ go test ./models/... -v
 go test ./controllers/... -v
 ```
 
-Tests run against a separate `mygympal_test` database (configured in `conf/app.test.conf`) so they never touch development data. The test database is created automatically when the Docker container first starts.
-
----
-
-## Project Structure
-
-```
-myGymPal/
-├── conf/
-│   └── app.conf              # Beego config (port, DB credentials, sessions)
-├── controllers/
-│   ├── auth.go               # Register, login, logout
-│   ├── dashboard.go          # Dashboard (requires auth)
-│   └── default.go            # Homepage
-├── docs/
-│   ├── user-stories.md       # Product requirements
-│   └── data-model.md         # PostgreSQL schema design
-├── migrations/               # SQL migration files (auto-applied on startup)
-├── models/
-│   ├── db.go                 # Database init and migration runner
-│   └── user.go               # User model
-├── routers/
-│   └── router.go             # Route registration
-├── views/
-│   ├── auth/
-│   │   ├── login.tpl
-│   │   └── register.tpl
-│   ├── dashboard.tpl
-│   └── index.tpl
-├── docker-compose.yml        # PostgreSQL container
-└── main.go
-```
+Tests run against a separate `mygympal_test` database (configured in `conf/app.test.conf`) so they never touch
+development data. The test database is created automatically when the Docker container first starts.
 
 ---
 
@@ -94,16 +67,16 @@ myGymPal/
 
 All configuration lives in `conf/app.conf`. Key settings:
 
-| Key | Default | Description |
-|---|---|---|
-| `httpaddr` | `localhost` | Server bind address |
-| `httpport` | `8080` | Server port |
-| `runmode` | `dev` | `dev` or `prod` |
-| `db_host` | `localhost` | PostgreSQL host |
-| `db_port` | `5432` | PostgreSQL port |
-| `db_name` | `mygympal` | Database name |
-| `db_user` | `postgres` | Database user |
-| `db_password` | `postgres` | Database password |
+| Key           | Default     | Description         |
+|---------------|-------------|---------------------|
+| `httpaddr`    | `localhost` | Server bind address |
+| `httpport`    | `8080`      | Server port         |
+| `runmode`     | `dev`       | `dev` or `prod`     |
+| `db_host`     | `localhost` | PostgreSQL host     |
+| `db_port`     | `5432`      | PostgreSQL port     |
+| `db_name`     | `mygympal`  | Database name       |
+| `db_user`     | `postgres`  | Database user       |
+| `db_password` | `postgres`  | Database password   |
 
 ---
 
