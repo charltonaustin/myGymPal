@@ -27,7 +27,7 @@
         {{range .Exercises}}
         <div class="list-group-item d-flex justify-content-between align-items-center">
             <div class="flex-grow-1">
-                <div class="fw-semibold">
+                <div class="fw-semibold text-capitalize">
                     {{.Name}}
                     {{if .IsBodyweight}}<span class="badge bg-secondary ms-1">Bodyweight</span>{{end}}
                 </div>

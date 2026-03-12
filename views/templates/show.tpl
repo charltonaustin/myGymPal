@@ -34,7 +34,7 @@
         <ul class="list-group list-group-flush">
             {{range .Exercises}}
             <li class="list-group-item">
-                <div class="fw-semibold">{{.Name}}</div>
+                <div class="fw-semibold text-capitalize">{{.Name}}</div>
                 {{if .IsBodyweight}}<div class="text-muted small">Bodyweight</div>{{end}}
             </li>
             {{end}}

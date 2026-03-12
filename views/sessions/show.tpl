@@ -32,7 +32,7 @@
     <div class="card mb-3">
         <div class="card-body pb-2">
             <div class="d-flex align-items-baseline justify-content-between mb-2">
-                <h2 class="h6 fw-semibold mb-0">{{.Exercise.Name}}</h2>
+                <h2 class="h6 fw-semibold mb-0 text-capitalize">{{.Exercise.Name}}</h2>
                 <span class="text-muted small">
                 {{if gt .Exercise.GoalWeight 0.0}}
                 Goal: {{.Exercise.GoalWeight}} {{.Exercise.WeightUnit}}
