@@ -8,12 +8,55 @@ import (
 	beego "github.com/beego/beego/v2/server/web"
 )
 
+var blockOrder = []string{"main", "abs", "cardio", "stretch"}
+
+var blockLabels = map[string]string{
+	"main":    "Exercises",
+	"abs":     "Abs",
+	"cardio":  "Cardio",
+	"stretch": "Stretch",
+}
+
+type templateExerciseBlock struct {
+	Block     string
+	Label     string
+	Exercises []*models.TemplateExercise
+}
+
+func groupTemplateExercises(exercises []*models.TemplateExercise) []templateExerciseBlock {
+	byBlock := map[string][]*models.TemplateExercise{}
+	for _, ex := range exercises {
+		b := ex.Block
+		if b == "" {
+			b = "main"
+		}
+		byBlock[b] = append(byBlock[b], ex)
+	}
+	var blocks []templateExerciseBlock
+	for _, key := range blockOrder {
+		if exs, ok := byBlock[key]; ok {
+			blocks = append(blocks, templateExerciseBlock{Block: key, Label: blockLabels[key], Exercises: exs})
+		}
+	}
+	return blocks
+}
+
+func validBlock(b string) string {
+	switch b {
+	case "abs", "cardio", "stretch":
+		return b
+	default:
+		return "main"
+	}
+}
+
 func exercisesToForms(exercises []*models.TemplateExercise) []exerciseForm {
 	forms := make([]exerciseForm, len(exercises))
 	for i, ex := range exercises {
 		forms[i] = exerciseForm{
 			Name:         ex.Name,
 			IsBodyweight: ex.IsBodyweight,
+			Block:        ex.Block,
 		}
 	}
 	return forms
@@ -27,6 +70,7 @@ type TemplateController struct {
 type exerciseForm struct {
 	Name         string
 	IsBodyweight bool
+	Block        string
 }
 
 func (c *TemplateController) Index() {
@@ -62,7 +106,7 @@ func (c *TemplateController) New() {
 
 	c.Data["LoggedIn"] = true
 	c.Data["ActivePage"] = "templates"
-	c.Data["Exercises"] = []exerciseForm{{}}
+	c.Data["Exercises"] = []exerciseForm{{Block: "main"}}
 	c.Data["ExerciseLibraryJSON"] = exerciseLibraryJSON(userID.(int64))
 	c.TplName = "templates/new.tpl"
 }
@@ -87,10 +131,12 @@ func (c *TemplateController) Create() {
 			continue
 		}
 		isBodyweight := c.GetString(fmt.Sprintf("is_bodyweight_%d", i)) != ""
-		forms = append(forms, exerciseForm{Name: exName, IsBodyweight: isBodyweight})
+		block := validBlock(c.GetString(fmt.Sprintf("block_%d", i)))
+		forms = append(forms, exerciseForm{Name: exName, IsBodyweight: isBodyweight, Block: block})
 		inputs = append(inputs, models.TemplateExerciseInput{
 			Name:         exName,
 			IsBodyweight: isBodyweight,
+			Block:        block,
 			SortOrder:    len(inputs),
 		})
 	}
@@ -150,7 +196,7 @@ func (c *TemplateController) Show() {
 	c.Data["LoggedIn"] = true
 	c.Data["ActivePage"] = "templates"
 	c.Data["Template"] = tmpl
-	c.Data["Exercises"] = exercises
+	c.Data["ExerciseBlocks"] = groupTemplateExercises(exercises)
 	c.TplName = "templates/show.tpl"
 }
 
@@ -215,10 +261,12 @@ func (c *TemplateController) Update() {
 			continue
 		}
 		isBodyweight := c.GetString(fmt.Sprintf("is_bodyweight_%d", i)) != ""
-		forms = append(forms, exerciseForm{Name: exName, IsBodyweight: isBodyweight})
+		block := validBlock(c.GetString(fmt.Sprintf("block_%d", i)))
+		forms = append(forms, exerciseForm{Name: exName, IsBodyweight: isBodyweight, Block: block})
 		inputs = append(inputs, models.TemplateExerciseInput{
 			Name:         exName,
 			IsBodyweight: isBodyweight,
+			Block:        block,
 			SortOrder:    len(inputs),
 		})
 	}

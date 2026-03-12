@@ -10,6 +10,32 @@ import (
 	beego "github.com/beego/beego/v2/server/web"
 )
 
+type sessionExerciseBlock struct {
+	Block     string
+	Label     string
+	Exercises []*models.SessionExerciseView
+}
+
+func groupSessionExercises(exercises []*models.SessionExerciseView) []sessionExerciseBlock {
+	byBlock := map[string][]*models.SessionExerciseView{}
+	for _, ev := range exercises {
+		b := ev.Exercise.Block
+		if b == "" {
+			b = "main"
+		}
+		byBlock[b] = append(byBlock[b], ev)
+	}
+	var blocks []sessionExerciseBlock
+	for _, key := range blockOrder {
+		exs := byBlock[key]
+		// Always include the cardio block so the section is always visible.
+		if exs != nil || key == "cardio" {
+			blocks = append(blocks, sessionExerciseBlock{Block: key, Label: blockLabels[key], Exercises: exs})
+		}
+	}
+	return blocks
+}
+
 type SessionController struct {
 	beego.Controller
 }
@@ -134,7 +160,7 @@ func (c *SessionController) Create() {
 					goalWeight = libEx.GoalWeight
 					weightUnit = libEx.WeightUnit
 				}
-				SessionExercises.Create(session.ID, ex.Name, ex.IsBodyweight, goalWeight, weightUnit, goalReps)
+				SessionExercises.Create(session.ID, ex.Name, ex.IsBodyweight, goalWeight, weightUnit, goalReps, ex.Block)
 			}
 		}
 	}
@@ -235,7 +261,7 @@ func (c *SessionController) Show() {
 	c.Data["ActivePage"] = "programs"
 	c.Data["Session"] = session
 	c.Data["Program"] = program
-	c.Data["Exercises"] = exercises
+	c.Data["ExerciseBlocks"] = groupSessionExercises(exercises)
 	c.Data["WeightUnit"] = weightUnit
 	c.Data["PhaseRepMin"] = phaseRepMin
 	c.Data["PhaseRepMax"] = phaseRepMax
@@ -278,7 +304,8 @@ func (c *SessionController) AddExercise() {
 	goalWeightStr := c.GetString("goal_weight")
 	goalWeight, _ := strconv.ParseFloat(goalWeightStr, 64)
 
-	_, err = SessionExercises.Create(sessionID, name, isBodyweight, goalWeight, weightUnit, 0)
+	block := validBlock(c.GetString("block"))
+	_, err = SessionExercises.Create(sessionID, name, isBodyweight, goalWeight, weightUnit, 0, block)
 	if err != nil {
 		c.Redirect(fmt.Sprintf("/sessions/%d", sessionID), 302)
 		return
@@ -367,6 +394,118 @@ func (c *SessionController) LogSet() {
 		return
 	}
 
+	c.Redirect(fmt.Sprintf("/sessions/%d", sessionID), 302)
+}
+
+func (c *SessionController) AddCardioActivity() {
+	userID := c.GetSession("user_id")
+	if userID == nil {
+		c.Redirect("/login", 302)
+		return
+	}
+
+	sessionID, err := strconv.ParseInt(c.Ctx.Input.Param(":id"), 10, 64)
+	if err != nil {
+		c.Redirect("/programs", 302)
+		return
+	}
+
+	if _, err := Sessions.GetByID(sessionID, userID.(int64)); err != nil {
+		c.Redirect("/programs", 302)
+		return
+	}
+
+	name := c.GetString("name")
+	if name == "" {
+		name = "cardio"
+	}
+	cardioType := c.GetString("cardio_type")
+	goalDuration, _ := strconv.Atoi(c.GetString("goal_duration"))
+	actualDuration, _ := strconv.Atoi(c.GetString("actual_duration"))
+
+	ex, err := SessionExercises.Create(sessionID, name, false, 0, "lb", 0, "cardio")
+	if err != nil {
+		logs.Error("SessionController.AddCardioActivity: Create: %v", err)
+		c.Redirect(fmt.Sprintf("/sessions/%d", sessionID), 302)
+		return
+	}
+
+	if _, err := SessionExercises.LogCardio(ex.ID, cardioType, goalDuration, actualDuration); err != nil {
+		logs.Error("SessionController.AddCardioActivity: LogCardio: %v", err)
+	}
+
+	c.Redirect(fmt.Sprintf("/sessions/%d", sessionID), 302)
+}
+
+func (c *SessionController) LogCardio() {
+	userID := c.GetSession("user_id")
+	if userID == nil {
+		c.Redirect("/login", 302)
+		return
+	}
+
+	sessionID, err := strconv.ParseInt(c.Ctx.Input.Param(":id"), 10, 64)
+	if err != nil {
+		c.Redirect("/programs", 302)
+		return
+	}
+
+	exerciseID, err := strconv.ParseInt(c.Ctx.Input.Param(":eid"), 10, 64)
+	if err != nil {
+		c.Redirect(fmt.Sprintf("/sessions/%d", sessionID), 302)
+		return
+	}
+
+	// Verify session ownership.
+	if _, err := Sessions.GetByID(sessionID, userID.(int64)); err != nil {
+		c.Redirect("/programs", 302)
+		return
+	}
+
+	// Verify the exercise belongs to this session.
+	exercise, err := SessionExercises.GetByID(exerciseID)
+	if err != nil || exercise.SessionID != sessionID {
+		c.Redirect(fmt.Sprintf("/sessions/%d", sessionID), 302)
+		return
+	}
+
+	cardioType := c.GetString("cardio_type")
+	goalDuration, _ := strconv.Atoi(c.GetString("goal_duration"))
+	actualDuration, _ := strconv.Atoi(c.GetString("actual_duration"))
+
+	if _, err := SessionExercises.LogCardio(exerciseID, cardioType, goalDuration, actualDuration); err != nil {
+		logs.Error("SessionController.LogCardio: %v", err)
+	}
+
+	c.Redirect(fmt.Sprintf("/sessions/%d", sessionID), 302)
+}
+
+func (c *SessionController) DeleteCardioLog() {
+	userID := c.GetSession("user_id")
+	if userID == nil {
+		c.Redirect("/login", 302)
+		return
+	}
+
+	sessionID, err := strconv.ParseInt(c.Ctx.Input.Param(":id"), 10, 64)
+	if err != nil {
+		c.Redirect("/programs", 302)
+		return
+	}
+
+	logID, err := strconv.ParseInt(c.Ctx.Input.Param(":lid"), 10, 64)
+	if err != nil {
+		c.Redirect(fmt.Sprintf("/sessions/%d", sessionID), 302)
+		return
+	}
+
+	// Verify session ownership.
+	if _, err := Sessions.GetByID(sessionID, userID.(int64)); err != nil {
+		c.Redirect("/programs", 302)
+		return
+	}
+
+	SessionExercises.DeleteCardioLog(logID)
 	c.Redirect(fmt.Sprintf("/sessions/%d", sessionID), 302)
 }
 

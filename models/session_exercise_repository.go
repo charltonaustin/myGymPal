@@ -6,8 +6,8 @@ func NewSessionExerciseRepository() SessionExerciseRepository {
 	return &ormSessionExerciseRepository{}
 }
 
-func (r *ormSessionExerciseRepository) Create(sessionID int64, name string, isBodyweight bool, goalWeight float64, weightUnit string, goalReps int) (*SessionExercise, error) {
-	return CreateSessionExercise(sessionID, name, isBodyweight, goalWeight, weightUnit, goalReps)
+func (r *ormSessionExerciseRepository) Create(sessionID int64, name string, isBodyweight bool, goalWeight float64, weightUnit string, goalReps int, block string) (*SessionExercise, error) {
+	return CreateSessionExercise(sessionID, name, isBodyweight, goalWeight, weightUnit, goalReps, block)
 }
 
 func (r *ormSessionExerciseRepository) GetBySession(sessionID int64) ([]*SessionExerciseView, error) {
@@ -28,4 +28,12 @@ func (r *ormSessionExerciseRepository) CountSetsByExercise(exerciseID int64) (in
 
 func (r *ormSessionExerciseRepository) DeleteSet(setID int64) error {
 	return DeleteSessionSet(setID)
+}
+
+func (r *ormSessionExerciseRepository) LogCardio(sessionExerciseID int64, cardioType string, goalDuration, actualDuration int) (*CardioLog, error) {
+	return LogCardioEntry(sessionExerciseID, cardioType, goalDuration, actualDuration)
+}
+
+func (r *ormSessionExerciseRepository) DeleteCardioLog(id int64) error {
+	return DeleteCardioLog(id)
 }

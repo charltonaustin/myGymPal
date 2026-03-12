@@ -15,6 +15,7 @@ type SessionExercise struct {
 	GoalWeight   float64 `orm:"column(goal_weight)"`
 	WeightUnit   string  `orm:"column(weight_unit)"`
 	GoalReps     int     `orm:"column(goal_reps)"`
+	Block        string  `orm:"column(block)"`
 	SortOrder    int     `orm:"column(sort_order)"`
 }
 
@@ -35,18 +36,22 @@ func (s *SessionSet) TableName() string {
 	return "session_sets"
 }
 
-// SessionExerciseView bundles an exercise with its logged sets for display.
+// SessionExerciseView bundles an exercise with its logged sets and cardio logs for display.
 type SessionExerciseView struct {
-	Exercise *SessionExercise
-	Sets     []*SessionSet
+	Exercise   *SessionExercise
+	Sets       []*SessionSet
+	CardioLogs []*CardioLog
 }
 
 func init() {
 	orm.RegisterModel(&SessionExercise{}, &SessionSet{})
 }
 
-func CreateSessionExercise(sessionID int64, name string, isBodyweight bool, goalWeight float64, weightUnit string, goalReps int) (*SessionExercise, error) {
+func CreateSessionExercise(sessionID int64, name string, isBodyweight bool, goalWeight float64, weightUnit string, goalReps int, block string) (*SessionExercise, error) {
 	name = strings.ToLower(strings.TrimSpace(name))
+	if block == "" {
+		block = "main"
+	}
 	o := orm.NewOrm()
 	n, _ := o.QueryTable(&SessionExercise{}).Filter("SessionID", sessionID).Count()
 	e := &SessionExercise{
@@ -56,6 +61,7 @@ func CreateSessionExercise(sessionID int64, name string, isBodyweight bool, goal
 		GoalWeight:   goalWeight,
 		WeightUnit:   weightUnit,
 		GoalReps:     goalReps,
+		Block:        block,
 		SortOrder:    int(n),
 	}
 	_, err := o.Insert(e)
@@ -73,7 +79,11 @@ func GetSessionExercisesWithSets(sessionID int64) ([]*SessionExerciseView, error
 	for i, ex := range exercises {
 		var sets []*SessionSet
 		o.QueryTable(&SessionSet{}).Filter("SessionExerciseID", ex.ID).OrderBy("SetNumber").All(&sets)
-		views[i] = &SessionExerciseView{Exercise: ex, Sets: sets}
+		var cardioLogs []*CardioLog
+		if ex.Block == "cardio" {
+			o.QueryTable(&CardioLog{}).Filter("SessionExerciseID", ex.ID).OrderBy("CreatedAt").All(&cardioLogs)
+		}
+		views[i] = &SessionExerciseView{Exercise: ex, Sets: sets, CardioLogs: cardioLogs}
 	}
 	return views, nil
 }

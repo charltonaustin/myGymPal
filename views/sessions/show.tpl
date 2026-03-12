@@ -27,6 +27,70 @@
         </p>
     </div>
 
+    {{range .ExerciseBlocks}}
+    {{if ne .Block "main"}}
+    <h2 class="h6 fw-semibold text-uppercase text-muted mt-4 mb-3">{{.Label}}</h2>
+    {{end}}
+
+    {{if eq .Block "cardio"}}
+
+    {{range .Exercises}}
+    {{if .CardioLogs}}
+    {{$exID := .Exercise.ID}}
+    {{$exName := .Exercise.Name}}
+    {{range .CardioLogs}}
+    <div class="card mb-2">
+        <div class="card-body py-2">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <span class="fw-semibold text-capitalize small">{{$exName}}</span>
+                    {{if .CardioType}}<span class="text-muted small ms-2 text-capitalize">{{.CardioType}}</span>{{end}}
+                </div>
+                <div class="d-flex align-items-center gap-3">
+                    <span class="text-muted small">
+                        {{if gt .GoalDuration 0}}{{.GoalDuration}}→{{end}}{{.ActualDuration}} min
+                    </span>
+                    <form method="POST" action="/sessions/{{$.Session.ID}}/exercises/{{$exID}}/cardio/{{.ID}}/delete" class="d-inline">
+                        <button type="submit" class="btn btn-link btn-sm text-danger p-0" title="Delete"><i class="bi bi-trash"></i></button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    {{end}}
+    {{end}}
+    {{end}}
+
+    <div class="card mb-3 p-3">
+        <form method="POST" action="/sessions/{{$.Session.ID}}/cardio" class="d-flex flex-column gap-2">
+            <input type="text" name="name" class="form-control form-control-sm" placeholder="Activity (e.g. run, bike) — optional">
+            <div class="d-flex gap-2 align-items-end flex-wrap">
+                <div>
+                    <label class="form-label small mb-1">Type</label>
+                    <select name="cardio_type" class="form-select form-select-sm" style="width: 150px;">
+                        <option value="">—</option>
+                        <option value="steady state">Steady State</option>
+                        <option value="fartlek">Fartlek</option>
+                        <option value="intervals">Intervals</option>
+                        <option value="hiit">HIIT</option>
+                        <option value="easy">Easy / Recovery</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="form-label small mb-1">Goal (min)</label>
+                    <input type="number" name="goal_duration" class="form-control form-control-sm" placeholder="0" min="0" style="width: 80px;">
+                </div>
+                <div>
+                    <label class="form-label small mb-1">Actual (min)</label>
+                    <input type="number" name="actual_duration" class="form-control form-control-sm" placeholder="0" min="0" required style="width: 80px;">
+                </div>
+                <button type="submit" class="btn btn-dark btn-sm mb-0">Log</button>
+            </div>
+        </form>
+    </div>
+
+    {{else}}
+
     {{range .Exercises}}
     {{$exID := .Exercise.ID}}
     <div class="card mb-3">
@@ -91,15 +155,26 @@
     </div>
     {{end}}
 
+    {{end}}
+    {{end}}
+
     <h2 class="h6 fw-semibold text-uppercase text-muted mt-4 mb-3">Add Exercise</h2>
     <form method="POST" action="/sessions/{{.Session.ID}}/exercises">
         <div class="card mb-3 p-3">
             <div class="mb-2">
                 <input type="text" name="name" class="form-control" placeholder="Exercise name" required>
             </div>
-            <div class="form-check mb-2">
-                <input type="checkbox" class="form-check-input add-ex-bw-check" name="is_bodyweight" id="add_ex_bw">
-                <label class="form-check-label" for="add_ex_bw">Bodyweight exercise</label>
+            <div class="d-flex align-items-center gap-3 mb-2">
+                <div class="form-check mb-0">
+                    <input type="checkbox" class="form-check-input add-ex-bw-check" name="is_bodyweight" id="add_ex_bw">
+                    <label class="form-check-label" for="add_ex_bw">Bodyweight</label>
+                </div>
+                <select name="block" class="form-select form-select-sm" style="width: auto;">
+                    <option value="main">Main</option>
+                    <option value="abs">Abs</option>
+                    <option value="cardio">Cardio</option>
+                    <option value="stretch">Stretch</option>
+                </select>
             </div>
             <div class="add-ex-weight-row">
                 <div class="input-group input-group-sm">

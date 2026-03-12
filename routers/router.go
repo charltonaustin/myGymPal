@@ -48,6 +48,9 @@ func Register() {
 	beego.Router("/sessions/:id/exercises", &controllers.SessionController{}, "post:AddExercise")
 	beego.Router("/sessions/:id/exercises/:eid/sets", &controllers.SessionController{}, "post:LogSet")
 	beego.Router("/sessions/:id/exercises/:eid/sets/:sid/delete", &controllers.SessionController{}, "post:DeleteSet")
+	beego.Router("/sessions/:id/cardio", &controllers.SessionController{}, "post:AddCardioActivity")
+	beego.Router("/sessions/:id/exercises/:eid/cardio", &controllers.SessionController{}, "post:LogCardio")
+	beego.Router("/sessions/:id/exercises/:eid/cardio/:lid/delete", &controllers.SessionController{}, "post:DeleteCardioLog")
 
 	// Exercises
 	beego.Router("/exercises", &controllers.ExerciseController{}, "get:Index")

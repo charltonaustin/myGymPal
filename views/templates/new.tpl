@@ -65,15 +65,23 @@
                     >
                 </div>
                 <div class="d-flex align-items-center justify-content-between">
-                    <div class="form-check mb-0">
-                        <input
-                            type="checkbox"
-                            class="form-check-input bw-check"
-                            name="is_bodyweight_{{$i}}"
-                            id="bw_{{$i}}"
-                            {{if $ex.IsBodyweight}}checked{{end}}
-                        >
-                        <label class="form-check-label" for="bw_{{$i}}">Bodyweight</label>
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="form-check mb-0">
+                            <input
+                                type="checkbox"
+                                class="form-check-input bw-check"
+                                name="is_bodyweight_{{$i}}"
+                                id="bw_{{$i}}"
+                                {{if $ex.IsBodyweight}}checked{{end}}
+                            >
+                            <label class="form-check-label" for="bw_{{$i}}">Bodyweight</label>
+                        </div>
+                        <select class="form-select form-select-sm" name="block_{{$i}}" style="width: auto;">
+                            <option value="main" {{if or (eq $ex.Block "") (eq $ex.Block "main")}}selected{{end}}>Main</option>
+                            <option value="abs" {{if eq $ex.Block "abs"}}selected{{end}}>Abs</option>
+                            <option value="cardio" {{if eq $ex.Block "cardio"}}selected{{end}}>Cardio</option>
+                            <option value="stretch" {{if eq $ex.Block "stretch"}}selected{{end}}>Stretch</option>
+                        </select>
                     </div>
                     <button type="button" class="btn btn-sm btn-outline-danger remove-exercise">Remove</button>
                 </div>
@@ -141,9 +149,17 @@
                 <input type="text" class="form-control" name="exercise_name_${i}" placeholder="Exercise name" list="exercise-list" required>
             </div>
             <div class="d-flex align-items-center justify-content-between">
-                <div class="form-check mb-0">
-                    <input type="checkbox" class="form-check-input bw-check" name="is_bodyweight_${i}" id="bw_${i}">
-                    <label class="form-check-label" for="bw_${i}">Bodyweight</label>
+                <div class="d-flex align-items-center gap-3">
+                    <div class="form-check mb-0">
+                        <input type="checkbox" class="form-check-input bw-check" name="is_bodyweight_${i}" id="bw_${i}">
+                        <label class="form-check-label" for="bw_${i}">Bodyweight</label>
+                    </div>
+                    <select class="form-select form-select-sm" name="block_${i}" style="width: auto;">
+                        <option value="main" selected>Main</option>
+                        <option value="abs">Abs</option>
+                        <option value="cardio">Cardio</option>
+                        <option value="stretch">Stretch</option>
+                    </select>
                 </div>
                 <button type="button" class="btn btn-sm btn-outline-danger remove-exercise">Remove</button>
             </div>

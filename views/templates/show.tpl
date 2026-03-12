@@ -27,10 +27,10 @@
     <div class="alert alert-success alert-dismissible fade show" id="success-alert">{{.Success}}</div>
     {{end}}
 
-    <h2 class="h6 fw-semibold text-uppercase text-muted mb-3">Exercises</h2>
-
-    {{if .Exercises}}
-    <div class="card">
+    {{if .ExerciseBlocks}}
+    {{range .ExerciseBlocks}}
+    <h2 class="h6 fw-semibold text-uppercase text-muted mb-3">{{.Label}}</h2>
+    <div class="card mb-4">
         <ul class="list-group list-group-flush">
             {{range .Exercises}}
             <li class="list-group-item">
@@ -40,6 +40,7 @@
             {{end}}
         </ul>
     </div>
+    {{end}}
     {{else}}
     <p class="text-muted">No exercises in this template.</p>
     {{end}}

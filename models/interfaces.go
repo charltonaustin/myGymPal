@@ -51,10 +51,12 @@ type ExerciseRepository interface {
 }
 
 type SessionExerciseRepository interface {
-	Create(sessionID int64, name string, isBodyweight bool, goalWeight float64, weightUnit string, goalReps int) (*SessionExercise, error)
+	Create(sessionID int64, name string, isBodyweight bool, goalWeight float64, weightUnit string, goalReps int, block string) (*SessionExercise, error)
 	GetBySession(sessionID int64) ([]*SessionExerciseView, error)
 	GetByID(exerciseID int64) (*SessionExercise, error)
 	LogSet(exerciseID int64, setNumber int, actualWeight float64, weightUnit string, actualReps int) (*SessionSet, error)
 	CountSetsByExercise(exerciseID int64) (int, error)
 	DeleteSet(setID int64) error
+	LogCardio(sessionExerciseID int64, cardioType string, goalDuration, actualDuration int) (*CardioLog, error)
+	DeleteCardioLog(id int64) error
 }
