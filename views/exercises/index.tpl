@@ -12,7 +12,7 @@
 
 {{template "partials/navbar.tpl" .}}
 
-<main class="container mt-4" style="max-width: 600px;">
+<main class="container mt-4 mb-4" style="max-width: 600px;">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1 class="h4 fw-bold mb-0">Exercise Library</h1>
         <a href="/exercises/new" class="btn btn-dark btn-sm">+ New Exercise</a>
