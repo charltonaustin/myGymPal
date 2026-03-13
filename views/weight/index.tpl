@@ -19,6 +19,15 @@
     <div class="alert alert-success alert-dismissible fade show" id="success-alert">{{.Success}}</div>
     {{end}}
 
+    {{if .WeightAvg}}
+    <div class="card mb-4">
+        <div class="card-body">
+            <h2 class="h6 fw-semibold mb-1">{{.WeightAvg.Days}}-Day Average</h2>
+            <p class="display-6 fw-bold mb-0 mt-2">{{printf "%.1f" .WeightAvg.Weight}} <span class="fs-5 fw-normal text-muted">{{.WeightAvg.Unit}}</span></p>
+        </div>
+    </div>
+    {{end}}
+
     <div class="card mb-4">
         <div class="card-body">
             <h2 class="h6 fw-semibold mb-3">Log Weight</h2>

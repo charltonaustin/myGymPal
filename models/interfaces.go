@@ -34,6 +34,7 @@ type TemplateRepository interface {
 type SessionRepository interface {
 	Create(programID, userID int64, phaseNumber, weekNumber, workoutNumber int, isDeload bool, date time.Time) (*Session, error)
 	CountByProgram(programID int64) (int, error)
+	LatestByProgram(programID int64) (*Session, error)
 	GetByID(id, userID int64) (*Session, error)
 	GetByProgram(programID int64) ([]*Session, error)
 	GetRecentByUser(userID int64, limit int) ([]*RecentSession, error)
@@ -56,6 +57,11 @@ type BodyWeightRepository interface {
 	GetByID(id, userID int64) (*BodyWeight, error)
 	Update(id, userID int64, weight float64, weightUnit string) (*BodyWeight, error)
 	Delete(id, userID int64) error
+}
+
+type MacroGoalRepository interface {
+	Get(userID int64) (*MacroGoal, error)
+	Upsert(userID int64, protein, carbs, fat float64) (*MacroGoal, error)
 }
 
 type SessionExerciseRepository interface {

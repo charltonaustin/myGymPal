@@ -16,6 +16,10 @@ func (r *ormSessionRepository) CountByProgram(programID int64) (int, error) {
 	return CountSessionsByProgram(programID)
 }
 
+func (r *ormSessionRepository) LatestByProgram(programID int64) (*Session, error) {
+	return GetLatestSessionByProgram(programID)
+}
+
 func (r *ormSessionRepository) GetByID(id, userID int64) (*Session, error) {
 	return GetSessionByID(id, userID)
 }

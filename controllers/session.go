@@ -59,14 +59,29 @@ func (c *SessionController) New() {
 		return
 	}
 
-	count, err := Sessions.CountByProgram(programID)
-	if err != nil {
-		logs.Error("SessionController.New: CountByProgram: %v", err)
-		c.Redirect("/error", 302)
-		return
+	var phase, week, workoutNum int
+	logMode := c.GetString("sequential") == "1"
+	if logMode {
+		count, err := Sessions.CountByProgram(programID)
+		if err != nil {
+			logs.Error("SessionController.New: CountByProgram: %v", err)
+			c.Redirect("/error", 302)
+			return
+		}
+		phase, week, workoutNum, _ = models.CalculateNextSession(count, program.WeeksPerPhase, program.WorkoutsPerWeek)
+	} else {
+		last, err := Sessions.LatestByProgram(programID)
+		if err != nil {
+			logs.Error("SessionController.New: LatestByProgram: %v", err)
+			c.Redirect("/error", 302)
+			return
+		}
+		if last != nil {
+			phase, week, workoutNum, _ = models.CalculateNextSessionFromLast(last, program.WeeksPerPhase, program.WorkoutsPerWeek)
+		} else {
+			phase, week, workoutNum = 1, 1, 1
+		}
 	}
-
-	phase, week, workoutNum, _ := models.CalculateNextSession(count, program.WeeksPerPhase, program.WorkoutsPerWeek)
 
 	templates, _ := Templates.GetAll()
 
@@ -78,6 +93,7 @@ func (c *SessionController) New() {
 	c.Data["WorkoutNumber"] = workoutNum
 	c.Data["Templates"] = templates
 	c.Data["DefaultDate"] = time.Now().Format("2006-01-02")
+	c.Data["LogMode"] = logMode
 	c.TplName = "sessions/new.tpl"
 }
 

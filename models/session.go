@@ -64,6 +64,30 @@ func CalculateNextSession(sessionCount, weeksPerPhase, workoutsPerWeek int) (pha
 	return
 }
 
+// CalculateNextSessionFromLast returns the next phase, week, workout number, and deload
+// flag by incrementing from the most recent session's values.
+func CalculateNextSessionFromLast(last *Session, weeksPerPhase, workoutsPerWeek int) (phase, week, workoutNumber int, isDeload bool) {
+	if weeksPerPhase <= 0 {
+		weeksPerPhase = 8
+	}
+	if workoutsPerWeek <= 0 {
+		workoutsPerWeek = 4
+	}
+	phase = last.PhaseNumber
+	week = last.WeekNumber
+	workoutNumber = last.WorkoutNumber + 1
+	if workoutNumber > workoutsPerWeek {
+		workoutNumber = 1
+		week++
+		if week > weeksPerPhase {
+			week = 1
+			phase++
+		}
+	}
+	isDeload = week == weeksPerPhase
+	return
+}
+
 func CreateSession(programID, userID int64, phaseNumber, weekNumber, workoutNumber int, isDeload bool, date time.Time) (*Session, error) {
 	o := orm.NewOrm()
 	s := &Session{
@@ -90,6 +114,16 @@ func GetSessionsByProgram(programID int64) ([]*Session, error) {
 	var sessions []*Session
 	_, err := o.QueryTable(&Session{}).Filter("ProgramID", programID).OrderBy("-Date", "-ID").All(&sessions)
 	return sessions, err
+}
+
+func GetLatestSessionByProgram(programID int64) (*Session, error) {
+	o := orm.NewOrm()
+	var s Session
+	err := o.QueryTable(&Session{}).Filter("ProgramID", programID).OrderBy("-Date", "-ID").Limit(1).One(&s)
+	if err == orm.ErrNoRows {
+		return nil, nil
+	}
+	return &s, err
 }
 
 func DeleteSession(id, userID int64) error {

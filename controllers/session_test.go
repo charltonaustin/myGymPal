@@ -189,7 +189,7 @@ func TestSessionNew_ProgramNotFound(t *testing.T) {
 func TestSessionNew_ShowsForm(t *testing.T) {
 	t.Cleanup(resetMocks)
 	setProgramGetByIDWithDates("My Program", 4, 8, testProgramDate)
-	setSessionCountByProgram(3)
+	setSessionLatestByProgram(1, 1, 3)
 	cookies := loginAs(t, "session_new_ok", "lb")
 
 	w := getPath("/programs/1/sessions/new", cookies)
@@ -199,7 +199,7 @@ func TestSessionNew_ShowsForm(t *testing.T) {
 	assert.Contains(t, body, `name="phase_number"`)
 	assert.Contains(t, body, `name="week_number"`)
 	assert.Contains(t, body, `name="workout_number"`)
-	// Workout number default = count+1 = 4
+	// Last workout was #3, so next is #4
 	assert.Contains(t, body, `value="4"`)
 }
 

@@ -24,7 +24,10 @@
                     &middot; {{.Program.WeeksPerPhase}} week{{if gt .Program.WeeksPerPhase 1}}s{{end}}/phase
                 </p>
             </div>
-            <a href="/programs/{{.Program.ID}}/sessions/new" class="btn btn-dark btn-sm ms-3 flex-shrink-0">Start Workout</a>
+            <div class="d-flex gap-2 ms-3 flex-shrink-0">
+                <a href="/programs/{{.Program.ID}}/sessions/new" class="btn btn-dark btn-sm">Start Workout</a>
+                <a href="/programs/{{.Program.ID}}/sessions/new?sequential=1" class="btn btn-outline-secondary btn-sm">Log Workout</a>
+            </div>
         </div>
     </div>
 

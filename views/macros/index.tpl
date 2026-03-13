@@ -15,6 +15,82 @@
 <main class="container mt-4" style="max-width: 600px;">
     <h1 class="h4 fw-bold mb-4">Macros</h1>
 
+    {{if .Summary}}
+    <div class="card mb-4">
+        <div class="card-body">
+            <h2 class="h6 fw-semibold mb-1">{{.Summary.Days}}-Day Average</h2>
+            <table class="table table-sm mb-0 mt-2">
+                <thead>
+                    <tr class="text-muted small">
+                        <th class="fw-normal ps-0">Macro</th>
+                        <th class="fw-normal text-end">Avg</th>
+                        {{if .Summary.HasGoal}}<th class="fw-normal text-end">Goal</th><th class="fw-normal text-end">%</th>{{end}}
+                    </tr>
+                </thead>
+                <tbody class="small">
+                    <tr>
+                        <td class="ps-0">Protein</td>
+                        <td class="text-end">{{printf "%.0f" .Summary.Protein.Actual}}g</td>
+                        {{if .Summary.HasGoal}}
+                        <td class="text-end text-muted">{{printf "%.0f" .Summary.Protein.Goal}}g</td>
+                        <td class="text-end fw-semibold {{if .Summary.Protein.AtGoal}}text-success{{else}}text-danger{{end}}">{{.Summary.Protein.Pct}}%</td>
+                        {{end}}
+                    </tr>
+                    <tr>
+                        <td class="ps-0">Carbs</td>
+                        <td class="text-end">{{printf "%.0f" .Summary.Carbs.Actual}}g</td>
+                        {{if .Summary.HasGoal}}
+                        <td class="text-end text-muted">{{printf "%.0f" .Summary.Carbs.Goal}}g</td>
+                        <td class="text-end fw-semibold {{if .Summary.Carbs.AtGoal}}text-success{{else}}text-danger{{end}}">{{.Summary.Carbs.Pct}}%</td>
+                        {{end}}
+                    </tr>
+                    <tr>
+                        <td class="ps-0">Fat</td>
+                        <td class="text-end">{{printf "%.0f" .Summary.Fat.Actual}}g</td>
+                        {{if .Summary.HasGoal}}
+                        <td class="text-end text-muted">{{printf "%.0f" .Summary.Fat.Goal}}g</td>
+                        <td class="text-end fw-semibold {{if .Summary.Fat.AtGoal}}text-success{{else}}text-danger{{end}}">{{.Summary.Fat.Pct}}%</td>
+                        {{end}}
+                    </tr>
+                    <tr class="border-top">
+                        <td class="ps-0">Calories</td>
+                        <td class="text-end">{{printf "%.0f" .Summary.Calories.Actual}} kcal</td>
+                        {{if .Summary.HasGoal}}
+                        <td class="text-end text-muted">{{printf "%.0f" .Summary.Calories.Goal}} kcal</td>
+                        <td class="text-end fw-semibold {{if .Summary.Calories.AtGoal}}text-success{{else}}text-danger{{end}}">{{.Summary.Calories.Pct}}%</td>
+                        {{end}}
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {{end}}
+
+    <div class="card mb-4">
+        <div class="card-body">
+            <h2 class="h6 fw-semibold mb-3">Daily Goals</h2>
+            <form method="POST" action="/macros/goals">
+                <div class="row g-2 align-items-end">
+                    <div class="col-auto">
+                        <label class="form-label small mb-1">Protein (g)</label>
+                        <input type="number" name="protein_goal" class="form-control form-control-sm" value="{{if .Goal}}{{printf "%.0f" .Goal.Protein}}{{end}}" placeholder="0" min="0" step="1" style="width: 90px;">
+                    </div>
+                    <div class="col-auto">
+                        <label class="form-label small mb-1">Carbs (g)</label>
+                        <input type="number" name="carbs_goal" class="form-control form-control-sm" value="{{if .Goal}}{{printf "%.0f" .Goal.Carbs}}{{end}}" placeholder="0" min="0" step="1" style="width: 90px;">
+                    </div>
+                    <div class="col-auto">
+                        <label class="form-label small mb-1">Fat (g)</label>
+                        <input type="number" name="fat_goal" class="form-control form-control-sm" value="{{if .Goal}}{{printf "%.0f" .Goal.Fat}}{{end}}" placeholder="0" min="0" step="1" style="width: 90px;">
+                    </div>
+                    <div class="col-auto">
+                        <button type="submit" class="btn btn-outline-secondary btn-sm">Save</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <div class="card mb-4">
         <div class="card-body">
             <h2 class="h6 fw-semibold mb-3">Log Food</h2>
@@ -62,13 +138,21 @@
     {{if .Days}}
     {{range .Days}}
     <div class="mb-4">
+        {{$day := .}}
         <div class="d-flex align-items-baseline justify-content-between mb-2">
             <h2 class="h6 fw-semibold mb-0">{{.Date.Format "Mon, Jan 2, 2006"}}</h2>
             <span class="text-muted small">
+                {{with $.Goal}}
+                P {{printf "%.0f" $day.Protein}}/{{printf "%.0f" .Protein}}g &middot;
+                C {{printf "%.0f" $day.Carbs}}/{{printf "%.0f" .Carbs}}g &middot;
+                F {{printf "%.0f" $day.Fat}}/{{printf "%.0f" .Fat}}g &middot;
+                {{printf "%.0f" $day.Calories}} kcal
+                {{else}}
                 P {{printf "%.0f" .Protein}}g &middot;
                 C {{printf "%.0f" .Carbs}}g &middot;
                 F {{printf "%.0f" .Fat}}g &middot;
                 {{printf "%.0f" .Calories}} kcal
+                {{end}}
             </span>
         </div>
         <div class="card">

@@ -14,7 +14,7 @@
 <main class="container mt-4" style="max-width: 480px;">
     <div class="mb-4">
         <a href="/programs/{{.Program.ID}}" class="text-muted small">&larr; {{.Program.Name}}</a>
-        <h1 class="h4 fw-bold mt-1 mb-0">Start Workout</h1>
+        <h1 class="h4 fw-bold mt-1 mb-0">{{if .LogMode}}Log Workout{{else}}Start Workout{{end}}</h1>
     </div>
 
     <form method="POST" action="/programs/{{.Program.ID}}/sessions">
@@ -86,7 +86,7 @@
         </div>
         {{end}}
 
-        <button type="submit" class="btn btn-dark w-100">Start Workout</button>
+        <button type="submit" class="btn btn-dark w-100">{{if .LogMode}}Log Workout{{else}}Start Workout{{end}}</button>
     </form>
 </main>
 

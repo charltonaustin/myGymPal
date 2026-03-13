@@ -1,12 +1,38 @@
 package controllers
 
 import (
+	"myGymPal/models"
 	"strconv"
 	"time"
 
 	"github.com/beego/beego/v2/core/logs"
 	beego "github.com/beego/beego/v2/server/web"
 )
+
+type weightAverage struct {
+	Days   int
+	Weight float64
+	Unit   string
+}
+
+func computeWeightAverage(entries []*models.BodyWeight) *weightAverage {
+	n := len(entries)
+	if n == 0 {
+		return nil
+	}
+	if n > 3 {
+		n = 3
+	}
+	var sum float64
+	for i := 0; i < n; i++ {
+		sum += entries[i].Weight
+	}
+	return &weightAverage{
+		Days:   n,
+		Weight: sum / float64(n),
+		Unit:   entries[0].WeightUnit,
+	}
+}
 
 type WeightController struct {
 	beego.Controller
@@ -40,6 +66,7 @@ func (c *WeightController) Index() {
 	c.Data["Entries"] = entries
 	c.Data["WeightUnit"] = weightUnit
 	c.Data["DefaultDate"] = time.Now().Format("2006-01-02")
+	c.Data["WeightAvg"] = computeWeightAverage(entries)
 	c.TplName = "weight/index.tpl"
 }
 

@@ -22,6 +22,66 @@ type macroDay struct {
 	Calories float64
 }
 
+type macroSummaryRow struct {
+	Actual float64
+	Goal   float64
+	Pct    int
+	AtGoal bool
+}
+
+type macroSummary struct {
+	Days     int
+	Protein  macroSummaryRow
+	Carbs    macroSummaryRow
+	Fat      macroSummaryRow
+	Calories macroSummaryRow
+	HasGoal  bool
+}
+
+func buildMacroSummary(days []macroDay, goal *models.MacroGoal) *macroSummary {
+	n := len(days)
+	if n == 0 {
+		return nil
+	}
+	if n > 3 {
+		n = 3
+	}
+	var p, c, f float64
+	for i := 0; i < n; i++ {
+		p += days[i].Protein
+		c += days[i].Carbs
+		f += days[i].Fat
+	}
+	dn := float64(n)
+	s := &macroSummary{
+		Days:     n,
+		Protein:  macroSummaryRow{Actual: p / dn},
+		Carbs:    macroSummaryRow{Actual: c / dn},
+		Fat:      macroSummaryRow{Actual: f / dn},
+		Calories: macroSummaryRow{Actual: (4*p + 4*c + 9*f) / dn},
+	}
+	if goal != nil {
+		s.HasGoal = true
+		pct := func(actual, goal float64) (int, bool) {
+			if goal <= 0 {
+				return 0, true
+			}
+			p := int(actual / goal * 100)
+			return p, p >= 100
+		}
+		goalCal := 4*goal.Protein + 4*goal.Carbs + 9*goal.Fat
+		s.Protein.Goal = goal.Protein
+		s.Protein.Pct, s.Protein.AtGoal = pct(s.Protein.Actual, goal.Protein)
+		s.Carbs.Goal = goal.Carbs
+		s.Carbs.Pct, s.Carbs.AtGoal = pct(s.Carbs.Actual, goal.Carbs)
+		s.Fat.Goal = goal.Fat
+		s.Fat.Pct, s.Fat.AtGoal = pct(s.Fat.Actual, goal.Fat)
+		s.Calories.Goal = goalCal
+		s.Calories.Pct, s.Calories.AtGoal = pct(s.Calories.Actual, goalCal)
+	}
+	return s
+}
+
 func groupMacrosByDay(entries []*models.MacroEntry) []macroDay {
 	var days []macroDay
 	index := map[string]int{}
@@ -61,11 +121,38 @@ func (c *MacroController) Index() {
 		logs.Error("MacroController.Index: GetAllByUser: %v", err)
 	}
 
+	goal, err := MacroGoals.Get(userID.(int64))
+	if err != nil {
+		logs.Error("MacroController.Index: MacroGoals.Get: %v", err)
+	}
+
+	days := groupMacrosByDay(entries)
+
 	c.Data["LoggedIn"] = true
 	c.Data["ActivePage"] = "macros"
-	c.Data["Days"] = groupMacrosByDay(entries)
+	c.Data["Days"] = days
 	c.Data["DefaultDate"] = time.Now().Format("2006-01-02")
+	c.Data["Goal"] = goal
+	c.Data["Summary"] = buildMacroSummary(days, goal)
 	c.TplName = "macros/index.tpl"
+}
+
+func (c *MacroController) SaveGoal() {
+	userID := c.GetSession("user_id")
+	if userID == nil {
+		c.Redirect("/login", 302)
+		return
+	}
+
+	protein, _ := strconv.ParseFloat(c.GetString("protein_goal"), 64)
+	carbs, _ := strconv.ParseFloat(c.GetString("carbs_goal"), 64)
+	fat, _ := strconv.ParseFloat(c.GetString("fat_goal"), 64)
+
+	if _, err := MacroGoals.Upsert(userID.(int64), protein, carbs, fat); err != nil {
+		logs.Error("MacroController.SaveGoal: %v", err)
+	}
+
+	c.Redirect("/macros", 302)
 }
 
 func (c *MacroController) Create() {

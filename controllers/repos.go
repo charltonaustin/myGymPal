@@ -15,4 +15,5 @@ var (
 	Exercises        models.ExerciseRepository
 	BodyWeights      models.BodyWeightRepository
 	Macros           models.MacroRepository
+	MacroGoals       models.MacroGoalRepository
 )

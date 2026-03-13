@@ -50,8 +50,8 @@ func (c *ProgramController) New() {
 	c.Data["ActivePage"] = "programs"
 	c.Data["WeeksPerPhase"] = "8"
 	c.Data["WorkoutsPerWeek"] = "4"
-	c.Data["DefaultRepMin"] = ""
-	c.Data["DefaultRepMax"] = ""
+	c.Data["DefaultRepMin"] = "12"
+	c.Data["DefaultRepMax"] = "14"
 	c.TplName = "programs/new.tpl"
 }
 

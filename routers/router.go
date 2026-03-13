@@ -17,6 +17,7 @@ func Register() {
 	controllers.Exercises = models.NewExerciseRepository()
 	controllers.BodyWeights = models.NewBodyWeightRepository()
 	controllers.Macros = models.NewMacroRepository()
+	controllers.MacroGoals = models.NewMacroGoalRepository()
 
 	// PWA assets (must be served from root path for correct service worker scope)
 	beego.Router("/sw.js", &controllers.PWAController{}, "get:ServiceWorker")
@@ -57,6 +58,7 @@ func Register() {
 
 	// Macros
 	beego.Router("/macros", &controllers.MacroController{}, "get:Index;post:Create")
+	beego.Router("/macros/goals", &controllers.MacroController{}, "post:SaveGoal")
 	beego.Router("/macros/:id", &controllers.MacroController{}, "post:Update")
 	beego.Router("/macros/:id/delete", &controllers.MacroController{}, "post:Delete")
 

@@ -130,6 +130,7 @@ type mockPhaseRepo struct {
 type mockSessionRepo struct {
 	CreateFn          func(programID, userID int64, phaseNumber, weekNumber, workoutNumber int, isDeload bool, date time.Time) (*models.Session, error)
 	CountByProgramFn  func(programID int64) (int, error)
+	LatestByProgramFn func(programID int64) (*models.Session, error)
 	GetByIDFn         func(id, userID int64) (*models.Session, error)
 	GetByProgramFn    func(programID int64) ([]*models.Session, error)
 	GetRecentByUserFn func(userID int64, limit int) ([]*models.RecentSession, error)
@@ -148,6 +149,13 @@ func (m *mockSessionRepo) CountByProgram(programID int64) (int, error) {
 		return m.CountByProgramFn(programID)
 	}
 	return 0, nil
+}
+
+func (m *mockSessionRepo) LatestByProgram(programID int64) (*models.Session, error) {
+	if m.LatestByProgramFn != nil {
+		return m.LatestByProgramFn(programID)
+	}
+	return nil, nil
 }
 
 func (m *mockSessionRepo) GetByID(id, userID int64) (*models.Session, error) {
@@ -369,6 +377,47 @@ func (m *mockExerciseRepo) Delete(id, userID int64) error {
 	return nil
 }
 
+// --- Minimal mocks for BodyWeight, Macro, and MacroGoal repos ---
+
+type mockBodyWeightRepo struct{}
+
+func (m *mockBodyWeightRepo) Create(userID int64, date time.Time, weight float64, weightUnit string) (*models.BodyWeight, error) {
+	return &models.BodyWeight{}, nil
+}
+func (m *mockBodyWeightRepo) GetAllByUser(userID int64) ([]*models.BodyWeight, error) {
+	return []*models.BodyWeight{}, nil
+}
+func (m *mockBodyWeightRepo) GetByID(id, userID int64) (*models.BodyWeight, error) {
+	return nil, errors.New("not found")
+}
+func (m *mockBodyWeightRepo) Update(id, userID int64, weight float64, weightUnit string) (*models.BodyWeight, error) {
+	return &models.BodyWeight{}, nil
+}
+func (m *mockBodyWeightRepo) Delete(id, userID int64) error { return nil }
+
+type mockMacroRepo struct{}
+
+func (m *mockMacroRepo) Create(userID int64, date time.Time, foodName string, servingWeight float64, servingUnit string, protein, carbs, fat float64) (*models.MacroEntry, error) {
+	return &models.MacroEntry{}, nil
+}
+func (m *mockMacroRepo) GetAllByUser(userID int64) ([]*models.MacroEntry, error) {
+	return []*models.MacroEntry{}, nil
+}
+func (m *mockMacroRepo) GetByID(id, userID int64) (*models.MacroEntry, error) {
+	return nil, errors.New("not found")
+}
+func (m *mockMacroRepo) Update(id, userID int64, foodName string, servingWeight float64, servingUnit string, protein, carbs, fat float64) (*models.MacroEntry, error) {
+	return &models.MacroEntry{}, nil
+}
+func (m *mockMacroRepo) Delete(id, userID int64) error { return nil }
+
+type mockMacroGoalRepo struct{}
+
+func (m *mockMacroGoalRepo) Get(userID int64) (*models.MacroGoal, error) { return nil, nil }
+func (m *mockMacroGoalRepo) Upsert(userID int64, protein, carbs, fat float64) (*models.MacroGoal, error) {
+	return &models.MacroGoal{}, nil
+}
+
 // --- Global mock instances ---
 
 var (
@@ -379,6 +428,9 @@ var (
 	mockTemplates        = &mockTemplateRepo{}
 	mockSessionExercises = &mockSessionExerciseRepo{}
 	mockExercises        = &mockExerciseRepo{}
+	mockBodyWeights      = &mockBodyWeightRepo{}
+	mockMacros           = &mockMacroRepo{}
+	mockMacroGoals       = &mockMacroGoalRepo{}
 )
 
 func resetMocks() {
@@ -564,6 +616,18 @@ func setSessionsGetByProgram(count int) {
 func setSessionCountByProgram(count int) {
 	mockSessions.CountByProgramFn = func(programID int64) (int, error) {
 		return count, nil
+	}
+}
+
+// setSessionLatestByProgram makes LatestByProgram return a session with the given values.
+func setSessionLatestByProgram(phase, week, workoutNumber int) {
+	mockSessions.LatestByProgramFn = func(programID int64) (*models.Session, error) {
+		return &models.Session{
+			ProgramID:     programID,
+			PhaseNumber:   phase,
+			WeekNumber:    week,
+			WorkoutNumber: workoutNumber,
+		}, nil
 	}
 }
 
