@@ -36,11 +36,11 @@
                 {{end}}
             </div>
             <div class="d-flex gap-2 flex-shrink-0 ms-3">
-                <a href="/exercises/{{.ID}}/edit" class="btn btn-outline-secondary btn-sm">Edit</a>
-                <button type="button" class="btn btn-outline-danger btn-sm"
+                <a href="/exercises/{{.ID}}/edit" class="btn btn-link btn-sm p-0 text-secondary"><i class="bi bi-pencil"></i></a>
+                <button type="button" class="btn btn-link btn-sm p-0 text-danger"
                     data-bs-toggle="modal" data-bs-target="#deleteModal"
                     data-exercise-id="{{.ID}}" data-exercise-name="{{.Name}}">
-                    Delete
+                    <i class="bi bi-trash"></i>
                 </button>
             </div>
         </div>

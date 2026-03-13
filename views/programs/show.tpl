@@ -42,13 +42,13 @@
     <div class="card">
         <ul class="list-group list-group-flush">
             {{range .Sessions}}
-            <li class="list-group-item d-flex align-items-center gap-2">
-                <a href="/sessions/{{.ID}}" class="text-decoration-none flex-grow-1 d-flex justify-content-between align-items-center">
+            <li class="list-group-item list-group-item-action d-flex align-items-center gap-2">
+                <a href="/sessions/{{.ID}}" class="text-decoration-none text-dark flex-grow-1 d-flex justify-content-between align-items-center">
                     <div>
                         <span class="fw-semibold">Workout #{{.WorkoutNumber}}</span>
                         <span class="text-muted ms-2 small">Phase {{.PhaseNumber}} · Week {{.WeekNumber}}{{if .IsDeload}} · <span class="text-warning">Deload</span>{{end}}</span>
                     </div>
-                    <span class="text-muted small">{{.Date.Format "Jan 2, 2006"}}</span>
+                    <span class="text-muted small d-flex align-items-center gap-2">{{.Date.Format "Jan 2, 2006"}} </span>
                 </a>
                 <form method="POST" action="/sessions/{{.ID}}/delete" class="flex-shrink-0">
                     <button type="submit" class="btn btn-link text-danger p-0" title="Delete workout" onclick="return confirm('Delete Workout #{{.WorkoutNumber}}?')">
@@ -103,7 +103,7 @@
                 </ul>
             </div>
 
-            <div class="mt-3">
+            <div class="mt-3 mb-3">
                 <button type="submit" class="btn btn-dark btn-sm">Save Rep Ranges</button>
             </div>
         </form>

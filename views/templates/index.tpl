@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Templates — My Gym Pal</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
     <link rel="manifest" href="/manifest.json">
 </head>
 <body>
@@ -24,15 +25,15 @@
     {{if .Templates}}
     <div class="list-group">
         {{range .Templates}}
-        <div class="list-group-item d-flex justify-content-between align-items-center">
+        <div class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
             <a href="/templates/{{.ID}}" class="text-decoration-none text-dark flex-grow-1">
                 <div class="fw-semibold">{{.Name}}</div>
                 {{if .Focus}}<div class="text-muted small">{{.Focus}}</div>{{end}}
             </a>
-            <button type="button" class="btn btn-outline-danger btn-sm ms-3 flex-shrink-0"
+            <button type="button" class="btn btn-link btn-sm p-0 text-danger ms-3 flex-shrink-0"
                 data-bs-toggle="modal" data-bs-target="#deleteModal"
                 data-template-id="{{.ID}}" data-template-name="{{.Name}}">
-                Delete
+                <i class="bi bi-trash"></i>
             </button>
         </div>
         {{end}}
