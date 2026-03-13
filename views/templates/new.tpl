@@ -60,7 +60,6 @@
                         name="exercise_name_{{$i}}"
                         value="{{$ex.Name}}"
                         placeholder="Exercise name"
-                        list="exercise-list"
                         required
                     >
                 </div>
@@ -98,8 +97,6 @@
             <a href="/templates" class="btn btn-outline-secondary">Cancel</a>
         </div>
     </form>
-
-    <datalist id="exercise-list"></datalist>
 </main>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
@@ -110,13 +107,7 @@
     // Exercise library for autocomplete
     const exerciseLibraryArr = {{.ExerciseLibraryJSON}};
     const exerciseLibrary = {};
-    const datalist = document.getElementById('exercise-list');
-    exerciseLibraryArr.forEach(ex => {
-        exerciseLibrary[ex.name] = ex;
-        const opt = document.createElement('option');
-        opt.value = ex.name;
-        datalist.appendChild(opt);
-    });
+    exerciseLibraryArr.forEach(ex => { exerciseLibrary[ex.name] = ex; });
 
     function autofillFromLibrary(row, nameVal) {
         const entry = exerciseLibrary[nameVal];
@@ -125,14 +116,56 @@
         if (bwCheck) bwCheck.checked = entry.isBodyweight;
     }
 
+    function attachAutocomplete(input, row) {
+        const wrapper = input.parentElement;
+        wrapper.style.position = 'relative';
+        let dropdown = null;
+
+        function showDropdown(matches) {
+            if (!dropdown) {
+                dropdown = document.createElement('div');
+                dropdown.className = 'list-group shadow';
+                dropdown.style.cssText = 'position:absolute;top:100%;left:0;right:0;z-index:1050;max-height:220px;overflow-y:auto;border-radius:0 0 .375rem .375rem;';
+                wrapper.appendChild(dropdown);
+            }
+            dropdown.innerHTML = '';
+            matches.forEach(ex => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'list-group-item list-group-item-action py-2 px-3';
+                btn.style.fontSize = '0.95rem';
+                btn.textContent = ex.name;
+                btn.addEventListener('mousedown', e => {
+                    e.preventDefault();
+                    input.value = ex.name;
+                    autofillFromLibrary(row, ex.name);
+                    hideDropdown();
+                });
+                dropdown.appendChild(btn);
+            });
+        }
+
+        function hideDropdown() {
+            if (dropdown) { dropdown.remove(); dropdown = null; }
+        }
+
+        input.addEventListener('input', () => {
+            const val = input.value.toLowerCase().trim();
+            if (!val) { hideDropdown(); return; }
+            const matches = exerciseLibraryArr.filter(ex => ex.name.includes(val)).slice(0, 10);
+            if (matches.length) showDropdown(matches);
+            else hideDropdown();
+        });
+
+        input.addEventListener('blur', () => setTimeout(hideDropdown, 150));
+    }
+
     let exerciseCount = parseInt(document.getElementById('exercise_count').value, 10);
 
     function bindRow(row) {
         row.querySelector('.remove-exercise').addEventListener('click', () => row.remove());
         const nameInput = row.querySelector('[name^="exercise_name_"]');
-        if (nameInput) {
-            nameInput.addEventListener('change', () => autofillFromLibrary(row, nameInput.value));
-        }
+        if (nameInput) attachAutocomplete(nameInput, row);
     }
 
     document.querySelectorAll('.exercise-row').forEach(bindRow);
@@ -146,7 +179,7 @@
         row.dataset.index = i;
         row.innerHTML = `
             <div class="mb-2">
-                <input type="text" class="form-control" name="exercise_name_${i}" placeholder="Exercise name" list="exercise-list" required>
+                <input type="text" class="form-control" name="exercise_name_${i}" placeholder="Exercise name" required>
             </div>
             <div class="d-flex align-items-center justify-content-between">
                 <div class="d-flex align-items-center gap-3">

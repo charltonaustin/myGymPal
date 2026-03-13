@@ -16,6 +16,7 @@ func Register() {
 	controllers.SessionExercises = models.NewSessionExerciseRepository()
 	controllers.Exercises = models.NewExerciseRepository()
 	controllers.BodyWeights = models.NewBodyWeightRepository()
+	controllers.Macros = models.NewMacroRepository()
 
 	// PWA assets (must be served from root path for correct service worker scope)
 	beego.Router("/sw.js", &controllers.PWAController{}, "get:ServiceWorker")
@@ -53,6 +54,11 @@ func Register() {
 	beego.Router("/sessions/:id/cardio", &controllers.SessionController{}, "post:AddCardioActivity")
 	beego.Router("/sessions/:id/exercises/:eid/cardio", &controllers.SessionController{}, "post:LogCardio")
 	beego.Router("/sessions/:id/exercises/:eid/cardio/:lid/delete", &controllers.SessionController{}, "post:DeleteCardioLog")
+
+	// Macros
+	beego.Router("/macros", &controllers.MacroController{}, "get:Index;post:Create")
+	beego.Router("/macros/:id", &controllers.MacroController{}, "post:Update")
+	beego.Router("/macros/:id/delete", &controllers.MacroController{}, "post:Delete")
 
 	// Weight
 	beego.Router("/weight", &controllers.WeightController{}, "get:Index;post:Create")

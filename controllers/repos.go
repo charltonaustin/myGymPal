@@ -14,4 +14,5 @@ var (
 	SessionExercises models.SessionExerciseRepository
 	Exercises        models.ExerciseRepository
 	BodyWeights      models.BodyWeightRepository
+	Macros           models.MacroRepository
 )
