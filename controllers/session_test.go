@@ -149,7 +149,7 @@ func TestSessionCreate_SetsGoalRepsFromPhase(t *testing.T) {
 	setTemplateGetByID(testTemplateID, "Upper Body A", "Upper", 2)
 	setPhasesGetByProgram(4) // phases 1–4 all have RepMin=10
 	var capturedGoalReps []int
-	mockSessionExercises.CreateFn = func(sessionID int64, name string, isBodyweight bool, goalWeight float64, weightUnit string, goalReps int, block string) (*models.SessionExercise, error) {
+	mockSessionExercises.CreateFn = func(sessionID int64, name string, isBodyweight bool, goalWeight float64, weightUnit string, goalReps int, block string, isTimeBased bool, goalSeconds int) (*models.SessionExercise, error) {
 		capturedGoalReps = append(capturedGoalReps, goalReps)
 		return &models.SessionExercise{ID: testExerciseID, SessionID: sessionID, Name: name, GoalReps: goalReps}, nil
 	}

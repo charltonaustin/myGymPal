@@ -37,7 +37,7 @@
                 <div class="invalid-feedback">Exercise name is required.</div>
             </div>
 
-            <div class="form-check mb-3">
+            <div class="form-check mb-2">
                 <input
                     type="checkbox"
                     class="form-check-input"
@@ -48,7 +48,18 @@
                 <label class="form-check-label" for="is_bodyweight">Bodyweight exercise</label>
             </div>
 
-            <div class="weight-row mb-3 {{if .IsBodyweight}}d-none{{end}}">
+            <div class="form-check mb-3">
+                <input
+                    type="checkbox"
+                    class="form-check-input"
+                    id="is_time_based"
+                    name="is_time_based"
+                    {{if .IsTimeBased}}checked{{end}}
+                >
+                <label class="form-check-label" for="is_time_based">Time-based exercise</label>
+            </div>
+
+            <div class="weight-row mb-3 {{if or .IsBodyweight .IsTimeBased}}d-none{{end}}">
                 <label class="form-label">Goal Weight</label>
                 <div class="input-group input-group-sm">
                     <input
@@ -67,6 +78,24 @@
                     </select>
                 </div>
             </div>
+
+            <div class="time-row mb-3 {{if not .IsTimeBased}}d-none{{end}}">
+                <label class="form-label">Goal Duration</label>
+                <div class="d-flex gap-2 align-items-center">
+                    <div class="text-center">
+                        <input type="number" name="goal_h" class="form-control form-control-sm text-center" value="{{.GoalHours}}" min="0" step="1" style="width: 64px;">
+                        <div class="text-muted" style="font-size: 0.75rem;">hrs</div>
+                    </div>
+                    <div class="text-center">
+                        <input type="number" name="goal_m" class="form-control form-control-sm text-center" value="{{.GoalMinutes}}" min="0" max="59" step="1" style="width: 64px;">
+                        <div class="text-muted" style="font-size: 0.75rem;">min</div>
+                    </div>
+                    <div class="text-center">
+                        <input type="number" name="goal_s" class="form-control form-control-sm text-center" value="{{.GoalSecsRemainder}}" min="0" max="59" step="1" style="width: 64px;">
+                        <div class="text-muted" style="font-size: 0.75rem;">sec</div>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <div class="d-flex gap-2 mt-3">
@@ -82,10 +111,17 @@
     if (alertEl) setTimeout(() => alertEl.remove(), 4000);
 
     const bwCheck = document.getElementById('is_bodyweight');
+    const tbCheck = document.getElementById('is_time_based');
     const weightRow = document.querySelector('.weight-row');
-    bwCheck.addEventListener('change', () => {
-        weightRow.classList.toggle('d-none', bwCheck.checked);
-    });
+    const timeRow = document.querySelector('.time-row');
+
+    function updateGoalRows() {
+        weightRow.classList.toggle('d-none', bwCheck.checked || tbCheck.checked);
+        timeRow.classList.toggle('d-none', !tbCheck.checked);
+    }
+
+    bwCheck.addEventListener('change', updateGoalRows);
+    tbCheck.addEventListener('change', updateGoalRows);
 
     document.getElementById('exercise-form').addEventListener('submit', function (e) {
         if (!this.checkValidity()) {

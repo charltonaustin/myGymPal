@@ -1,11 +1,24 @@
 package routers
 
 import (
+	"fmt"
 	"myGymPal/controllers"
 	"myGymPal/models"
 
 	beego "github.com/beego/beego/v2/server/web"
 )
+
+func init() {
+	beego.AddFuncMap("fmtDuration", func(secs int) string {
+		h := secs / 3600
+		m := (secs % 3600) / 60
+		s := secs % 60
+		if h > 0 {
+			return fmt.Sprintf("%d:%02d:%02d", h, m, s)
+		}
+		return fmt.Sprintf("%d:%02d", m, s)
+	})
+}
 
 func Register() {
 	controllers.Users = models.NewUserRepository()

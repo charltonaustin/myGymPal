@@ -30,8 +30,11 @@
                 <div class="fw-semibold text-capitalize">
                     {{.Name}}
                     {{if .IsBodyweight}}<span class="badge bg-secondary ms-1">Bodyweight</span>{{end}}
+                    {{if .IsTimeBased}}<span class="badge bg-info ms-1">Time-based</span>{{end}}
                 </div>
-                {{if not .IsBodyweight}}
+                {{if .IsTimeBased}}
+                <div class="text-muted small">Goal: {{fmtDuration .GoalSeconds}}</div>
+                {{else if not .IsBodyweight}}
                 <div class="text-muted small">Goal: {{.GoalWeight}} {{.WeightUnit}}</div>
                 {{end}}
             </div>

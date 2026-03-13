@@ -17,6 +17,8 @@ type SessionExercise struct {
 	GoalReps     int     `orm:"column(goal_reps)"`
 	Block        string  `orm:"column(block)"`
 	SortOrder    int     `orm:"column(sort_order)"`
+	IsTimeBased  bool    `orm:"column(is_time_based)"`
+	GoalSeconds  int     `orm:"column(goal_seconds)"`
 }
 
 func (s *SessionExercise) TableName() string {
@@ -30,6 +32,8 @@ type SessionSet struct {
 	ActualWeight      float64 `orm:"column(actual_weight)"`
 	WeightUnit        string  `orm:"column(weight_unit)"`
 	ActualReps        int     `orm:"column(actual_reps)"`
+	ActualSeconds     int     `orm:"column(actual_seconds)"`
+	ActivityType      string  `orm:"column(activity_type)"`
 }
 
 func (s *SessionSet) TableName() string {
@@ -47,7 +51,7 @@ func init() {
 	orm.RegisterModel(&SessionExercise{}, &SessionSet{})
 }
 
-func CreateSessionExercise(sessionID int64, name string, isBodyweight bool, goalWeight float64, weightUnit string, goalReps int, block string) (*SessionExercise, error) {
+func CreateSessionExercise(sessionID int64, name string, isBodyweight bool, goalWeight float64, weightUnit string, goalReps int, block string, isTimeBased bool, goalSeconds int) (*SessionExercise, error) {
 	name = strings.ToLower(strings.TrimSpace(name))
 	if block == "" {
 		block = "main"
@@ -63,6 +67,8 @@ func CreateSessionExercise(sessionID int64, name string, isBodyweight bool, goal
 		GoalReps:     goalReps,
 		Block:        block,
 		SortOrder:    int(n),
+		IsTimeBased:  isTimeBased,
+		GoalSeconds:  goalSeconds,
 	}
 	_, err := o.Insert(e)
 	return e, err
@@ -103,7 +109,7 @@ func GetSessionExerciseByID(exerciseID int64) (*SessionExercise, error) {
 	return e, nil
 }
 
-func LogSessionSet(exerciseID int64, setNumber int, actualWeight float64, weightUnit string, actualReps int) (*SessionSet, error) {
+func LogSessionSet(exerciseID int64, setNumber int, actualWeight float64, weightUnit string, actualReps int, actualSeconds int, activityType string) (*SessionSet, error) {
 	o := orm.NewOrm()
 	s := &SessionSet{
 		SessionExerciseID: exerciseID,
@@ -111,6 +117,8 @@ func LogSessionSet(exerciseID int64, setNumber int, actualWeight float64, weight
 		ActualWeight:      actualWeight,
 		WeightUnit:        weightUnit,
 		ActualReps:        actualReps,
+		ActualSeconds:     actualSeconds,
+		ActivityType:      activityType,
 	}
 	_, err := o.Insert(s)
 	return s, err

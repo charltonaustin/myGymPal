@@ -6,8 +6,8 @@ func NewSessionExerciseRepository() SessionExerciseRepository {
 	return &ormSessionExerciseRepository{}
 }
 
-func (r *ormSessionExerciseRepository) Create(sessionID int64, name string, isBodyweight bool, goalWeight float64, weightUnit string, goalReps int, block string) (*SessionExercise, error) {
-	return CreateSessionExercise(sessionID, name, isBodyweight, goalWeight, weightUnit, goalReps, block)
+func (r *ormSessionExerciseRepository) Create(sessionID int64, name string, isBodyweight bool, goalWeight float64, weightUnit string, goalReps int, block string, isTimeBased bool, goalSeconds int) (*SessionExercise, error) {
+	return CreateSessionExercise(sessionID, name, isBodyweight, goalWeight, weightUnit, goalReps, block, isTimeBased, goalSeconds)
 }
 
 func (r *ormSessionExerciseRepository) GetBySession(sessionID int64) ([]*SessionExerciseView, error) {
@@ -18,8 +18,8 @@ func (r *ormSessionExerciseRepository) GetByID(exerciseID int64) (*SessionExerci
 	return GetSessionExerciseByID(exerciseID)
 }
 
-func (r *ormSessionExerciseRepository) LogSet(exerciseID int64, setNumber int, actualWeight float64, weightUnit string, actualReps int) (*SessionSet, error) {
-	return LogSessionSet(exerciseID, setNumber, actualWeight, weightUnit, actualReps)
+func (r *ormSessionExerciseRepository) LogSet(exerciseID int64, setNumber int, actualWeight float64, weightUnit string, actualReps int, actualSeconds int, activityType string) (*SessionSet, error) {
+	return LogSessionSet(exerciseID, setNumber, actualWeight, weightUnit, actualReps, actualSeconds, activityType)
 }
 
 func (r *ormSessionExerciseRepository) CountSetsByExercise(exerciseID int64) (int, error) {

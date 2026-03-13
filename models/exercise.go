@@ -15,6 +15,8 @@ type Exercise struct {
 	IsBodyweight bool      `orm:"column(is_bodyweight)"`
 	GoalWeight   float64   `orm:"column(goal_weight)"`
 	WeightUnit   string    `orm:"column(weight_unit)"`
+	IsTimeBased  bool      `orm:"column(is_time_based)"`
+	GoalSeconds  int       `orm:"column(goal_seconds)"`
 	CreatedAt    time.Time `orm:"column(created_at);auto_now_add"`
 	UpdatedAt    time.Time `orm:"column(updated_at);auto_now"`
 }
@@ -25,7 +27,7 @@ func init() {
 	orm.RegisterModel(&Exercise{})
 }
 
-func CreateExercise(userID int64, name string, isBodyweight bool, goalWeight float64, weightUnit string) (*Exercise, error) {
+func CreateExercise(userID int64, name string, isBodyweight bool, goalWeight float64, weightUnit string, isTimeBased bool, goalSeconds int) (*Exercise, error) {
 	name = strings.ToLower(strings.TrimSpace(name))
 	if name == "" {
 		return nil, errors.New("exercise name is required")
@@ -37,6 +39,8 @@ func CreateExercise(userID int64, name string, isBodyweight bool, goalWeight flo
 		IsBodyweight: isBodyweight,
 		GoalWeight:   goalWeight,
 		WeightUnit:   weightUnit,
+		IsTimeBased:  isTimeBased,
+		GoalSeconds:  goalSeconds,
 	}
 	if _, err := o.Insert(ex); err != nil {
 		return nil, err
@@ -76,7 +80,7 @@ func GetExerciseByName(userID int64, name string) (*Exercise, error) {
 	return exercises[0], nil
 }
 
-func UpdateExercise(id, userID int64, name string, isBodyweight bool, goalWeight float64, weightUnit string) (*Exercise, error) {
+func UpdateExercise(id, userID int64, name string, isBodyweight bool, goalWeight float64, weightUnit string, isTimeBased bool, goalSeconds int) (*Exercise, error) {
 	name = strings.ToLower(strings.TrimSpace(name))
 	if name == "" {
 		return nil, errors.New("exercise name is required")
@@ -89,6 +93,8 @@ func UpdateExercise(id, userID int64, name string, isBodyweight bool, goalWeight
 	ex.IsBodyweight = isBodyweight
 	ex.GoalWeight = goalWeight
 	ex.WeightUnit = weightUnit
+	ex.IsTimeBased = isTimeBased
+	ex.GoalSeconds = goalSeconds
 	o := orm.NewOrm()
 	if _, err := o.Update(ex); err != nil {
 		return nil, err

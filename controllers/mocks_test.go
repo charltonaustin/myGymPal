@@ -244,10 +244,10 @@ func (m *mockPhaseRepo) UpdateRepRanges(programID int64, updates []models.PhaseU
 }
 
 type mockSessionExerciseRepo struct {
-	CreateFn              func(sessionID int64, name string, isBodyweight bool, goalWeight float64, weightUnit string, goalReps int, block string) (*models.SessionExercise, error)
+	CreateFn              func(sessionID int64, name string, isBodyweight bool, goalWeight float64, weightUnit string, goalReps int, block string, isTimeBased bool, goalSeconds int) (*models.SessionExercise, error)
 	GetBySessionFn        func(sessionID int64) ([]*models.SessionExerciseView, error)
 	GetByIDFn             func(exerciseID int64) (*models.SessionExercise, error)
-	LogSetFn              func(exerciseID int64, setNumber int, actualWeight float64, weightUnit string, actualReps int) (*models.SessionSet, error)
+	LogSetFn              func(exerciseID int64, setNumber int, actualWeight float64, weightUnit string, actualReps int, actualSeconds int, activityType string) (*models.SessionSet, error)
 	CountSetsByExerciseFn func(exerciseID int64) (int, error)
 	DeleteSetFn           func(setID int64) error
 	LogCardioFn           func(sessionExerciseID int64, cardioType string, goalDuration, actualDuration int) (*models.CardioLog, error)
@@ -255,9 +255,9 @@ type mockSessionExerciseRepo struct {
 	DeleteExerciseFn      func(exerciseID int64) error
 }
 
-func (m *mockSessionExerciseRepo) Create(sessionID int64, name string, isBodyweight bool, goalWeight float64, weightUnit string, goalReps int, block string) (*models.SessionExercise, error) {
+func (m *mockSessionExerciseRepo) Create(sessionID int64, name string, isBodyweight bool, goalWeight float64, weightUnit string, goalReps int, block string, isTimeBased bool, goalSeconds int) (*models.SessionExercise, error) {
 	if m.CreateFn != nil {
-		return m.CreateFn(sessionID, name, isBodyweight, goalWeight, weightUnit, goalReps, block)
+		return m.CreateFn(sessionID, name, isBodyweight, goalWeight, weightUnit, goalReps, block, isTimeBased, goalSeconds)
 	}
 	return &models.SessionExercise{ID: testExerciseID, SessionID: sessionID, Name: name, IsBodyweight: isBodyweight, GoalWeight: goalWeight, WeightUnit: weightUnit, GoalReps: goalReps, Block: block}, nil
 }
@@ -276,11 +276,11 @@ func (m *mockSessionExerciseRepo) GetByID(exerciseID int64) (*models.SessionExer
 	return nil, errors.New("not found")
 }
 
-func (m *mockSessionExerciseRepo) LogSet(exerciseID int64, setNumber int, actualWeight float64, weightUnit string, actualReps int) (*models.SessionSet, error) {
+func (m *mockSessionExerciseRepo) LogSet(exerciseID int64, setNumber int, actualWeight float64, weightUnit string, actualReps int, actualSeconds int, activityType string) (*models.SessionSet, error) {
 	if m.LogSetFn != nil {
-		return m.LogSetFn(exerciseID, setNumber, actualWeight, weightUnit, actualReps)
+		return m.LogSetFn(exerciseID, setNumber, actualWeight, weightUnit, actualReps, actualSeconds, activityType)
 	}
-	return &models.SessionSet{ID: testSetID, SessionExerciseID: exerciseID, SetNumber: setNumber, ActualWeight: actualWeight, WeightUnit: weightUnit, ActualReps: actualReps}, nil
+	return &models.SessionSet{ID: testSetID, SessionExerciseID: exerciseID, SetNumber: setNumber, ActualWeight: actualWeight, WeightUnit: weightUnit, ActualReps: actualReps, ActualSeconds: actualSeconds}, nil
 }
 
 func (m *mockSessionExerciseRepo) CountSetsByExercise(exerciseID int64) (int, error) {
@@ -319,18 +319,18 @@ func (m *mockSessionExerciseRepo) DeleteExercise(exerciseID int64) error {
 }
 
 type mockExerciseRepo struct {
-	CreateFn           func(userID int64, name string, isBodyweight bool, goalWeight float64, weightUnit string) (*models.Exercise, error)
+	CreateFn           func(userID int64, name string, isBodyweight bool, goalWeight float64, weightUnit string, isTimeBased bool, goalSeconds int) (*models.Exercise, error)
 	GetAllByUserFn     func(userID int64) ([]*models.Exercise, error)
 	GetByIDFn          func(id, userID int64) (*models.Exercise, error)
 	GetByNameFn        func(userID int64, name string) (*models.Exercise, error)
-	UpdateFn           func(id, userID int64, name string, isBodyweight bool, goalWeight float64, weightUnit string) (*models.Exercise, error)
+	UpdateFn           func(id, userID int64, name string, isBodyweight bool, goalWeight float64, weightUnit string, isTimeBased bool, goalSeconds int) (*models.Exercise, error)
 	UpdateGoalWeightFn func(id int64, goalWeight float64) error
 	DeleteFn           func(id, userID int64) error
 }
 
-func (m *mockExerciseRepo) Create(userID int64, name string, isBodyweight bool, goalWeight float64, weightUnit string) (*models.Exercise, error) {
+func (m *mockExerciseRepo) Create(userID int64, name string, isBodyweight bool, goalWeight float64, weightUnit string, isTimeBased bool, goalSeconds int) (*models.Exercise, error) {
 	if m.CreateFn != nil {
-		return m.CreateFn(userID, name, isBodyweight, goalWeight, weightUnit)
+		return m.CreateFn(userID, name, isBodyweight, goalWeight, weightUnit, isTimeBased, goalSeconds)
 	}
 	return &models.Exercise{ID: 1, UserID: userID, Name: name, IsBodyweight: isBodyweight, GoalWeight: goalWeight, WeightUnit: weightUnit}, nil
 }
@@ -356,9 +356,9 @@ func (m *mockExerciseRepo) GetByName(userID int64, name string) (*models.Exercis
 	return nil, errors.New("not found")
 }
 
-func (m *mockExerciseRepo) Update(id, userID int64, name string, isBodyweight bool, goalWeight float64, weightUnit string) (*models.Exercise, error) {
+func (m *mockExerciseRepo) Update(id, userID int64, name string, isBodyweight bool, goalWeight float64, weightUnit string, isTimeBased bool, goalSeconds int) (*models.Exercise, error) {
 	if m.UpdateFn != nil {
-		return m.UpdateFn(id, userID, name, isBodyweight, goalWeight, weightUnit)
+		return m.UpdateFn(id, userID, name, isBodyweight, goalWeight, weightUnit, isTimeBased, goalSeconds)
 	}
 	return &models.Exercise{ID: id, UserID: userID, Name: name, IsBodyweight: isBodyweight, GoalWeight: goalWeight, WeightUnit: weightUnit}, nil
 }
@@ -463,11 +463,13 @@ func resetMocks() {
 		isDeload      bool
 	}{}
 	lastLogSet = struct {
-		exerciseID   int64
-		setNumber    int
-		actualWeight float64
-		weightUnit   string
-		actualReps   int
+		exerciseID    int64
+		setNumber     int
+		actualWeight  float64
+		weightUnit    string
+		actualReps    int
+		actualSeconds int
+		activityType  string
 	}{}
 	sessionExerciseCreateNames = nil
 }
@@ -741,11 +743,13 @@ func setTemplateCreateError(err error) {
 
 // lastLogSet holds args captured by captureLogSet.
 var lastLogSet struct {
-	exerciseID   int64
-	setNumber    int
-	actualWeight float64
-	weightUnit   string
-	actualReps   int
+	exerciseID    int64
+	setNumber     int
+	actualWeight  float64
+	weightUnit    string
+	actualReps    int
+	actualSeconds int
+	activityType  string
 }
 
 // sessionExerciseCreateNames captures exercise names from captureSessionExerciseCreates.
@@ -754,7 +758,7 @@ var sessionExerciseCreateNames []string
 // captureSessionExerciseCreates records the name of each exercise created.
 func captureSessionExerciseCreates() {
 	sessionExerciseCreateNames = nil
-	mockSessionExercises.CreateFn = func(sessionID int64, name string, isBodyweight bool, goalWeight float64, weightUnit string, goalReps int, block string) (*models.SessionExercise, error) {
+	mockSessionExercises.CreateFn = func(sessionID int64, name string, isBodyweight bool, goalWeight float64, weightUnit string, goalReps int, block string, isTimeBased bool, goalSeconds int) (*models.SessionExercise, error) {
 		sessionExerciseCreateNames = append(sessionExerciseCreateNames, name)
 		return &models.SessionExercise{ID: testExerciseID, SessionID: sessionID, Name: name, IsBodyweight: isBodyweight, GoalWeight: goalWeight, WeightUnit: weightUnit, GoalReps: goalReps, Block: block}, nil
 	}
@@ -784,13 +788,15 @@ func setSessionExerciseGetByIDError(err error) {
 
 // captureLogSet makes LogSetFn capture the call args and return a valid set.
 func captureLogSet() {
-	mockSessionExercises.LogSetFn = func(exerciseID int64, setNumber int, actualWeight float64, weightUnit string, actualReps int) (*models.SessionSet, error) {
+	mockSessionExercises.LogSetFn = func(exerciseID int64, setNumber int, actualWeight float64, weightUnit string, actualReps int, actualSeconds int, activityType string) (*models.SessionSet, error) {
 		lastLogSet.exerciseID = exerciseID
 		lastLogSet.setNumber = setNumber
 		lastLogSet.actualWeight = actualWeight
 		lastLogSet.weightUnit = weightUnit
 		lastLogSet.actualReps = actualReps
-		return &models.SessionSet{ID: testSetID, SessionExerciseID: exerciseID, SetNumber: setNumber, ActualWeight: actualWeight, WeightUnit: weightUnit, ActualReps: actualReps}, nil
+		lastLogSet.actualSeconds = actualSeconds
+		lastLogSet.activityType = activityType
+		return &models.SessionSet{ID: testSetID, SessionExerciseID: exerciseID, SetNumber: setNumber, ActualWeight: actualWeight, WeightUnit: weightUnit, ActualReps: actualReps, ActualSeconds: actualSeconds}, nil
 	}
 }
 

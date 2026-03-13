@@ -72,8 +72,13 @@ func (c *ExerciseController) Create() {
 
 	name := c.GetString("name")
 	isBodyweight := c.GetString("is_bodyweight") != ""
+	isTimeBased := c.GetString("is_time_based") != ""
 	goalWeightStr := c.GetString("goal_weight")
 	goalWeight, _ := strconv.ParseFloat(goalWeightStr, 64)
+	goalH, _ := strconv.Atoi(c.GetString("goal_h"))
+	goalM, _ := strconv.Atoi(c.GetString("goal_m"))
+	goalS, _ := strconv.Atoi(c.GetString("goal_s"))
+	goalSeconds := goalH*3600 + goalM*60 + goalS
 	exWeightUnit := c.GetString("weight_unit")
 	if exWeightUnit != "kg" {
 		exWeightUnit = "lb"
@@ -85,7 +90,11 @@ func (c *ExerciseController) Create() {
 		c.Data["Error"] = errMsg
 		c.Data["Name"] = name
 		c.Data["IsBodyweight"] = isBodyweight
+		c.Data["IsTimeBased"] = isTimeBased
 		c.Data["GoalWeight"] = goalWeightStr
+		c.Data["GoalHours"] = goalH
+		c.Data["GoalMinutes"] = goalM
+		c.Data["GoalSecsRemainder"] = goalS
 		c.Data["WeightUnit"] = weightUnit
 		c.Data["ExWeightUnit"] = exWeightUnit
 		c.TplName = "exercises/new.tpl"
@@ -96,7 +105,7 @@ func (c *ExerciseController) Create() {
 		return
 	}
 
-	if _, err := Exercises.Create(userID.(int64), name, isBodyweight, goalWeight, exWeightUnit); err != nil {
+	if _, err := Exercises.Create(userID.(int64), name, isBodyweight, goalWeight, exWeightUnit, isTimeBased, goalSeconds); err != nil {
 		logs.Error("ExerciseController.Create: %v", err)
 		renderForm(err.Error())
 		return
@@ -138,7 +147,11 @@ func (c *ExerciseController) Edit() {
 	c.Data["Exercise"] = ex
 	c.Data["Name"] = ex.Name
 	c.Data["IsBodyweight"] = ex.IsBodyweight
+	c.Data["IsTimeBased"] = ex.IsTimeBased
 	c.Data["GoalWeight"] = fmt.Sprintf("%g", ex.GoalWeight)
+	c.Data["GoalHours"] = ex.GoalSeconds / 3600
+	c.Data["GoalMinutes"] = (ex.GoalSeconds % 3600) / 60
+	c.Data["GoalSecsRemainder"] = ex.GoalSeconds % 60
 	c.Data["ExWeightUnit"] = ex.WeightUnit
 	c.TplName = "exercises/edit.tpl"
 }
@@ -169,8 +182,13 @@ func (c *ExerciseController) Update() {
 
 	name := c.GetString("name")
 	isBodyweight := c.GetString("is_bodyweight") != ""
+	isTimeBased := c.GetString("is_time_based") != ""
 	goalWeightStr := c.GetString("goal_weight")
 	goalWeight, _ := strconv.ParseFloat(goalWeightStr, 64)
+	goalH, _ := strconv.Atoi(c.GetString("goal_h"))
+	goalM, _ := strconv.Atoi(c.GetString("goal_m"))
+	goalS, _ := strconv.Atoi(c.GetString("goal_s"))
+	goalSeconds := goalH*3600 + goalM*60 + goalS
 	exWeightUnit := c.GetString("weight_unit")
 	if exWeightUnit != "kg" {
 		exWeightUnit = "lb"
@@ -184,7 +202,11 @@ func (c *ExerciseController) Update() {
 		c.Data["Exercise"] = ex
 		c.Data["Name"] = name
 		c.Data["IsBodyweight"] = isBodyweight
+		c.Data["IsTimeBased"] = isTimeBased
 		c.Data["GoalWeight"] = goalWeightStr
+		c.Data["GoalHours"] = goalH
+		c.Data["GoalMinutes"] = goalM
+		c.Data["GoalSecsRemainder"] = goalS
 		c.Data["ExWeightUnit"] = exWeightUnit
 		c.TplName = "exercises/edit.tpl"
 	}
@@ -194,7 +216,7 @@ func (c *ExerciseController) Update() {
 		return
 	}
 
-	if _, err := Exercises.Update(id, userID.(int64), name, isBodyweight, goalWeight, exWeightUnit); err != nil {
+	if _, err := Exercises.Update(id, userID.(int64), name, isBodyweight, goalWeight, exWeightUnit, isTimeBased, goalSeconds); err != nil {
 		logs.Error("ExerciseController.Update: %v", err)
 		renderForm(err.Error())
 		return
@@ -242,6 +264,8 @@ func exerciseLibraryJSON(userID int64) template.JS {
 		GoalWeight   float64 `json:"goalWeight"`
 		WeightUnit   string  `json:"weightUnit"`
 		IsBodyweight bool    `json:"isBodyweight"`
+		IsTimeBased  bool    `json:"isTimeBased"`
+		GoalSeconds  int     `json:"goalSeconds"`
 	}
 	entries := make([]libEntry, len(exercises))
 	for i, ex := range exercises {
@@ -250,6 +274,8 @@ func exerciseLibraryJSON(userID int64) template.JS {
 			GoalWeight:   ex.GoalWeight,
 			WeightUnit:   ex.WeightUnit,
 			IsBodyweight: ex.IsBodyweight,
+			IsTimeBased:  ex.IsTimeBased,
+			GoalSeconds:  ex.GoalSeconds,
 		}
 	}
 	b, err := json.Marshal(entries)

@@ -42,11 +42,11 @@ type SessionRepository interface {
 }
 
 type ExerciseRepository interface {
-	Create(userID int64, name string, isBodyweight bool, goalWeight float64, weightUnit string) (*Exercise, error)
+	Create(userID int64, name string, isBodyweight bool, goalWeight float64, weightUnit string, isTimeBased bool, goalSeconds int) (*Exercise, error)
 	GetAllByUser(userID int64) ([]*Exercise, error)
 	GetByID(id, userID int64) (*Exercise, error)
 	GetByName(userID int64, name string) (*Exercise, error)
-	Update(id, userID int64, name string, isBodyweight bool, goalWeight float64, weightUnit string) (*Exercise, error)
+	Update(id, userID int64, name string, isBodyweight bool, goalWeight float64, weightUnit string, isTimeBased bool, goalSeconds int) (*Exercise, error)
 	UpdateGoalWeight(id int64, goalWeight float64) error
 	Delete(id, userID int64) error
 }
@@ -65,10 +65,10 @@ type MacroGoalRepository interface {
 }
 
 type SessionExerciseRepository interface {
-	Create(sessionID int64, name string, isBodyweight bool, goalWeight float64, weightUnit string, goalReps int, block string) (*SessionExercise, error)
+	Create(sessionID int64, name string, isBodyweight bool, goalWeight float64, weightUnit string, goalReps int, block string, isTimeBased bool, goalSeconds int) (*SessionExercise, error)
 	GetBySession(sessionID int64) ([]*SessionExerciseView, error)
 	GetByID(exerciseID int64) (*SessionExercise, error)
-	LogSet(exerciseID int64, setNumber int, actualWeight float64, weightUnit string, actualReps int) (*SessionSet, error)
+	LogSet(exerciseID int64, setNumber int, actualWeight float64, weightUnit string, actualReps int, actualSeconds int, activityType string) (*SessionSet, error)
 	CountSetsByExercise(exerciseID int64) (int, error)
 	DeleteSet(setID int64) error
 	LogCardio(sessionExerciseID int64, cardioType string, goalDuration, actualDuration int) (*CardioLog, error)

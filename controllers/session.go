@@ -172,11 +172,15 @@ func (c *SessionController) Create() {
 			for _, ex := range exercises {
 				goalWeight := 0.0
 				weightUnit := defaultUnit
+				isTimeBased := false
+				goalSeconds := 0
 				if libEx, err := Exercises.GetByName(userID.(int64), ex.Name); err == nil {
 					goalWeight = libEx.GoalWeight
 					weightUnit = libEx.WeightUnit
+					isTimeBased = libEx.IsTimeBased
+					goalSeconds = libEx.GoalSeconds
 				}
-				SessionExercises.Create(session.ID, ex.Name, ex.IsBodyweight, goalWeight, weightUnit, goalReps, ex.Block)
+				SessionExercises.Create(session.ID, ex.Name, ex.IsBodyweight, goalWeight, weightUnit, goalReps, ex.Block, isTimeBased, goalSeconds)
 			}
 		}
 	}
@@ -246,12 +250,14 @@ func (c *SessionController) Show() {
 		exercises = []*models.SessionExerciseView{}
 	}
 
-	// Enrich goal weight/unit from the exercise library so the session always
+	// Enrich goal weight/unit/time from the exercise library so the session always
 	// reflects the current goal even if it was created before the library existed.
 	for _, ev := range exercises {
 		if libEx, err := Exercises.GetByName(userID.(int64), ev.Exercise.Name); err == nil {
 			ev.Exercise.GoalWeight = libEx.GoalWeight
 			ev.Exercise.WeightUnit = libEx.WeightUnit
+			ev.Exercise.IsTimeBased = libEx.IsTimeBased
+			ev.Exercise.GoalSeconds = libEx.GoalSeconds
 		}
 	}
 
@@ -311,6 +317,7 @@ func (c *SessionController) AddExercise() {
 	}
 
 	isBodyweight := c.GetString("is_bodyweight") != ""
+	isTimeBased := c.GetString("is_time_based") != ""
 
 	weightUnit := c.GetString("weight_unit")
 	if weightUnit != "kg" {
@@ -319,9 +326,10 @@ func (c *SessionController) AddExercise() {
 
 	goalWeightStr := c.GetString("goal_weight")
 	goalWeight, _ := strconv.ParseFloat(goalWeightStr, 64)
+	goalSeconds, _ := strconv.Atoi(c.GetString("goal_seconds"))
 
 	block := validBlock(c.GetString("block"))
-	_, err = SessionExercises.Create(sessionID, name, isBodyweight, goalWeight, weightUnit, 0, block)
+	_, err = SessionExercises.Create(sessionID, name, isBodyweight, goalWeight, weightUnit, 0, block, isTimeBased, goalSeconds)
 	if err != nil {
 		c.Redirect(fmt.Sprintf("/sessions/%d", sessionID), 302)
 		return
@@ -363,20 +371,35 @@ func (c *SessionController) LogSet() {
 		return
 	}
 
-	actualRepsStr := c.GetString("actual_reps")
-	actualReps, err := strconv.Atoi(actualRepsStr)
-	if err != nil || actualReps < 1 {
-		c.Redirect(fmt.Sprintf("/sessions/%d", sessionID), 302)
-		return
-	}
+	var actualReps int
+	var actualWeight float64
+	var weightUnit string
+	var actualSeconds int
+	var activityType string
 
-	weightUnit := c.GetString("weight_unit")
-	if weightUnit != "kg" {
+	if exercise.IsTimeBased {
+		ah, _ := strconv.Atoi(c.GetString("actual_h"))
+		am, _ := strconv.Atoi(c.GetString("actual_m"))
+		as, _ := strconv.Atoi(c.GetString("actual_s"))
+		actualSeconds = ah*3600 + am*60 + as
+		if actualSeconds < 1 {
+			c.Redirect(fmt.Sprintf("/sessions/%d", sessionID), 302)
+			return
+		}
+		activityType = c.GetString("activity_type")
 		weightUnit = "lb"
+	} else {
+		actualReps, err = strconv.Atoi(c.GetString("actual_reps"))
+		if err != nil || actualReps < 1 {
+			c.Redirect(fmt.Sprintf("/sessions/%d", sessionID), 302)
+			return
+		}
+		weightUnit = c.GetString("weight_unit")
+		if weightUnit != "kg" {
+			weightUnit = "lb"
+		}
+		actualWeight, _ = strconv.ParseFloat(c.GetString("actual_weight"), 64)
 	}
-
-	actualWeightStr := c.GetString("actual_weight")
-	actualWeight, _ := strconv.ParseFloat(actualWeightStr, 64)
 
 	count, err := SessionExercises.CountSetsByExercise(exerciseID)
 	if err != nil {
@@ -385,16 +408,16 @@ func (c *SessionController) LogSet() {
 		return
 	}
 
-	set, err := SessionExercises.LogSet(exerciseID, count+1, actualWeight, weightUnit, actualReps)
+	set, err := SessionExercises.LogSet(exerciseID, count+1, actualWeight, weightUnit, actualReps, actualSeconds, activityType)
 	if err != nil {
 		logs.Error("SessionController.LogSet: LogSet: %v", err)
 		c.Redirect(fmt.Sprintf("/sessions/%d", sessionID), 302)
 		return
 	}
 
-	// After 3rd set at or above goal reps, update the exercise library entry.
+	// After 3rd set at or above goal reps, update the exercise library entry (weight-based only).
 	newCount := count + 1
-	if newCount >= 3 && actualReps >= exercise.GoalReps {
+	if !exercise.IsTimeBased && newCount >= 3 && actualReps >= exercise.GoalReps {
 		if ex, err := Exercises.GetByName(userID.(int64), exercise.Name); err == nil {
 			Exercises.UpdateGoalWeight(ex.ID, actualWeight)
 		}
@@ -403,8 +426,11 @@ func (c *SessionController) LogSet() {
 	// AJAX callers get JSON back so the client can render the new row with a delete button.
 	if c.Ctx.Request.Header.Get("X-Requested-With") == "XMLHttpRequest" {
 		c.Data["json"] = map[string]interface{}{
-			"id":         set.ID,
-			"set_number": set.SetNumber,
+			"id":             set.ID,
+			"set_number":     set.SetNumber,
+			"is_time_based":  exercise.IsTimeBased,
+			"actual_seconds": actualSeconds,
+			"activity_type":  activityType,
 		}
 		c.ServeJSON()
 		return
@@ -439,7 +465,7 @@ func (c *SessionController) AddCardioActivity() {
 	goalDuration, _ := strconv.Atoi(c.GetString("goal_duration"))
 	actualDuration, _ := strconv.Atoi(c.GetString("actual_duration"))
 
-	ex, err := SessionExercises.Create(sessionID, name, false, 0, "lb", 0, "cardio")
+	ex, err := SessionExercises.Create(sessionID, name, false, 0, "lb", 0, "cardio", false, 0)
 	if err != nil {
 		logs.Error("SessionController.AddCardioActivity: Create: %v", err)
 		c.Redirect(fmt.Sprintf("/sessions/%d", sessionID), 302)
