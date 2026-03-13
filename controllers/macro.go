@@ -1,6 +1,8 @@
 package controllers
 
 import (
+	"encoding/json"
+	"html/template"
 	"myGymPal/models"
 	"strconv"
 	"time"
@@ -128,12 +130,38 @@ func (c *MacroController) Index() {
 
 	days := groupMacrosByDay(entries)
 
+	distinctFoods, err := Macros.GetDistinctFoods(userID.(int64))
+	if err != nil {
+		logs.Error("MacroController.Index: GetDistinctFoods: %v", err)
+	}
+	type foodJSON struct {
+		Name          string  `json:"name"`
+		ServingWeight float64 `json:"servingWeight"`
+		ServingUnit   string  `json:"servingUnit"`
+		Protein       float64 `json:"protein"`
+		Carbs         float64 `json:"carbs"`
+		Fat           float64 `json:"fat"`
+	}
+	foodList := make([]foodJSON, 0, len(distinctFoods))
+	for _, f := range distinctFoods {
+		foodList = append(foodList, foodJSON{
+			Name:          f.FoodName,
+			ServingWeight: f.ServingWeight,
+			ServingUnit:   f.ServingUnit,
+			Protein:       f.Protein,
+			Carbs:         f.Carbs,
+			Fat:           f.Fat,
+		})
+	}
+	foodJSON2, _ := json.Marshal(foodList)
+
 	c.Data["LoggedIn"] = true
 	c.Data["ActivePage"] = "macros"
 	c.Data["Days"] = days
 	c.Data["DefaultDate"] = time.Now().Format("2006-01-02")
 	c.Data["Goal"] = goal
 	c.Data["Summary"] = buildMacroSummary(days, goal)
+	c.Data["FoodHistoryJSON"] = template.JS(foodJSON2)
 	c.TplName = "macros/index.tpl"
 }
 

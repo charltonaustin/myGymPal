@@ -50,6 +50,19 @@ func GetMacroEntriesByUser(userID int64) ([]*MacroEntry, error) {
 	return entries, err
 }
 
+// GetDistinctFoodsByUser returns the most recent entry for each unique food name for the user.
+func GetDistinctFoodsByUser(userID int64) ([]*MacroEntry, error) {
+	o := orm.NewOrm()
+	var entries []*MacroEntry
+	_, err := o.Raw(`
+		SELECT DISTINCT ON (food_name) id, user_id, date, food_name, serving_weight, serving_unit, protein, carbs, fat, created_at
+		FROM macro_entries
+		WHERE user_id = ?
+		ORDER BY food_name, created_at DESC
+	`, userID).QueryRows(&entries)
+	return entries, err
+}
+
 func GetMacroEntryByID(id, userID int64) (*MacroEntry, error) {
 	o := orm.NewOrm()
 	e := &MacroEntry{ID: id}

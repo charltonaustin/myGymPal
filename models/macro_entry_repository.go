@@ -5,6 +5,7 @@ import "time"
 type MacroRepository interface {
 	Create(userID int64, date time.Time, foodName string, servingWeight float64, servingUnit string, protein, carbs, fat float64) (*MacroEntry, error)
 	GetAllByUser(userID int64) ([]*MacroEntry, error)
+	GetDistinctFoods(userID int64) ([]*MacroEntry, error)
 	GetByID(id, userID int64) (*MacroEntry, error)
 	Update(id, userID int64, foodName string, servingWeight float64, servingUnit string, protein, carbs, fat float64) (*MacroEntry, error)
 	Delete(id, userID int64) error
@@ -22,6 +23,10 @@ func (r *ormMacroRepository) Create(userID int64, date time.Time, foodName strin
 
 func (r *ormMacroRepository) GetAllByUser(userID int64) ([]*MacroEntry, error) {
 	return GetMacroEntriesByUser(userID)
+}
+
+func (r *ormMacroRepository) GetDistinctFoods(userID int64) ([]*MacroEntry, error) {
+	return GetDistinctFoodsByUser(userID)
 }
 
 func (r *ormMacroRepository) GetByID(id, userID int64) (*MacroEntry, error) {

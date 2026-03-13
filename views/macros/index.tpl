@@ -96,8 +96,8 @@
             <h2 class="h6 fw-semibold mb-3">Log Food</h2>
             <form method="POST" action="/macros">
                 <div class="row g-2 mb-2">
-                    <div class="col-4">
-                        <input type="text" name="food_name" class="form-control form-control-sm" placeholder="Food name" required>
+                    <div class="col-4" id="food-name-wrapper">
+                        <input type="text" id="food-name-input" name="food_name" class="form-control form-control-sm" placeholder="Food name" required autocomplete="off">
                     </div>
                     <div class="col-3">
                         <input type="date" name="date" class="form-control form-control-sm" value="{{.DefaultDate}}" required>
@@ -233,6 +233,64 @@
         document.querySelector(`.edit-row-${id}`).classList.add('d-none');
         document.querySelector(`.view-row-${id}`).classList.remove('d-none');
     }
+
+    // Food history autocomplete
+    const foodHistory = {{.FoodHistoryJSON}};
+    const foodMap = {};
+    foodHistory.forEach(f => { foodMap[f.name] = f; });
+
+    const foodInput = document.getElementById('food-name-input');
+    const foodWrapper = document.getElementById('food-name-wrapper');
+    foodWrapper.style.position = 'relative';
+    let dropdown = null;
+
+    function fillForm(food) {
+        foodInput.value = food.name;
+        const form = foodInput.closest('form');
+        if (food.servingWeight > 0) form.querySelector('[name="serving_weight"]').value = food.servingWeight;
+        const unitSel = form.querySelector('[name="serving_unit"]');
+        if (food.servingUnit) unitSel.value = food.servingUnit;
+        if (food.protein) form.querySelector('[name="protein"]').value = food.protein;
+        if (food.carbs)   form.querySelector('[name="carbs"]').value = food.carbs;
+        if (food.fat)     form.querySelector('[name="fat"]').value = food.fat;
+    }
+
+    function showDropdown(matches) {
+        if (!dropdown) {
+            dropdown = document.createElement('div');
+            dropdown.className = 'list-group shadow';
+            dropdown.style.cssText = 'position:absolute;top:100%;left:0;right:0;z-index:1050;max-height:220px;overflow-y:auto;border-radius:0 0 .375rem .375rem;';
+            foodWrapper.appendChild(dropdown);
+        }
+        dropdown.innerHTML = '';
+        matches.forEach(food => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'list-group-item list-group-item-action py-2 px-3';
+            btn.style.fontSize = '0.9rem';
+            btn.textContent = food.name;
+            btn.addEventListener('mousedown', e => {
+                e.preventDefault();
+                fillForm(food);
+                hideDropdown();
+            });
+            dropdown.appendChild(btn);
+        });
+    }
+
+    function hideDropdown() {
+        if (dropdown) { dropdown.remove(); dropdown = null; }
+    }
+
+    foodInput.addEventListener('input', () => {
+        const val = foodInput.value.toLowerCase().trim();
+        if (!val) { hideDropdown(); return; }
+        const matches = foodHistory.filter(f => f.name.toLowerCase().includes(val)).slice(0, 10);
+        if (matches.length) showDropdown(matches);
+        else hideDropdown();
+    });
+
+    foodInput.addEventListener('blur', () => setTimeout(hideDropdown, 150));
 </script>
 <script>if ('serviceWorker' in navigator) { navigator.serviceWorker.register('/sw.js').catch(console.error); }</script>
 </body>

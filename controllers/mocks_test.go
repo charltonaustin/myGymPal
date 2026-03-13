@@ -403,6 +403,9 @@ func (m *mockMacroRepo) Create(userID int64, date time.Time, foodName string, se
 func (m *mockMacroRepo) GetAllByUser(userID int64) ([]*models.MacroEntry, error) {
 	return []*models.MacroEntry{}, nil
 }
+func (m *mockMacroRepo) GetDistinctFoods(userID int64) ([]*models.MacroEntry, error) {
+	return []*models.MacroEntry{}, nil
+}
 func (m *mockMacroRepo) GetByID(id, userID int64) (*models.MacroEntry, error) {
 	return nil, errors.New("not found")
 }
