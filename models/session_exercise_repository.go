@@ -37,3 +37,7 @@ func (r *ormSessionExerciseRepository) LogCardio(sessionExerciseID int64, cardio
 func (r *ormSessionExerciseRepository) DeleteCardioLog(id int64) error {
 	return DeleteCardioLog(id)
 }
+
+func (r *ormSessionExerciseRepository) DeleteExercise(exerciseID int64) error {
+	return DeleteSessionExercise(exerciseID)
+}

@@ -15,6 +15,7 @@ func Register() {
 	controllers.Sessions = models.NewSessionRepository()
 	controllers.SessionExercises = models.NewSessionExerciseRepository()
 	controllers.Exercises = models.NewExerciseRepository()
+	controllers.BodyWeights = models.NewBodyWeightRepository()
 
 	// PWA assets (must be served from root path for correct service worker scope)
 	beego.Router("/sw.js", &controllers.PWAController{}, "get:ServiceWorker")
@@ -46,11 +47,17 @@ func Register() {
 	beego.Router("/sessions/:id", &controllers.SessionController{}, "get:Show")
 	beego.Router("/sessions/:id/delete", &controllers.SessionController{}, "post:Delete")
 	beego.Router("/sessions/:id/exercises", &controllers.SessionController{}, "post:AddExercise")
+	beego.Router("/sessions/:id/exercises/:eid/delete", &controllers.SessionController{}, "post:DeleteExercise")
 	beego.Router("/sessions/:id/exercises/:eid/sets", &controllers.SessionController{}, "post:LogSet")
 	beego.Router("/sessions/:id/exercises/:eid/sets/:sid/delete", &controllers.SessionController{}, "post:DeleteSet")
 	beego.Router("/sessions/:id/cardio", &controllers.SessionController{}, "post:AddCardioActivity")
 	beego.Router("/sessions/:id/exercises/:eid/cardio", &controllers.SessionController{}, "post:LogCardio")
 	beego.Router("/sessions/:id/exercises/:eid/cardio/:lid/delete", &controllers.SessionController{}, "post:DeleteCardioLog")
+
+	// Weight
+	beego.Router("/weight", &controllers.WeightController{}, "get:Index;post:Create")
+	beego.Router("/weight/:id", &controllers.WeightController{}, "post:Update")
+	beego.Router("/weight/:id/delete", &controllers.WeightController{}, "post:Delete")
 
 	// Exercises
 	beego.Router("/exercises", &controllers.ExerciseController{}, "get:Index")

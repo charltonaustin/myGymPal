@@ -88,6 +88,12 @@ func GetSessionExercisesWithSets(sessionID int64) ([]*SessionExerciseView, error
 	return views, nil
 }
 
+func DeleteSessionExercise(exerciseID int64) error {
+	o := orm.NewOrm()
+	_, err := o.Delete(&SessionExercise{ID: exerciseID})
+	return err
+}
+
 func GetSessionExerciseByID(exerciseID int64) (*SessionExercise, error) {
 	o := orm.NewOrm()
 	e := &SessionExercise{ID: exerciseID}

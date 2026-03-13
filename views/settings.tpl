@@ -37,7 +37,7 @@
             </div>
         </fieldset>
 
-        <button type="submit" class="btn btn-primary">Save Settings</button>
+        <button type="submit" class="btn btn-dark">Save Settings</button>
     </form>
 
     <hr class="my-5">

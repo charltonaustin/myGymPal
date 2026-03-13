@@ -48,7 +48,7 @@
                 </div>
                 <div class="d-flex align-items-center gap-3">
                     <span class="text-muted small">
-                        {{if gt .GoalDuration 0}}{{.GoalDuration}}→{{end}}{{.ActualDuration}} min
+                       Goal: {{if gt .GoalDuration 0}}{{.GoalDuration}} | Actual: {{end}}{{.ActualDuration}} min
                     </span>
                     <form method="POST" action="/sessions/{{$.Session.ID}}/exercises/{{$exID}}/cardio/{{.ID}}/delete" class="d-inline">
                         <button type="submit" class="btn btn-link btn-sm text-danger p-0" title="Delete"><i class="bi bi-trash"></i></button>
@@ -97,14 +97,19 @@
         <div class="card-body pb-2">
             <div class="d-flex align-items-baseline justify-content-between mb-2">
                 <h2 class="h6 fw-semibold mb-0 text-capitalize">{{.Exercise.Name}}</h2>
-                <span class="text-muted small">
-                {{if gt .Exercise.GoalWeight 0.0}}
-                Goal: {{.Exercise.GoalWeight}} {{.Exercise.WeightUnit}}
-                {{end}}
-                {{if and (gt $.PhaseRepMin 0) (gt $.PhaseRepMax 0)}}
-                {{$.PhaseRepMin}}–{{$.PhaseRepMax}} reps
-                {{end}}
-                </span>
+                <div class="d-flex align-items-center gap-2">
+                    <span class="text-muted small">
+                    {{if gt .Exercise.GoalWeight 0.0}}
+                    Goal: {{.Exercise.GoalWeight}} {{.Exercise.WeightUnit}}
+                    {{end}}
+                    {{if and (gt $.PhaseRepMin 0) (gt $.PhaseRepMax 0)}}
+                    {{$.PhaseRepMin}}–{{$.PhaseRepMax}} reps
+                    {{end}}
+                    </span>
+                    <form method="POST" action="/sessions/{{$.Session.ID}}/exercises/{{$exID}}/delete" class="d-inline">
+                        <button type="submit" class="btn btn-link btn-sm text-danger p-0" title="Remove exercise"><i class="bi bi-trash"></i></i></button>
+                    </form>
+                </div>
             </div>
 
             {{if .Sets}}

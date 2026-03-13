@@ -509,6 +509,42 @@ func (c *SessionController) DeleteCardioLog() {
 	c.Redirect(fmt.Sprintf("/sessions/%d", sessionID), 302)
 }
 
+func (c *SessionController) DeleteExercise() {
+	userID := c.GetSession("user_id")
+	if userID == nil {
+		c.Redirect("/login", 302)
+		return
+	}
+
+	sessionID, err := strconv.ParseInt(c.Ctx.Input.Param(":id"), 10, 64)
+	if err != nil {
+		c.Redirect("/programs", 302)
+		return
+	}
+
+	exerciseID, err := strconv.ParseInt(c.Ctx.Input.Param(":eid"), 10, 64)
+	if err != nil {
+		c.Redirect(fmt.Sprintf("/sessions/%d", sessionID), 302)
+		return
+	}
+
+	// Verify session ownership.
+	if _, err := Sessions.GetByID(sessionID, userID.(int64)); err != nil {
+		c.Redirect("/programs", 302)
+		return
+	}
+
+	// Verify the exercise belongs to this session.
+	exercise, err := SessionExercises.GetByID(exerciseID)
+	if err != nil || exercise.SessionID != sessionID {
+		c.Redirect(fmt.Sprintf("/sessions/%d", sessionID), 302)
+		return
+	}
+
+	SessionExercises.DeleteExercise(exerciseID)
+	c.Redirect(fmt.Sprintf("/sessions/%d", sessionID), 302)
+}
+
 func (c *SessionController) DeleteSet() {
 	userID := c.GetSession("user_id")
 	if userID == nil {
