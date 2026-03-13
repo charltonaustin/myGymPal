@@ -41,28 +41,30 @@
                     </div>
                     {{if .MacroSummary}}
                     <p class="text-muted small mb-1">{{.MacroSummary.Days}}-day avg</p>
-                    <div class="small">
-                        <div class="d-flex justify-content-between">
-                            <span class="text-muted">Protein</span>
-                            <span class="fw-semibold">{{printf "%.0f" .MacroSummary.Protein.Actual}}g
-                            {{if .MacroSummary.HasGoal}}<span class="{{if .MacroSummary.Protein.AtGoal}}text-success{{else}}text-danger{{end}}">{{.MacroSummary.Protein.Pct}}%</span>{{end}}</span>
-                        </div>
-                        <div class="d-flex justify-content-between">
-                            <span class="text-muted">Carbs</span>
-                            <span class="fw-semibold">{{printf "%.0f" .MacroSummary.Carbs.Actual}}g
-                            {{if .MacroSummary.HasGoal}}<span class="{{if .MacroSummary.Carbs.AtGoal}}text-success{{else}}text-danger{{end}}">{{.MacroSummary.Carbs.Pct}}%</span>{{end}}</span>
-                        </div>
-                        <div class="d-flex justify-content-between">
-                            <span class="text-muted">Fat</span>
-                            <span class="fw-semibold">{{printf "%.0f" .MacroSummary.Fat.Actual}}g
-                            {{if .MacroSummary.HasGoal}}<span class="{{if .MacroSummary.Fat.AtGoal}}text-success{{else}}text-danger{{end}}">{{.MacroSummary.Fat.Pct}}%</span>{{end}}</span>
-                        </div>
-                        <div class="d-flex justify-content-between border-top mt-1 pt-1">
-                            <span class="text-muted">Calories</span>
-                            <span class="fw-semibold">{{printf "%.0f" .MacroSummary.Calories.Actual}}
-                            {{if .MacroSummary.HasGoal}}<span class="{{if .MacroSummary.Calories.AtGoal}}text-success{{else}}text-danger{{end}}">{{.MacroSummary.Calories.Pct}}%</span>{{end}}</span>
-                        </div>
-                    </div>
+                    <table class="table table-sm mb-0">
+                        <tbody class="small">
+                            <tr>
+                                <td class="ps-0 text-muted">Protein</td>
+                                <td class="text-end fw-semibold">{{printf "%.0f" .MacroSummary.Protein.Actual}}g</td>
+                                {{if .MacroSummary.HasGoal}}<td class="text-end fw-semibold {{if .MacroSummary.Protein.AtGoal}}text-success{{else}}text-danger{{end}}">{{.MacroSummary.Protein.Pct}}%</td>{{end}}
+                            </tr>
+                            <tr>
+                                <td class="ps-0 text-muted">Carbs</td>
+                                <td class="text-end fw-semibold">{{printf "%.0f" .MacroSummary.Carbs.Actual}}g</td>
+                                {{if .MacroSummary.HasGoal}}<td class="text-end fw-semibold {{if .MacroSummary.Carbs.AtGoal}}text-success{{else}}text-danger{{end}}">{{.MacroSummary.Carbs.Pct}}%</td>{{end}}
+                            </tr>
+                            <tr>
+                                <td class="ps-0 text-muted">Fat</td>
+                                <td class="text-end fw-semibold">{{printf "%.0f" .MacroSummary.Fat.Actual}}g</td>
+                                {{if .MacroSummary.HasGoal}}<td class="text-end fw-semibold {{if .MacroSummary.Fat.AtGoal}}text-success{{else}}text-danger{{end}}">{{.MacroSummary.Fat.Pct}}%</td>{{end}}
+                            </tr>
+                            <tr class="border-top">
+                                <td class="ps-0 text-muted">Calories</td>
+                                <td class="text-end fw-semibold">{{printf "%.0f" .MacroSummary.Calories.Actual}}</td>
+                                {{if .MacroSummary.HasGoal}}<td class="text-end fw-semibold {{if .MacroSummary.Calories.AtGoal}}text-success{{else}}text-danger{{end}}">{{.MacroSummary.Calories.Pct}}%</td>{{end}}
+                            </tr>
+                        </tbody>
+                    </table>
                     {{else}}
                     <p class="text-muted small mb-0">No entries yet.</p>
                     {{end}}
