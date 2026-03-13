@@ -11,7 +11,7 @@
 
 {{template "partials/navbar.tpl" .}}
 
-<main class="container mt-4" style="max-width: 560px;">
+<main class="container mt-4 mb-4" style="max-width: 560px;">
     <div class="mb-4">
         <a href="/exercises" class="text-muted small">&larr; Exercise Library</a>
         <h1 class="h4 fw-bold mt-1 mb-0">New Exercise</h1>

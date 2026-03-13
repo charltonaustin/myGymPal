@@ -11,7 +11,7 @@
 
 {{template "partials/navbar.tpl" .}}
 
-<main class="container mt-5" style="max-width: 480px;">
+<main class="container mt-5 mb-4" style="max-width: 480px;">
     <h1 class="h4 fw-bold mb-4">Account Settings</h1>
 
     {{if .Success}}

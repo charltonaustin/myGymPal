@@ -12,7 +12,7 @@
 
 {{template "partials/navbar.tpl" .}}
 
-<main class="container mt-4" style="max-width: 600px;">
+<main class="container mt-4 mb-4" style="max-width: 600px;">
     <div class="mb-4">
         <a href="/programs/{{.Program.ID}}" class="text-muted small">&larr; {{.Program.Name}}</a>
         <div class="d-flex align-items-center gap-2 mt-1">

@@ -11,7 +11,7 @@
 
 {{template "partials/navbar.tpl" .}}
 
-<main class="container mt-4" style="max-width: 480px;">
+<main class="container mt-4 mb-4" style="max-width: 480px;">
     <div class="mb-4">
         <a href="/programs/{{.Program.ID}}" class="text-muted small">&larr; {{.Program.Name}}</a>
         <h1 class="h4 fw-bold mt-1 mb-0">{{if .LogMode}}Log Workout{{else}}Start Workout{{end}}</h1>

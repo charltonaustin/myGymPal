@@ -12,7 +12,7 @@
 
 {{template "partials/navbar.tpl" .}}
 
-<main class="container mt-5" style="max-width: 640px;">
+<main class="container mt-5 mb-4" style="max-width: 640px;">
     <h1 class="h4 fw-bold mb-4">Welcome back, {{.Username}}!</h1>
 
     <div class="row g-3 mb-4">

@@ -11,7 +11,7 @@
 
 {{template "partials/navbar.tpl" .}}
 
-<main class="container mt-5" style="max-width: 640px;">
+<main class="container mt-5 mb-4" style="max-width: 640px;">
     <h1 class="display-4 fw-bold mb-3 text-center">Welcome to My Gym Pal</h1>
     <p class="lead text-muted text-center mb-5">Your personal fitness companion.</p>
 

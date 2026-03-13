@@ -12,7 +12,7 @@
 
 {{template "partials/navbar.tpl" .}}
 
-<main class="container mt-4" style="max-width: 640px;">
+<main class="container mt-4 mb-4" style="max-width: 640px;">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1 class="h4 fw-bold mb-0">Training Programs</h1>
         <a href="/programs/new" class="btn btn-dark btn-sm">+ New Program</a>

@@ -12,7 +12,7 @@
 
 {{template "partials/navbar.tpl" .}}
 
-<main class="container mt-4" style="max-width: 600px;">
+<main class="container mt-4 mb-4" style="max-width: 600px;">
     <h1 class="h4 fw-bold mb-4">Macros</h1>
 
     {{if .Summary}}
