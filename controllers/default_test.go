@@ -20,6 +20,8 @@ func TestHomepage_Authenticated(t *testing.T) {
 	cookies := loginAs(t, "test_home", "lb")
 
 	w := getPath("/", cookies)
-	assert.Equal(t, http.StatusFound, w.Code)
-	assert.Equal(t, "/dashboard", w.Header().Get("Location"))
+	assert.Equal(t, http.StatusOK, w.Code)
+	assert.Contains(t, w.Body.String(), `href="/logout"`)
+	assert.NotContains(t, w.Body.String(), `href="/login"`)
+	assert.NotContains(t, w.Body.String(), `href="/register"`)
 }

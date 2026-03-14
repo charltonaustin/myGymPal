@@ -2,7 +2,7 @@
   "name": "My Gym Pal",
   "short_name": "MyGymPal",
   "description": "Your personal fitness companion.",
-  "start_url": "/",
+  "start_url": "/dashboard",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#212529",
