@@ -9,7 +9,10 @@ type MainController struct {
 }
 
 func (c *MainController) Get() {
-	c.Data["LoggedIn"] = c.GetSession("user_id") != nil
+	if c.GetSession("user_id") != nil {
+		c.Redirect("/dashboard", 302)
+		return
+	}
 	c.Data["ActivePage"] = "home"
 	c.TplName = "index.tpl"
 }
