@@ -38,6 +38,7 @@ func Register() {
 	beego.Router("/offline", &controllers.PWAController{}, "get:Offline")
 
 	beego.Router("/", &controllers.MainController{})
+	beego.Router("/example", &controllers.MainController{}, "get:Example")
 
 	// Auth
 	beego.Router("/register", &controllers.AuthController{}, "get:Register;post:RegisterPost")

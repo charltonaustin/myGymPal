@@ -13,3 +13,9 @@ func (c *MainController) Get() {
 	c.Data["ActivePage"] = "home"
 	c.TplName = "index.tpl"
 }
+
+func (c *MainController) Example() {
+	c.Data["LoggedIn"] = c.GetSession("user_id") != nil
+	c.Data["ActivePage"] = ""
+	c.TplName = "example.tpl"
+}

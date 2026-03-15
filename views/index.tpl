@@ -13,11 +13,11 @@
 
 <main class="container mt-5 mb-4" style="max-width: 640px;">
     <h1 class="display-4 fw-bold mb-3 text-center">Welcome to My Gym Pal</h1>
-    <p class="lead text-muted text-center mb-5">Your personal fitness companion.</p>
-
+    <p class="lead text-muted text-center mb-4">Your personal fitness companion.</p>
     <div class="card mb-4">
         <div class="card-body">
             <h2 class="h5 fw-bold mb-1">Quick Start</h2>
+            <a href="/example" >See what it looks like &rarr;</a>
             <p class="text-muted small mb-3">Get up and running in two steps.</p>
             <ol class="mb-0">
                 <li class="mb-1"><a href="/programs/new">Create a Program</a> — set your schedule and rep ranges by phase.</li>
