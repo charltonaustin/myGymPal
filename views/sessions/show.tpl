@@ -321,65 +321,17 @@
 
     <h2 class="h6 fw-semibold text-uppercase text-muted mt-4 mb-3">Add Exercise</h2>
 
-     <div class="card mb-3 p-3">
-            <form method="POST" action="/sessions/{{$.Session.ID}}/cardio" class="d-flex flex-column gap-2">
-                <input type="text" name="name" class="form-control form-control-sm" placeholder="Activity (e.g. run, bike) — optional">
-                <div class="d-flex gap-2 align-items-end flex-wrap">
-                    <div>
-                        <label class="form-label small mb-1">Type</label>
-                        <select name="cardio_type" class="form-select form-select-sm" style="width: 150px;">
-                            <option value="">—</option>
-                            <option value="steady state">Steady State</option>
-                            <option value="fartlek">Fartlek</option>
-                            <option value="intervals">Intervals</option>
-                            <option value="hiit">HIIT</option>
-                            <option value="easy">Easy / Recovery</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="form-label small mb-1">Goal (min)</label>
-                        <input type="number" name="goal_duration" class="form-control form-control-sm" placeholder="0" min="0" style="width: 80px;">
-                    </div>
-                    <div>
-                        <label class="form-label small mb-1">Actual (min)</label>
-                        <input type="number" name="actual_duration" class="form-control form-control-sm" placeholder="0" min="0" required style="width: 80px;">
-                    </div>
-                    <button type="submit" class="btn btn-dark btn-sm mb-0">Log</button>
-                </div>
-            </form>
-        </div>
-    <form method="POST" action="/sessions/{{.Session.ID}}/exercises">
+    <form id="add-exercise-form" method="POST" action="/sessions/{{.Session.ID}}/exercises">
         <div class="card mb-3 p-3">
-            <div class="mb-2">
-                <input type="text" name="name" class="form-control" placeholder="Exercise name" required>
-            </div>
-            <div class="d-flex align-items-center gap-3 mb-2">
-                <div class="form-check mb-0">
-                    <input type="checkbox" class="form-check-input add-ex-bw-check" name="is_bodyweight" id="add_ex_bw">
-                    <label class="form-check-label" for="add_ex_bw">Bodyweight</label>
-                </div>
-                <div class="form-check mb-0">
-                    <input type="checkbox" class="form-check-input add-ex-tb-check" name="is_time_based" id="add_ex_tb">
-                    <label class="form-check-label" for="add_ex_tb">Time-based</label>
-                </div>
-                <select name="block" class="form-select form-select-sm" style="width: auto;">
+            {{template "partials/exercise_fields.tpl" .}}
+            <div class="mt-2">
+                <label class="form-label">Section</label>
+                <select name="block" class="form-select form-select-sm">
                     <option value="main">Main</option>
                     <option value="abs">Abs</option>
                     <option value="cardio">Cardio</option>
                     <option value="stretch">Stretch</option>
                 </select>
-            </div>
-            <div class="add-ex-weight-row">
-                <div class="input-group input-group-sm">
-                    <input type="number" name="goal_weight" class="form-control" placeholder="Goal weight" min="0" step="0.5">
-                    <select name="weight_unit" class="form-select" style="max-width: 72px;">
-                        <option value="lb" {{if eq .WeightUnit "lb"}}selected{{end}}>lb</option>
-                        <option value="kg" {{if eq .WeightUnit "kg"}}selected{{end}}>kg</option>
-                    </select>
-                </div>
-            </div>
-            <div class="add-ex-time-row d-none mt-2">
-                <input type="number" name="goal_seconds" class="form-control form-control-sm" placeholder="Goal duration (sec)" min="0" step="1" style="width: 180px;">
             </div>
         </div>
         <button type="submit" class="btn btn-dark btn-sm mb-4">Add Exercise</button>
@@ -388,20 +340,6 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-const addExBwCheck = document.querySelector('.add-ex-bw-check');
-const addExTbCheck = document.querySelector('.add-ex-tb-check');
-const addExWeightRow = document.querySelector('.add-ex-weight-row');
-const addExTimeRow = document.querySelector('.add-ex-time-row');
-
-function updateAddExRows() {
-    addExWeightRow.classList.toggle('d-none', addExBwCheck.checked || addExTbCheck.checked);
-    addExTimeRow.classList.toggle('d-none', !addExTbCheck.checked);
-}
-
-if (addExBwCheck) {
-    addExBwCheck.addEventListener('change', updateAddExRows);
-    addExTbCheck.addEventListener('change', updateAddExRows);
-}
 
 function fmtDuration(secs) {
     const h = Math.floor(secs / 3600);

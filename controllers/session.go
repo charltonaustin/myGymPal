@@ -326,7 +326,10 @@ func (c *SessionController) AddExercise() {
 
 	goalWeightStr := c.GetString("goal_weight")
 	goalWeight, _ := strconv.ParseFloat(goalWeightStr, 64)
-	goalSeconds, _ := strconv.Atoi(c.GetString("goal_seconds"))
+	goalH, _ := strconv.Atoi(c.GetString("goal_h"))
+	goalM, _ := strconv.Atoi(c.GetString("goal_m"))
+	goalS, _ := strconv.Atoi(c.GetString("goal_s"))
+	goalSeconds := goalH*3600 + goalM*60 + goalS
 
 	block := validBlock(c.GetString("block"))
 	_, err = SessionExercises.Create(sessionID, name, isBodyweight, goalWeight, weightUnit, 0, block, isTimeBased, goalSeconds)
