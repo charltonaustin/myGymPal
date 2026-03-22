@@ -253,6 +253,7 @@ type mockSessionExerciseRepo struct {
 	LogCardioFn           func(sessionExerciseID int64, cardioType string, goalDuration, actualDuration int) (*models.CardioLog, error)
 	DeleteCardioLogFn     func(id int64) error
 	DeleteExerciseFn      func(exerciseID int64) error
+	UpdateSortOrdersFn    func(sessionID int64, ids []int64) error
 }
 
 func (m *mockSessionExerciseRepo) Create(sessionID int64, name string, isBodyweight bool, goalWeight float64, weightUnit string, goalReps int, block string, isTimeBased bool, goalSeconds int) (*models.SessionExercise, error) {
@@ -314,6 +315,13 @@ func (m *mockSessionExerciseRepo) DeleteCardioLog(id int64) error {
 func (m *mockSessionExerciseRepo) DeleteExercise(exerciseID int64) error {
 	if m.DeleteExerciseFn != nil {
 		return m.DeleteExerciseFn(exerciseID)
+	}
+	return nil
+}
+
+func (m *mockSessionExerciseRepo) UpdateSortOrders(sessionID int64, ids []int64) error {
+	if m.UpdateSortOrdersFn != nil {
+		return m.UpdateSortOrdersFn(sessionID, ids)
 	}
 	return nil
 }

@@ -165,3 +165,13 @@ func DeleteSessionSet(setID int64) error {
 	}
 	return tx.Commit()
 }
+
+func UpdateSessionExerciseSortOrders(sessionID int64, ids []int64) error {
+	o := orm.NewOrm()
+	for i, id := range ids {
+		if _, err := o.Raw("UPDATE session_exercises SET sort_order = ? WHERE id = ? AND session_id = ?", i, id, sessionID).Exec(); err != nil {
+			return err
+		}
+	}
+	return nil
+}

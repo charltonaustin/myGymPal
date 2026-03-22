@@ -74,4 +74,5 @@ type SessionExerciseRepository interface {
 	LogCardio(sessionExerciseID int64, cardioType string, goalDuration, actualDuration int) (*CardioLog, error)
 	DeleteCardioLog(id int64) error
 	DeleteExercise(exerciseID int64) error
+	UpdateSortOrders(sessionID int64, ids []int64) error
 }

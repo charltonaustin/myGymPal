@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"myGymPal/models"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/beego/beego/v2/core/logs"
@@ -695,4 +696,55 @@ func (c *SessionController) DeleteSet() {
 
 	SessionExercises.DeleteSet(setID)
 	c.Redirect(fmt.Sprintf("/sessions/%d", sessionID), 302)
+}
+
+func (c *SessionController) ReorderExercises() {
+	userID := c.GetSession("user_id")
+	if userID == nil {
+		c.Data["json"] = map[string]string{"error": "unauthorized"}
+		c.ServeJSON()
+		return
+	}
+
+	sessionID, err := strconv.ParseInt(c.Ctx.Input.Param(":id"), 10, 64)
+	if err != nil {
+		c.Data["json"] = map[string]string{"error": "invalid session"}
+		c.ServeJSON()
+		return
+	}
+
+	if _, err := Sessions.GetByID(sessionID, userID.(int64)); err != nil {
+		c.Data["json"] = map[string]string{"error": "not found"}
+		c.ServeJSON()
+		return
+	}
+
+	raw := strings.TrimSpace(c.GetString("ids"))
+	if raw == "" {
+		c.Data["json"] = map[string]string{"ok": "1"}
+		c.ServeJSON()
+		return
+	}
+
+	parts := strings.Split(raw, ",")
+	ids := make([]int64, 0, len(parts))
+	for _, p := range parts {
+		id, err := strconv.ParseInt(strings.TrimSpace(p), 10, 64)
+		if err != nil {
+			c.Data["json"] = map[string]string{"error": "invalid id"}
+			c.ServeJSON()
+			return
+		}
+		ids = append(ids, id)
+	}
+
+	if err := SessionExercises.UpdateSortOrders(sessionID, ids); err != nil {
+		logs.Error("ReorderExercises: %v", err)
+		c.Data["json"] = map[string]string{"error": "failed to save order"}
+		c.ServeJSON()
+		return
+	}
+
+	c.Data["json"] = map[string]string{"ok": "1"}
+	c.ServeJSON()
 }

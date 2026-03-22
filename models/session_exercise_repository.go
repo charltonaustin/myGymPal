@@ -41,3 +41,7 @@ func (r *ormSessionExerciseRepository) DeleteCardioLog(id int64) error {
 func (r *ormSessionExerciseRepository) DeleteExercise(exerciseID int64) error {
 	return DeleteSessionExercise(exerciseID)
 }
+
+func (r *ormSessionExerciseRepository) UpdateSortOrders(sessionID int64, ids []int64) error {
+	return UpdateSessionExerciseSortOrders(sessionID, ids)
+}

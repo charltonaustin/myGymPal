@@ -7,6 +7,7 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
     <link rel="manifest" href="/manifest.json">
+    <style>.drag-handle { cursor: grab; touch-action: none; } .sortable-ghost { opacity: 0.4; }</style>
 </head>
 <body>
 
@@ -188,13 +189,17 @@
 
     {{else}}
 
+    <div class="sortable-block" data-session-id="{{$.Session.ID}}" data-block="{{.Block}}">
     {{range .Exercises}}
     {{$exID := .Exercise.ID}}
-    <div class="card mb-3">
+    <div class="card mb-3" data-ex-id="{{$exID}}">
         <div class="card-body pb-2">
-            <div class="d-flex align-items-baseline justify-content-between mb-2">
-                <h2 class="h6 fw-semibold mb-0 text-capitalize">{{if .HitMax}}<button type="button" class="btn btn-link p-0 border-0 hit-max-btn" data-bs-toggle="modal" data-bs-target="#goalWeightModal" data-ex-name="{{.Exercise.Name}}" data-goal-weight="{{.Exercise.GoalWeight}}" data-weight-unit="{{.Exercise.WeightUnit}}" data-direction="up" title="Hit max reps last workout — tap to update goal weight" style="line-height:1;vertical-align:middle;"><i class="bi bi-arrow-up-circle-fill text-black" style="font-size:1.0em;"></i></button>&nbsp;{{else}}{{if and (not .Exercise.IsTimeBased) (gt .Exercise.GoalWeight 0.0)}}<button type="button" class="btn btn-link p-0 border-0 hit-max-btn" data-bs-toggle="modal" data-bs-target="#goalWeightModal" data-ex-name="{{.Exercise.Name}}" data-goal-weight="{{.Exercise.GoalWeight}}" data-weight-unit="{{.Exercise.WeightUnit}}" data-direction="down" title="Missed max reps — tap to adjust goal weight" style="line-height:1;vertical-align:middle;"><i class="bi bi-dash-circle-fill text-black" style="font-size:1.0em;"></i></button>&nbsp;{{end}}{{end}}{{.Exercise.Name}}</h2>
-                <div class="d-flex align-items-center gap-2">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+                <div class="d-flex align-items-center gap-2 flex-grow-1 min-w-0">
+                    <i class="bi bi-grip-vertical text-muted drag-handle flex-shrink-0" style="font-size:1.1rem;"></i>
+                    <h2 class="h6 fw-semibold mb-0 text-capitalize text-truncate">{{if .HitMax}}<button type="button" class="btn btn-link p-0 border-0 hit-max-btn" data-bs-toggle="modal" data-bs-target="#goalWeightModal" data-ex-name="{{.Exercise.Name}}" data-goal-weight="{{.Exercise.GoalWeight}}" data-weight-unit="{{.Exercise.WeightUnit}}" data-direction="up" title="Hit max reps last workout — tap to update goal weight" style="line-height:1;vertical-align:middle;"><i class="bi bi-arrow-up-circle-fill text-black" style="font-size:1.0em;"></i></button>&nbsp;{{else}}{{if and (not .Exercise.IsTimeBased) (gt .Exercise.GoalWeight 0.0)}}<button type="button" class="btn btn-link p-0 border-0 hit-max-btn" data-bs-toggle="modal" data-bs-target="#goalWeightModal" data-ex-name="{{.Exercise.Name}}" data-goal-weight="{{.Exercise.GoalWeight}}" data-weight-unit="{{.Exercise.WeightUnit}}" data-direction="down" title="Missed max reps — tap to adjust goal weight" style="line-height:1;vertical-align:middle;"><i class="bi bi-dash-circle-fill text-black" style="font-size:1.0em;"></i></button>&nbsp;{{end}}{{end}}{{.Exercise.Name}}</h2>
+                </div>
+                <div class="d-flex align-items-center gap-2 flex-shrink-0">
                     <span class="text-muted small">
                     {{if .Exercise.IsTimeBased}}
                     {{if gt .Exercise.GoalSeconds 0}}Goal: {{fmtDuration .Exercise.GoalSeconds}}{{end}}
@@ -321,6 +326,7 @@
         </div>
     </div>
     {{end}}
+    </div>{{/* end sortable-block */}}
 
     {{end}}
     {{end}}
@@ -372,6 +378,7 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.3/Sortable.min.js"></script>
 <script>
 
 function fmtDuration(secs) {
@@ -488,6 +495,26 @@ document.querySelectorAll('.log-set-form').forEach(form => {
 });
 </script>
 <script>if ('serviceWorker' in navigator) { navigator.serviceWorker.register('/sw.js').catch(console.error); }</script>
+<script>
+document.querySelectorAll('.sortable-block').forEach(function (container) {
+    Sortable.create(container, {
+        handle: '.drag-handle',
+        animation: 150,
+        ghostClass: 'sortable-ghost',
+        onEnd: function () {
+            const sessionID = container.dataset.sessionId;
+            const ids = Array.from(container.querySelectorAll('.card[data-ex-id]'))
+                .map(function (el) { return el.dataset.exId; })
+                .join(',');
+            fetch('/sessions/' + sessionID + '/exercises/reorder', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: 'ids=' + encodeURIComponent(ids),
+            });
+        },
+    });
+});
+</script>
 
 <!-- Rest Timer -->
 <div id="rest-timer" class="d-none" style="position:fixed;bottom:0;left:0;right:0;z-index:1050;background:rgba(15,15,15,0.95);color:#fff;border-top:1px solid rgba(255,255,255,0.12);">
