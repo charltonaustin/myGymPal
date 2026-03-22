@@ -112,6 +112,29 @@
                                 >
                                 <span class="text-muted small">sets</span>
                             </div>
+                            <div class="d-flex align-items-center gap-1">
+                                <input
+                                    type="number"
+                                    class="form-control form-control-sm phase-rest-m text-center"
+                                    name="rest_m_{{.PhaseNumber}}"
+                                    value="{{.RestSeconds | restMinutes}}"
+                                    placeholder="0"
+                                    min="0"
+                                    style="max-width: 56px;"
+                                >
+                                <span class="text-muted small">m</span>
+                                <input
+                                    type="number"
+                                    class="form-control form-control-sm phase-rest-s text-center"
+                                    name="rest_s_{{.PhaseNumber}}"
+                                    value="{{.RestSeconds | restSecs}}"
+                                    placeholder="0"
+                                    min="0"
+                                    max="59"
+                                    style="max-width: 56px;"
+                                >
+                                <span class="text-muted small">s rest</span>
+                            </div>
                             <button type="button" class="btn btn-outline-secondary btn-sm copy-to-all ms-auto" title="Copy to all phases"><i class="bi bi-copy"></i></button>
                         </div>
                     </li>
@@ -120,7 +143,7 @@
             </div>
 
             <div class="mt-3 mb-3">
-                <button type="submit" class="btn btn-dark btn-sm">Save Rep Ranges</button>
+                <button type="submit" class="btn btn-dark btn-sm">Save Phase Settings</button>
             </div>
         </form>
 </main>
@@ -134,13 +157,17 @@
 
     document.querySelectorAll('.copy-to-all').forEach(btn => {
         btn.addEventListener('click', () => {
-            const row = btn.closest('li');
-            const min  = row.querySelector('.phase-min').value;
-            const max  = row.querySelector('.phase-max').value;
-            const sets = row.querySelector('.phase-sets').value;
+            const row   = btn.closest('li');
+            const min   = row.querySelector('.phase-min').value;
+            const max   = row.querySelector('.phase-max').value;
+            const sets  = row.querySelector('.phase-sets').value;
+            const restM = row.querySelector('.phase-rest-m').value;
+            const restS = row.querySelector('.phase-rest-s').value;
             document.querySelectorAll('.phase-min').forEach(el => el.value = min);
             document.querySelectorAll('.phase-max').forEach(el => el.value = max);
             document.querySelectorAll('.phase-sets').forEach(el => el.value = sets);
+            document.querySelectorAll('.phase-rest-m').forEach(el => el.value = restM);
+            document.querySelectorAll('.phase-rest-s').forEach(el => el.value = restS);
         });
     });
 </script>

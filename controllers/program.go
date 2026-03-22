@@ -254,10 +254,15 @@ func (c *ProgramController) UpdatePhases() {
 		repMinStr := c.GetString(fmt.Sprintf("rep_min_%d", ph.PhaseNumber))
 		repMaxStr := c.GetString(fmt.Sprintf("rep_max_%d", ph.PhaseNumber))
 		setsStr := c.GetString(fmt.Sprintf("sets_%d", ph.PhaseNumber))
+		restMStr := c.GetString(fmt.Sprintf("rest_m_%d", ph.PhaseNumber))
+		restSStr := c.GetString(fmt.Sprintf("rest_s_%d", ph.PhaseNumber))
 
 		repMin, _ := strconv.Atoi(repMinStr)
 		repMax, _ := strconv.Atoi(repMaxStr)
 		sets, _ := strconv.Atoi(setsStr)
+		restM, _ := strconv.Atoi(restMStr)
+		restS, _ := strconv.Atoi(restSStr)
+		restSeconds := restM*60 + restS
 
 		viewPhases[i] = &models.Phase{
 			ID:          ph.ID,
@@ -266,8 +271,9 @@ func (c *ProgramController) UpdatePhases() {
 			RepMin:      repMin,
 			RepMax:      repMax,
 			DefaultSets: sets,
+			RestSeconds: restSeconds,
 		}
-		updates[i] = models.PhaseUpdate{PhaseNumber: ph.PhaseNumber, RepMin: repMin, RepMax: repMax, DefaultSets: sets}
+		updates[i] = models.PhaseUpdate{PhaseNumber: ph.PhaseNumber, RepMin: repMin, RepMax: repMax, DefaultSets: sets, RestSeconds: restSeconds}
 	}
 
 	if err := Phases.UpdateRepRanges(id, updates); err != nil {
@@ -276,7 +282,7 @@ func (c *ProgramController) UpdatePhases() {
 	}
 
 	flash := beego.NewFlash()
-	flash.Success("Rep ranges saved.")
+	flash.Success("Phase settings saved.")
 	flash.Store(&c.Controller)
 	c.Redirect(fmt.Sprintf("/programs/%d", id), 302)
 }

@@ -13,6 +13,7 @@ type Phase struct {
 	RepMin      int   `orm:"column(rep_min)"`
 	RepMax      int   `orm:"column(rep_max)"`
 	DefaultSets int   `orm:"column(default_sets)"`
+	RestSeconds int   `orm:"column(rest_seconds)"`
 }
 
 func (p *Phase) TableName() string {
@@ -35,6 +36,7 @@ type PhaseUpdate struct {
 	RepMin      int
 	RepMax      int
 	DefaultSets int
+	RestSeconds int
 }
 
 func UpdatePhaseRepRanges(programID int64, updates []PhaseUpdate) error {
@@ -59,6 +61,7 @@ func UpdatePhaseRepRanges(programID int64, updates []PhaseUpdate) error {
 				"rep_min":      u.RepMin,
 				"rep_max":      u.RepMax,
 				"default_sets": u.DefaultSets,
+				"rest_seconds": u.RestSeconds,
 			})
 		if err != nil {
 			return err

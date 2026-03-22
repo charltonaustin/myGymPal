@@ -1,0 +1,1 @@
+ALTER TABLE phases ADD COLUMN rest_seconds INT NOT NULL DEFAULT 0;

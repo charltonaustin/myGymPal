@@ -271,14 +271,15 @@ func (c *SessionController) Show() {
 		weightUnit = user.WeightUnit
 	}
 
-	// Find the rep range and default sets for the session's phase.
-	phaseRepMin, phaseRepMax, phaseDefaultSets := 0, 0, 0
+	// Find the rep range, default sets, and rest period for the session's phase.
+	phaseRepMin, phaseRepMax, phaseDefaultSets, phaseRestSeconds := 0, 0, 0, 0
 	if phases, err := Phases.GetByProgram(session.ProgramID); err == nil {
 		for _, ph := range phases {
 			if ph.PhaseNumber == session.PhaseNumber {
 				phaseRepMin = ph.RepMin
 				phaseRepMax = ph.RepMax
 				phaseDefaultSets = ph.DefaultSets
+				phaseRestSeconds = ph.RestSeconds
 				break
 			}
 		}
@@ -350,6 +351,7 @@ func (c *SessionController) Show() {
 	c.Data["ExWeightUnit"] = weightUnit
 	c.Data["PhaseRepMin"] = phaseRepMin
 	c.Data["PhaseRepMax"] = phaseRepMax
+	c.Data["PhaseRestSeconds"] = phaseRestSeconds
 	c.TplName = "sessions/show.tpl"
 }
 

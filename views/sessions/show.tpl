@@ -24,6 +24,7 @@
         <p class="text-muted small mb-0 mt-1">
             Phase {{.Session.PhaseNumber}} &middot; Week {{.Session.WeekNumber}}
             &middot; {{.Session.Date.Format "Jan 2, 2006"}}
+            {{if gt .PhaseRestSeconds 0}}&middot; {{.PhaseRestSeconds | restMinutes}}m {{.PhaseRestSeconds | restSecs}}s rest{{end}}
         </p>
     </div>
 
@@ -481,10 +482,113 @@ document.querySelectorAll('.log-set-form').forEach(form => {
                 `</form></td>`;
         }
         tbody.appendChild(row);
+
+        if (typeof window.startRestTimer === 'function') window.startRestTimer();
     });
 });
 </script>
 <script>if ('serviceWorker' in navigator) { navigator.serviceWorker.register('/sw.js').catch(console.error); }</script>
+
+<!-- Rest Timer -->
+<div id="rest-timer" class="d-none" style="position:fixed;bottom:0;left:0;right:0;z-index:1050;background:rgba(15,15,15,0.95);color:#fff;border-top:1px solid rgba(255,255,255,0.12);">
+    <div class="container py-3 px-3" style="max-width:600px;">
+        <div class="d-flex align-items-center justify-content-between gap-3">
+            <div>
+                <div class="text-secondary small mb-1">Rest</div>
+                <div id="rest-countdown" class="fw-bold font-monospace" style="font-size:2rem;line-height:1;letter-spacing:0.04em;">0:00</div>
+                <div class="text-secondary small mt-1">Rested: <span id="rest-elapsed">0:00</span></div>
+            </div>
+            <button id="rest-close" class="btn btn-outline-light btn-sm px-3">Done</button>
+        </div>
+    </div>
+</div>
+
+<script>
+(function () {
+    const PHASE_REST = {{.PhaseRestSeconds}};
+    const SID        = '{{.Session.ID}}';
+    const KEY_START  = 'restTimer_' + SID + '_start';
+    const KEY_DUR    = 'restTimer_' + SID + '_dur';
+
+    const timerEl      = document.getElementById('rest-timer');
+    const countdownEl  = document.getElementById('rest-countdown');
+    const elapsedEl    = document.getElementById('rest-elapsed');
+    const closeBtn     = document.getElementById('rest-close');
+    let   interval     = null;
+
+    function fmt(secs) {
+        const s = Math.abs(secs);
+        return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
+    }
+
+    let notified = false;
+
+    function notify() {
+        if (notified) return;
+        notified = true;
+        if (Notification.permission !== 'granted') return;
+        const opts = {
+            body: 'Time to get back to it.',
+            icon: '/static/icons/icon-192.png',
+            tag:  'rest-timer',
+            renotify: false,
+        };
+        // Mobile browsers require showNotification via the service worker;
+        // new Notification() is desktop-only.
+        if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+            navigator.serviceWorker.ready.then(function (reg) {
+                reg.showNotification('Rest complete!', opts);
+            });
+        } else {
+            new Notification('Rest complete!', opts);
+        }
+    }
+
+    function tick(startMs, durationSecs) {
+        const elapsed   = Math.floor((Date.now() - startMs) / 1000);
+        const remaining = durationSecs - elapsed;
+        if (remaining <= 0 && remaining > -1) notify();
+        countdownEl.textContent = remaining > 0 ? fmt(remaining) : 'Done!';
+        elapsedEl.textContent   = fmt(elapsed);
+    }
+
+    function show(startMs, durationSecs) {
+        if (interval) clearInterval(interval);
+        notified = false;
+        timerEl.classList.remove('d-none');
+        tick(startMs, durationSecs);
+        interval = setInterval(function () { tick(startMs, durationSecs); }, 500);
+    }
+
+    function stop() {
+        if (interval) { clearInterval(interval); interval = null; }
+        localStorage.removeItem(KEY_START);
+        localStorage.removeItem(KEY_DUR);
+        timerEl.classList.add('d-none');
+    }
+
+    closeBtn.addEventListener('click', stop);
+
+    // Restore on reload
+    const savedStart = localStorage.getItem(KEY_START);
+    const savedDur   = localStorage.getItem(KEY_DUR);
+    if (savedStart && savedDur) {
+        show(parseInt(savedStart, 10), parseInt(savedDur, 10));
+    }
+
+    window.startRestTimer = function () {
+        if (PHASE_REST <= 0) return;
+        // Request permission on first use (must be called during a user gesture)
+        if ('Notification' in window && Notification.permission === 'default') {
+            Notification.requestPermission();
+        }
+        const now = Date.now();
+        localStorage.setItem(KEY_START, now.toString());
+        localStorage.setItem(KEY_DUR, PHASE_REST.toString());
+        show(now, PHASE_REST);
+    };
+})();
+</script>
 <script>
 (function () {
     let activeBtn = null;

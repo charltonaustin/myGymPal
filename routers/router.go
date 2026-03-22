@@ -18,6 +18,8 @@ func init() {
 		}
 		return fmt.Sprintf("%d:%02d", m, s)
 	})
+	beego.AddFuncMap("restMinutes", func(secs int) int { return secs / 60 })
+	beego.AddFuncMap("restSecs", func(secs int) int { return secs % 60 })
 }
 
 func Register() {
