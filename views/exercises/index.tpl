@@ -34,7 +34,11 @@
                 </div>
                 {{if .IsTimeBased}}
                 <div class="text-muted small">Goal: {{fmtDuration .GoalSeconds}}</div>
-                {{else if not .IsBodyweight}}
+                {{else if .IsBodyweight}}
+                {{if and (gt .GoalRepMin 0) (gt .GoalRepMax 0)}}
+                <div class="text-muted small">Goal: {{.GoalRepMin}}–{{.GoalRepMax}} reps</div>
+                {{end}}
+                {{else}}
                 <div class="text-muted small">Goal: {{.GoalWeight}} {{.WeightUnit}}</div>
                 {{end}}
             </div>
