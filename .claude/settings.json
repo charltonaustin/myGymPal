@@ -5,11 +5,27 @@
         "hooks": [
           {
             "type": "command",
-            "command": "cd /Users/timbrown/GolandProjects/myGymPal && ./bin/ci 2>&1 || true",
+            "command": "cd /Users/timbrown/GolandProjects/myGymPal && ./bin/ci 2>&1",
             "statusMessage": "Running CI..."
           }
         ]
       }
+    ]
+  },
+  "permissions": {
+    "allow": [
+      "Bash(go:*)",
+      "Bash(grep:*)",
+      "Bash(chmod +x:*)",
+      "Bash(docker compose:*)",
+      "Bash(docker exec:*)",
+      "Bash(sed:*)",
+      "Bash(ls:*)",
+      "Bash(./bin/ci)",
+      "mcp__playwright",
+      "Bash(echo:*)",
+      "Bash(jq:*)",
+      "Bash(curl:*)"
     ]
   }
 }
