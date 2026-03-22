@@ -64,7 +64,7 @@
     <div class="card mb-3">
         <div class="card-body pb-2">
             <div class="d-flex align-items-baseline justify-content-between mb-2">
-                <h2 class="h6 fw-semibold mb-0 text-capitalize">{{.Exercise.Name}}{{if .HitMax}}&nbsp;<button type="button" class="btn btn-link p-0 border-0 hit-max-btn" data-bs-toggle="modal" data-bs-target="#goalWeightModal" data-ex-name="{{.Exercise.Name}}" data-goal-weight="{{.Exercise.GoalWeight}}" data-weight-unit="{{.Exercise.WeightUnit}}" title="Hit max reps last workout — tap to update goal weight" style="line-height:1;vertical-align:middle;"><i class="bi bi-arrow-up-circle-fill text-success" style="font-size:1.1em;"></i></button>{{end}}</h2>
+                <h2 class="h6 fw-semibold mb-0 text-capitalize">{{if .HitMax}}<button type="button" class="btn btn-link p-0 border-0 hit-max-btn" data-bs-toggle="modal" data-bs-target="#goalWeightModal" data-ex-name="{{.Exercise.Name}}" data-goal-weight="{{.Exercise.GoalWeight}}" data-weight-unit="{{.Exercise.WeightUnit}}" data-direction="up" title="Hit max reps last workout — tap to update goal weight" style="line-height:1;vertical-align:middle;"><i class="bi bi-arrow-up-circle-fill text-black" style="font-size:1.0em;"></i></button>&nbsp;{{else}}{{if and (not .Exercise.IsTimeBased) (gt .Exercise.GoalWeight 0.0)}}<button type="button" class="btn btn-link p-0 border-0 hit-max-btn" data-bs-toggle="modal" data-bs-target="#goalWeightModal" data-ex-name="{{.Exercise.Name}}" data-goal-weight="{{.Exercise.GoalWeight}}" data-weight-unit="{{.Exercise.WeightUnit}}" data-direction="down" title="Missed max reps — tap to adjust goal weight" style="line-height:1;vertical-align:middle;"><i class="bi bi-dash-circle-fill text-black" style="font-size:1.0em;"></i></button>&nbsp;{{end}}{{end}}{{.Exercise.Name}}</h2>
                 <div class="d-flex align-items-center gap-2">
                     <span class="text-muted small">
                     {{if .Exercise.IsTimeBased}}
@@ -160,12 +160,12 @@
             </form>
             {{else}}
             {{$last := .LastSet}}
-            <form method="POST" action="/sessions/{{$.Session.ID}}/exercises/{{.Exercise.ID}}/sets" class="d-flex gap-2 align-items-end log-set-form">
-                <div>
+            <form method="POST" action="/sessions/{{$.Session.ID}}/exercises/{{.Exercise.ID}}/sets" class="d-flex gap-2 align-items-end w-100 log-set-form">
+                <div class="flex-grow-1">
                     <label class="form-label small mb-1">Weight</label>
-                    <div class="input-group input-group-sm" style="width: 160px;">
+                    <div class="input-group input-group-sm">
                         <input type="number" name="actual_weight" class="form-control" placeholder="0" min="0" step="0.5"{{if $last}} value="{{$last.ActualWeight}}"{{else if gt .Exercise.GoalWeight 0.0}} value="{{.Exercise.GoalWeight}}"{{end}}>
-                        <select name="weight_unit" class="form-select" style="max-width: 90px;">
+                        <select name="weight_unit" class="form-select" style="max-width: 80px;">
                             <option value="lb" {{if $last}}{{if eq $last.WeightUnit "lb"}}selected{{end}}{{else if eq .Exercise.WeightUnit "lb"}}selected{{end}}>lb</option>
                             <option value="kg" {{if $last}}{{if eq $last.WeightUnit "kg"}}selected{{end}}{{else if eq .Exercise.WeightUnit "kg"}}selected{{end}}>kg</option>
                         </select>
@@ -192,7 +192,7 @@
     <div class="card mb-3">
         <div class="card-body pb-2">
             <div class="d-flex align-items-baseline justify-content-between mb-2">
-                <h2 class="h6 fw-semibold mb-0 text-capitalize">{{.Exercise.Name}}{{if .HitMax}}&nbsp;<button type="button" class="btn btn-link p-0 border-0 hit-max-btn" data-bs-toggle="modal" data-bs-target="#goalWeightModal" data-ex-name="{{.Exercise.Name}}" data-goal-weight="{{.Exercise.GoalWeight}}" data-weight-unit="{{.Exercise.WeightUnit}}" title="Hit max reps last workout — tap to update goal weight" style="line-height:1;vertical-align:middle;"><i class="bi bi-arrow-up-circle-fill text-success" style="font-size:1.1em;"></i></button>{{end}}</h2>
+                <h2 class="h6 fw-semibold mb-0 text-capitalize">{{if .HitMax}}<button type="button" class="btn btn-link p-0 border-0 hit-max-btn" data-bs-toggle="modal" data-bs-target="#goalWeightModal" data-ex-name="{{.Exercise.Name}}" data-goal-weight="{{.Exercise.GoalWeight}}" data-weight-unit="{{.Exercise.WeightUnit}}" data-direction="up" title="Hit max reps last workout — tap to update goal weight" style="line-height:1;vertical-align:middle;"><i class="bi bi-arrow-up-circle-fill text-black" style="font-size:1.0em;"></i></button>&nbsp;{{else}}{{if and (not .Exercise.IsTimeBased) (gt .Exercise.GoalWeight 0.0)}}<button type="button" class="btn btn-link p-0 border-0 hit-max-btn" data-bs-toggle="modal" data-bs-target="#goalWeightModal" data-ex-name="{{.Exercise.Name}}" data-goal-weight="{{.Exercise.GoalWeight}}" data-weight-unit="{{.Exercise.WeightUnit}}" data-direction="down" title="Missed max reps — tap to adjust goal weight" style="line-height:1;vertical-align:middle;"><i class="bi bi-dash-circle-fill text-black" style="font-size:1.0em;"></i></button>&nbsp;{{end}}{{end}}{{.Exercise.Name}}</h2>
                 <div class="d-flex align-items-center gap-2">
                     <span class="text-muted small">
                     {{if .Exercise.IsTimeBased}}
@@ -297,12 +297,12 @@
                 <button type="submit" class="btn btn-dark btn-sm mb-0">+ Set</button>
             </form>
             {{else}}
-            <form method="POST" action="/sessions/{{$.Session.ID}}/exercises/{{.Exercise.ID}}/sets" class="d-flex gap-2 align-items-end log-set-form">
-                <div>
+            <form method="POST" action="/sessions/{{$.Session.ID}}/exercises/{{.Exercise.ID}}/sets" class="d-flex gap-2 align-items-end w-100 log-set-form">
+                <div class="flex-grow-1">
                     <label class="form-label small mb-1">Weight</label>
-                    <div class="input-group input-group-sm" style="width: 160px;">
+                    <div class="input-group input-group-sm">
                         <input type="number" name="actual_weight" class="form-control" placeholder="0" min="0" step="0.5"{{if $last}} value="{{$last.ActualWeight}}"{{else if gt .Exercise.GoalWeight 0.0}} value="{{.Exercise.GoalWeight}}"{{end}}>
-                        <select name="weight_unit" class="form-select" style="max-width: 90px;">
+                        <select name="weight_unit" class="form-select" style="max-width: 80px;">
                             <option value="lb" {{if $last}}{{if eq $last.WeightUnit "lb"}}selected{{end}}{{else if eq .Exercise.WeightUnit "lb"}}selected{{end}}>lb</option>
                             <option value="kg" {{if $last}}{{if eq $last.WeightUnit "kg"}}selected{{end}}{{else if eq .Exercise.WeightUnit "kg"}}selected{{end}}>kg</option>
                         </select>
@@ -350,7 +350,7 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <p class="text-muted small mb-3">You hit the max reps last session. Set a new goal weight for <strong id="goalWeightExName"></strong>.</p>
+                <p id="goalWeightDesc" class="text-muted small mb-3">You hit the max reps last session. Set a new goal weight for <strong id="goalWeightExName"></strong>.</p>
                 <div class="input-group">
                     <input type="number" id="goalWeightInput" class="form-control" min="0" step="0.5" placeholder="New goal weight">
                     <select id="goalWeightUnit" class="form-select" style="max-width: 90px;">
@@ -492,11 +492,20 @@ document.querySelectorAll('.log-set-form').forEach(form => {
         const name       = activeBtn.dataset.exName;
         const goalWeight = parseFloat(activeBtn.dataset.goalWeight) || 0;
         const unit       = activeBtn.dataset.weightUnit || 'lb';
+        const direction  = activeBtn.dataset.direction || 'up';
 
         document.getElementById('goalWeightExName').textContent = name;
         document.getElementById('goalWeightInput').value = goalWeight > 0 ? goalWeight : '';
         document.getElementById('goalWeightUnit').value  = unit === 'kg' ? 'kg' : 'lb';
         document.getElementById('goalWeightError').style.display = 'none';
+
+        const desc = document.getElementById('goalWeightDesc');
+        const strong = document.getElementById('goalWeightExName');
+        if (direction === 'down') {
+            desc.firstChild.textContent = 'Set a new goal weight for ';
+        } else {
+            desc.firstChild.textContent = 'You hit the max reps last session. Set a new goal weight for ';
+        }
     });
 
     document.getElementById('goalWeightSaveBtn').addEventListener('click', async function () {
