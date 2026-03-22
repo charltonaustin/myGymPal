@@ -79,6 +79,8 @@ func (c *ExerciseController) Create() {
 	goalM, _ := strconv.Atoi(c.GetString("goal_m"))
 	goalS, _ := strconv.Atoi(c.GetString("goal_s"))
 	goalSeconds := goalH*3600 + goalM*60 + goalS
+	goalRepMin, _ := strconv.Atoi(c.GetString("goal_rep_min"))
+	goalRepMax, _ := strconv.Atoi(c.GetString("goal_rep_max"))
 	exWeightUnit := c.GetString("weight_unit")
 	if exWeightUnit != "kg" {
 		exWeightUnit = "lb"
@@ -95,6 +97,8 @@ func (c *ExerciseController) Create() {
 		c.Data["GoalHours"] = goalH
 		c.Data["GoalMinutes"] = goalM
 		c.Data["GoalSecsRemainder"] = goalS
+		c.Data["GoalRepMin"] = goalRepMin
+		c.Data["GoalRepMax"] = goalRepMax
 		c.Data["WeightUnit"] = weightUnit
 		c.Data["ExWeightUnit"] = exWeightUnit
 		c.TplName = "exercises/new.tpl"
@@ -105,7 +109,7 @@ func (c *ExerciseController) Create() {
 		return
 	}
 
-	if _, err := Exercises.Create(userID.(int64), name, isBodyweight, goalWeight, exWeightUnit, isTimeBased, goalSeconds); err != nil {
+	if _, err := Exercises.Create(userID.(int64), name, isBodyweight, goalWeight, exWeightUnit, isTimeBased, goalSeconds, goalRepMin, goalRepMax); err != nil {
 		logs.Error("ExerciseController.Create: %v", err)
 		renderForm(err.Error())
 		return
@@ -152,6 +156,8 @@ func (c *ExerciseController) Edit() {
 	c.Data["GoalHours"] = ex.GoalSeconds / 3600
 	c.Data["GoalMinutes"] = (ex.GoalSeconds % 3600) / 60
 	c.Data["GoalSecsRemainder"] = ex.GoalSeconds % 60
+	c.Data["GoalRepMin"] = ex.GoalRepMin
+	c.Data["GoalRepMax"] = ex.GoalRepMax
 	c.Data["ExWeightUnit"] = ex.WeightUnit
 	c.TplName = "exercises/edit.tpl"
 }
@@ -189,6 +195,8 @@ func (c *ExerciseController) Update() {
 	goalM, _ := strconv.Atoi(c.GetString("goal_m"))
 	goalS, _ := strconv.Atoi(c.GetString("goal_s"))
 	goalSeconds := goalH*3600 + goalM*60 + goalS
+	goalRepMin, _ := strconv.Atoi(c.GetString("goal_rep_min"))
+	goalRepMax, _ := strconv.Atoi(c.GetString("goal_rep_max"))
 	exWeightUnit := c.GetString("weight_unit")
 	if exWeightUnit != "kg" {
 		exWeightUnit = "lb"
@@ -207,6 +215,8 @@ func (c *ExerciseController) Update() {
 		c.Data["GoalHours"] = goalH
 		c.Data["GoalMinutes"] = goalM
 		c.Data["GoalSecsRemainder"] = goalS
+		c.Data["GoalRepMin"] = goalRepMin
+		c.Data["GoalRepMax"] = goalRepMax
 		c.Data["ExWeightUnit"] = exWeightUnit
 		c.TplName = "exercises/edit.tpl"
 	}
@@ -216,7 +226,7 @@ func (c *ExerciseController) Update() {
 		return
 	}
 
-	if _, err := Exercises.Update(id, userID.(int64), name, isBodyweight, goalWeight, exWeightUnit, isTimeBased, goalSeconds); err != nil {
+	if _, err := Exercises.Update(id, userID.(int64), name, isBodyweight, goalWeight, exWeightUnit, isTimeBased, goalSeconds, goalRepMin, goalRepMax); err != nil {
 		logs.Error("ExerciseController.Update: %v", err)
 		renderForm(err.Error())
 		return
@@ -282,7 +292,7 @@ func (c *ExerciseController) UpdateGoalWeightJSON() {
 		return
 	}
 
-	if _, err := Exercises.Update(libEx.ID, userID.(int64), libEx.Name, libEx.IsBodyweight, goalWeight, weightUnit, libEx.IsTimeBased, libEx.GoalSeconds); err != nil {
+	if _, err := Exercises.Update(libEx.ID, userID.(int64), libEx.Name, libEx.IsBodyweight, goalWeight, weightUnit, libEx.IsTimeBased, libEx.GoalSeconds, libEx.GoalRepMin, libEx.GoalRepMax); err != nil {
 		logs.Error("ExerciseController.UpdateGoalWeightJSON: %v", err)
 		c.Data["json"] = map[string]string{"error": err.Error()}
 		c.ServeJSON()

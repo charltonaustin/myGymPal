@@ -22,9 +22,19 @@
     <div class="input-group input-group-sm">
         <input type="number" class="form-control" name="goal_weight" value="{{.GoalWeight}}" placeholder="0" min="0" step="0.5">
         <select name="weight_unit" class="form-select" style="max-width: 72px;">
-            <option value="lb" {{if eq .WeightUnit "lb"}}selected{{end}}>lb</option>
-            <option value="kg" {{if eq .WeightUnit "kg"}}selected{{end}}>kg</option>
+            <option value="lb" {{if eq .ExWeightUnit "lb"}}selected{{end}}>lb</option>
+            <option value="kg" {{if eq .ExWeightUnit "kg"}}selected{{end}}>kg</option>
         </select>
+    </div>
+</div>
+
+<div class="ex-bw-row {{if not .IsBodyweight}}d-none{{end}} mb-3">
+    <label class="form-label">Goal Rep Range</label>
+    <div class="d-flex align-items-center gap-2">
+        <input type="number" name="goal_rep_min" class="form-control form-control-sm text-center" value="{{.GoalRepMin}}" min="0" step="1" placeholder="Min" style="width: 80px;">
+        <span class="text-muted small">–</span>
+        <input type="number" name="goal_rep_max" class="form-control form-control-sm text-center" value="{{.GoalRepMax}}" min="0" step="1" placeholder="Max" style="width: 80px;">
+        <span class="text-muted small">reps</span>
     </div>
 </div>
 
@@ -49,6 +59,7 @@
     const isTbInput = document.getElementById('ex_is_tb');
     const weightRow = document.querySelector('.ex-weight-row');
     const timeRow   = document.querySelector('.ex-time-row');
+    const bwRow     = document.querySelector('.ex-bw-row');
     if (!radios.length) return;
     function updateRows() {
         const val = document.querySelector('input[name="ex_type_radio"]:checked').value;
@@ -56,6 +67,7 @@
         isTbInput.value = val === 'time_based' ? 'on' : '';
         weightRow.classList.toggle('d-none', val !== 'weighted');
         timeRow.classList.toggle('d-none', val !== 'time_based');
+        if (bwRow) bwRow.classList.toggle('d-none', val !== 'bodyweight');
     }
     radios.forEach(r => r.addEventListener('change', updateRows));
 })();

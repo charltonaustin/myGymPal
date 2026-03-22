@@ -17,6 +17,8 @@ type Exercise struct {
 	WeightUnit   string    `orm:"column(weight_unit)"`
 	IsTimeBased  bool      `orm:"column(is_time_based)"`
 	GoalSeconds  int       `orm:"column(goal_seconds)"`
+	GoalRepMin   int       `orm:"column(goal_rep_min)"`
+	GoalRepMax   int       `orm:"column(goal_rep_max)"`
 	CreatedAt    time.Time `orm:"column(created_at);auto_now_add"`
 	UpdatedAt    time.Time `orm:"column(updated_at);auto_now"`
 }
@@ -27,7 +29,7 @@ func init() {
 	orm.RegisterModel(&Exercise{})
 }
 
-func CreateExercise(userID int64, name string, isBodyweight bool, goalWeight float64, weightUnit string, isTimeBased bool, goalSeconds int) (*Exercise, error) {
+func CreateExercise(userID int64, name string, isBodyweight bool, goalWeight float64, weightUnit string, isTimeBased bool, goalSeconds int, goalRepMin int, goalRepMax int) (*Exercise, error) {
 	name = strings.ToLower(strings.TrimSpace(name))
 	if name == "" {
 		return nil, errors.New("exercise name is required")
@@ -41,6 +43,8 @@ func CreateExercise(userID int64, name string, isBodyweight bool, goalWeight flo
 		WeightUnit:   weightUnit,
 		IsTimeBased:  isTimeBased,
 		GoalSeconds:  goalSeconds,
+		GoalRepMin:   goalRepMin,
+		GoalRepMax:   goalRepMax,
 	}
 	if _, err := o.Insert(ex); err != nil {
 		return nil, err
@@ -80,7 +84,7 @@ func GetExerciseByName(userID int64, name string) (*Exercise, error) {
 	return exercises[0], nil
 }
 
-func UpdateExercise(id, userID int64, name string, isBodyweight bool, goalWeight float64, weightUnit string, isTimeBased bool, goalSeconds int) (*Exercise, error) {
+func UpdateExercise(id, userID int64, name string, isBodyweight bool, goalWeight float64, weightUnit string, isTimeBased bool, goalSeconds int, goalRepMin int, goalRepMax int) (*Exercise, error) {
 	name = strings.ToLower(strings.TrimSpace(name))
 	if name == "" {
 		return nil, errors.New("exercise name is required")
@@ -95,6 +99,8 @@ func UpdateExercise(id, userID int64, name string, isBodyweight bool, goalWeight
 	ex.WeightUnit = weightUnit
 	ex.IsTimeBased = isTimeBased
 	ex.GoalSeconds = goalSeconds
+	ex.GoalRepMin = goalRepMin
+	ex.GoalRepMax = goalRepMax
 	o := orm.NewOrm()
 	if _, err := o.Update(ex); err != nil {
 		return nil, err

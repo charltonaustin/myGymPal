@@ -1,0 +1,3 @@
+ALTER TABLE exercises
+    ADD COLUMN goal_rep_min INT NOT NULL DEFAULT 0,
+    ADD COLUMN goal_rep_max INT NOT NULL DEFAULT 0;

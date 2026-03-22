@@ -250,7 +250,7 @@ func (c *SessionController) Show() {
 		exercises = []*models.SessionExerciseView{}
 	}
 
-	// Enrich goal weight/unit/time from the exercise library so the session always
+	// Enrich goal weight/unit/time/reps from the exercise library so the session always
 	// reflects the current goal even if it was created before the library existed.
 	for _, ev := range exercises {
 		if libEx, err := Exercises.GetByName(userID.(int64), ev.Exercise.Name); err == nil {
@@ -258,6 +258,10 @@ func (c *SessionController) Show() {
 			ev.Exercise.WeightUnit = libEx.WeightUnit
 			ev.Exercise.IsTimeBased = libEx.IsTimeBased
 			ev.Exercise.GoalSeconds = libEx.GoalSeconds
+			if libEx.IsBodyweight {
+				ev.GoalRepMin = libEx.GoalRepMin
+				ev.GoalRepMax = libEx.GoalRepMax
+			}
 		}
 	}
 
@@ -310,9 +314,18 @@ func (c *SessionController) Show() {
 						if len(prevSets) < reqSets {
 							continue
 						}
+						// For bodyweight exercises with a custom rep goal, use that;
+						// otherwise fall back to the phase rep max.
+						repMax := phaseRepMax
+						if ev.Exercise.IsBodyweight && ev.GoalRepMax > 0 {
+							repMax = ev.GoalRepMax
+						}
+						if repMax == 0 {
+							continue
+						}
 						hitMax := true
 						for _, s := range prevSets {
-							if s.ActualReps < phaseRepMax {
+							if s.ActualReps < repMax {
 								hitMax = false
 								break
 							}
@@ -334,6 +347,7 @@ func (c *SessionController) Show() {
 	c.Data["Program"] = program
 	c.Data["ExerciseBlocks"] = groupSessionExercises(exercises)
 	c.Data["WeightUnit"] = weightUnit
+	c.Data["ExWeightUnit"] = weightUnit
 	c.Data["PhaseRepMin"] = phaseRepMin
 	c.Data["PhaseRepMax"] = phaseRepMax
 	c.TplName = "sessions/show.tpl"

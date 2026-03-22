@@ -23,79 +23,7 @@
 
     <form method="POST" action="/exercises/{{.Exercise.ID}}/edit" novalidate id="exercise-form">
         <div class="card p-3">
-            <div class="mb-3">
-                <label for="name" class="form-label">Exercise Name</label>
-                <input
-                    type="text"
-                    class="form-control"
-                    id="name"
-                    name="name"
-                    value="{{.Name}}"
-                    placeholder="e.g. Bench Press"
-                    required
-                >
-                <div class="invalid-feedback">Exercise name is required.</div>
-            </div>
-
-            <div class="form-check mb-2">
-                <input
-                    type="checkbox"
-                    class="form-check-input"
-                    id="is_bodyweight"
-                    name="is_bodyweight"
-                    {{if .IsBodyweight}}checked{{end}}
-                >
-                <label class="form-check-label" for="is_bodyweight">Bodyweight exercise</label>
-            </div>
-
-            <div class="form-check mb-3">
-                <input
-                    type="checkbox"
-                    class="form-check-input"
-                    id="is_time_based"
-                    name="is_time_based"
-                    {{if .IsTimeBased}}checked{{end}}
-                >
-                <label class="form-check-label" for="is_time_based">Time-based exercise</label>
-            </div>
-
-            <div class="weight-row mb-3 {{if or .IsBodyweight .IsTimeBased}}d-none{{end}}">
-                <label class="form-label">Goal Weight</label>
-                <div class="input-group input-group-sm">
-                    <input
-                        type="number"
-                        class="form-control"
-                        name="goal_weight"
-                        id="goal_weight"
-                        value="{{.GoalWeight}}"
-                        placeholder="0"
-                        min="0"
-                        step="0.5"
-                    >
-                    <select name="weight_unit" id="weight_unit" class="form-select" style="max-width: 72px;">
-                        <option value="lb" {{if eq .ExWeightUnit "lb"}}selected{{end}}>lb</option>
-                        <option value="kg" {{if eq .ExWeightUnit "kg"}}selected{{end}}>kg</option>
-                    </select>
-                </div>
-            </div>
-
-            <div class="time-row mb-3 {{if not .IsTimeBased}}d-none{{end}}">
-                <label class="form-label">Goal Duration</label>
-                <div class="d-flex gap-2 align-items-center">
-                    <div class="text-center">
-                        <input type="number" name="goal_h" class="form-control form-control-sm text-center" value="{{.GoalHours}}" min="0" step="1" style="width: 64px;">
-                        <div class="text-muted" style="font-size: 0.75rem;">hrs</div>
-                    </div>
-                    <div class="text-center">
-                        <input type="number" name="goal_m" class="form-control form-control-sm text-center" value="{{.GoalMinutes}}" min="0" max="59" step="1" style="width: 64px;">
-                        <div class="text-muted" style="font-size: 0.75rem;">min</div>
-                    </div>
-                    <div class="text-center">
-                        <input type="number" name="goal_s" class="form-control form-control-sm text-center" value="{{.GoalSecsRemainder}}" min="0" max="59" step="1" style="width: 64px;">
-                        <div class="text-muted" style="font-size: 0.75rem;">sec</div>
-                    </div>
-                </div>
-            </div>
+            {{template "partials/exercise_fields.tpl" .}}
         </div>
 
         <div class="d-flex gap-2 mt-3">
@@ -109,19 +37,6 @@
 <script>
     const alertEl = document.getElementById('error-alert');
     if (alertEl) setTimeout(() => alertEl.remove(), 4000);
-
-    const bwCheck = document.getElementById('is_bodyweight');
-    const tbCheck = document.getElementById('is_time_based');
-    const weightRow = document.querySelector('.weight-row');
-    const timeRow = document.querySelector('.time-row');
-
-    function updateGoalRows() {
-        weightRow.classList.toggle('d-none', bwCheck.checked || tbCheck.checked);
-        timeRow.classList.toggle('d-none', !tbCheck.checked);
-    }
-
-    bwCheck.addEventListener('change', updateGoalRows);
-    tbCheck.addEventListener('change', updateGoalRows);
 
     document.getElementById('exercise-form').addEventListener('submit', function (e) {
         if (!this.checkValidity()) {

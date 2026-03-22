@@ -201,7 +201,9 @@
                     {{if gt .Exercise.GoalWeight 0.0}}
                     Goal: {{.Exercise.GoalWeight}} {{.Exercise.WeightUnit}}
                     {{end}}
-                    {{if and (gt $.PhaseRepMin 0) (gt $.PhaseRepMax 0)}}
+                    {{if and .Exercise.IsBodyweight (gt .GoalRepMax 0)}}
+                    {{.GoalRepMin}}–{{.GoalRepMax}} reps
+                    {{else if and (gt $.PhaseRepMin 0) (gt $.PhaseRepMax 0)}}
                     {{$.PhaseRepMin}}–{{$.PhaseRepMax}} reps
                     {{end}}
                     {{end}}
