@@ -1,0 +1,15 @@
+{
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd /Users/timbrown/GolandProjects/myGymPal && ./bin/ci 2>&1 || true",
+            "statusMessage": "Running CI..."
+          }
+        ]
+      }
+    ]
+  }
+}
