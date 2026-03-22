@@ -52,6 +52,7 @@ func (c *ProgramController) New() {
 	c.Data["WorkoutsPerWeek"] = "4"
 	c.Data["DefaultRepMin"] = "12"
 	c.Data["DefaultRepMax"] = "14"
+	c.Data["DefaultSets"] = "3"
 	c.TplName = "programs/new.tpl"
 }
 
@@ -69,6 +70,7 @@ func (c *ProgramController) Create() {
 	workoutsPerWeekStr := c.GetString("workouts_per_week")
 	defaultRepMinStr := c.GetString("default_rep_min")
 	defaultRepMaxStr := c.GetString("default_rep_max")
+	defaultSetsStr := c.GetString("default_sets")
 
 	renderForm := func(errMsg string) {
 		c.Data["LoggedIn"] = true
@@ -81,6 +83,7 @@ func (c *ProgramController) Create() {
 		c.Data["WorkoutsPerWeek"] = workoutsPerWeekStr
 		c.Data["DefaultRepMin"] = defaultRepMinStr
 		c.Data["DefaultRepMax"] = defaultRepMaxStr
+		c.Data["DefaultSets"] = defaultSetsStr
 		c.TplName = "programs/new.tpl"
 	}
 
@@ -125,7 +128,13 @@ func (c *ProgramController) Create() {
 		return
 	}
 
-	if _, err := Programs.Create(userID.(int64), name, startDate, numPhases, weeksPerPhase, workoutsPerWeek, defaultRepMin, defaultRepMax); err != nil {
+	defaultSets, err := strconv.Atoi(defaultSetsStr)
+	if err != nil || defaultSets <= 0 {
+		renderForm("Default sets must be a positive number.")
+		return
+	}
+
+	if _, err := Programs.Create(userID.(int64), name, startDate, numPhases, weeksPerPhase, workoutsPerWeek, defaultRepMin, defaultRepMax, defaultSets); err != nil {
 		logs.Error("ProgramController.Create: %v", err)
 		renderForm("Something went wrong. Please try again.")
 		return
@@ -244,9 +253,11 @@ func (c *ProgramController) UpdatePhases() {
 	for i, ph := range phases {
 		repMinStr := c.GetString(fmt.Sprintf("rep_min_%d", ph.PhaseNumber))
 		repMaxStr := c.GetString(fmt.Sprintf("rep_max_%d", ph.PhaseNumber))
+		setsStr := c.GetString(fmt.Sprintf("sets_%d", ph.PhaseNumber))
 
 		repMin, _ := strconv.Atoi(repMinStr)
 		repMax, _ := strconv.Atoi(repMaxStr)
+		sets, _ := strconv.Atoi(setsStr)
 
 		viewPhases[i] = &models.Phase{
 			ID:          ph.ID,
@@ -254,8 +265,9 @@ func (c *ProgramController) UpdatePhases() {
 			PhaseNumber: ph.PhaseNumber,
 			RepMin:      repMin,
 			RepMax:      repMax,
+			DefaultSets: sets,
 		}
-		updates[i] = models.PhaseUpdate{PhaseNumber: ph.PhaseNumber, RepMin: repMin, RepMax: repMax}
+		updates[i] = models.PhaseUpdate{PhaseNumber: ph.PhaseNumber, RepMin: repMin, RepMax: repMax, DefaultSets: sets}
 	}
 
 	if err := Phases.UpdateRepRanges(id, updates); err != nil {

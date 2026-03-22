@@ -267,14 +267,63 @@ func (c *SessionController) Show() {
 		weightUnit = user.WeightUnit
 	}
 
-	// Find the rep range for the session's phase.
-	phaseRepMin, phaseRepMax := 0, 0
+	// Find the rep range and default sets for the session's phase.
+	phaseRepMin, phaseRepMax, phaseDefaultSets := 0, 0, 0
 	if phases, err := Phases.GetByProgram(session.ProgramID); err == nil {
 		for _, ph := range phases {
 			if ph.PhaseNumber == session.PhaseNumber {
 				phaseRepMin = ph.RepMin
 				phaseRepMax = ph.RepMax
+				phaseDefaultSets = ph.DefaultSets
 				break
+			}
+		}
+	}
+
+	// Mark HitMax on exercises where the user hit max reps at goal weight for all
+	// required sets in the previous session for this program.
+	if phaseRepMax > 0 {
+		allSessions, err := Sessions.GetByProgram(session.ProgramID)
+		if err == nil {
+			var prevSessionID int64
+			for i, s := range allSessions {
+				if s.ID == id && i+1 < len(allSessions) {
+					prevSessionID = allSessions[i+1].ID
+					break
+				}
+			}
+			if prevSessionID > 0 {
+				if prevExs, err := SessionExercises.GetBySession(prevSessionID); err == nil {
+					prevSetsByName := make(map[string][]*models.SessionSet, len(prevExs))
+					for _, pev := range prevExs {
+						prevSetsByName[pev.Exercise.Name] = pev.Sets
+					}
+					reqSets := phaseDefaultSets
+					if reqSets < 1 {
+						reqSets = 1
+					}
+					for _, ev := range exercises {
+						if ev.Exercise.IsTimeBased {
+							continue
+						}
+						prevSets := prevSetsByName[ev.Exercise.Name]
+						if len(prevSets) < reqSets {
+							continue
+						}
+						hitMax := true
+						for _, s := range prevSets {
+							if s.ActualReps < phaseRepMax {
+								hitMax = false
+								break
+							}
+							if !ev.Exercise.IsBodyweight && ev.Exercise.GoalWeight > 0 && s.ActualWeight < ev.Exercise.GoalWeight {
+								hitMax = false
+								break
+							}
+						}
+						ev.HitMax = hitMax
+					}
+				}
 			}
 		}
 	}

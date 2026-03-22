@@ -66,16 +66,16 @@
     <p class="text-muted small">No workouts yet. Start one above.</p>
     {{end}}
 
-        <h2 class="h6 fw-semibold text-uppercase text-muted mt-5 mb-3">Rep Ranges by Phase</h2>
+        <h2 class="h6 fw-semibold text-uppercase text-muted mt-5 mb-3">Phase Settings</h2>
 
         <form method="POST" action="/programs/{{.Program.ID}}" data-offline-sync>
             <div class="card">
                 <ul class="list-group list-group-flush">
                     {{range .Phases}}
                     <li class="list-group-item">
-                        <div class="d-flex align-items-center gap-3">
+                        <div class="d-flex align-items-center gap-3 flex-wrap">
                             <span class="fw-semibold" style="min-width: 64px;">Phase {{.PhaseNumber}}</span>
-                            <div class="d-flex align-items-center gap-2 flex-grow-1">
+                            <div class="d-flex align-items-center gap-2">
                                 <input
                                     type="number"
                                     class="form-control form-control-sm phase-min"
@@ -84,7 +84,7 @@
                                     placeholder="Min"
                                     min="1"
                                     required
-                                    style="max-width: 80px;"
+                                    style="max-width: 72px;"
                                 >
                                 <span class="text-muted">–</span>
                                 <input
@@ -95,11 +95,24 @@
                                     placeholder="Max"
                                     min="1"
                                     required
-                                    style="max-width: 80px;"
+                                    style="max-width: 72px;"
                                 >
                                 <span class="text-muted small">reps</span>
                             </div>
-                            <button type="button" class="btn btn-outline-secondary btn-sm copy-to-all" title="Copy to all phases"><i class="bi bi-copy"></i></button>
+                            <div class="d-flex align-items-center gap-2">
+                                <input
+                                    type="number"
+                                    class="form-control form-control-sm phase-sets"
+                                    name="sets_{{.PhaseNumber}}"
+                                    value="{{if gt .DefaultSets 0}}{{.DefaultSets}}{{else}}3{{end}}"
+                                    placeholder="Sets"
+                                    min="1"
+                                    required
+                                    style="max-width: 72px;"
+                                >
+                                <span class="text-muted small">sets</span>
+                            </div>
+                            <button type="button" class="btn btn-outline-secondary btn-sm copy-to-all ms-auto" title="Copy to all phases"><i class="bi bi-copy"></i></button>
                         </div>
                     </li>
                     {{end}}
@@ -122,10 +135,12 @@
     document.querySelectorAll('.copy-to-all').forEach(btn => {
         btn.addEventListener('click', () => {
             const row = btn.closest('li');
-            const min = row.querySelector('.phase-min').value;
-            const max = row.querySelector('.phase-max').value;
+            const min  = row.querySelector('.phase-min').value;
+            const max  = row.querySelector('.phase-max').value;
+            const sets = row.querySelector('.phase-sets').value;
             document.querySelectorAll('.phase-min').forEach(el => el.value = min);
             document.querySelectorAll('.phase-max').forEach(el => el.value = max);
+            document.querySelectorAll('.phase-sets').forEach(el => el.value = sets);
         });
     });
 </script>

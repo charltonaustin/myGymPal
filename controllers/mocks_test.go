@@ -88,15 +88,15 @@ func (m *mockUserRepo) DeleteByID(id int64) error {
 }
 
 type mockProgramRepo struct {
-	CreateFn       func(userID int64, name string, startDate time.Time, numPhases, weeksPerPhase, workoutsPerWeek, defaultRepMin, defaultRepMax int) (*models.Program, error)
+	CreateFn       func(userID int64, name string, startDate time.Time, numPhases, weeksPerPhase, workoutsPerWeek, defaultRepMin, defaultRepMax, defaultSets int) (*models.Program, error)
 	GetAllByUserFn func(userID int64) ([]*models.Program, error)
 	GetByIDFn      func(id, userID int64) (*models.Program, error)
 	DeleteFn       func(id, userID int64) error
 }
 
-func (m *mockProgramRepo) Create(userID int64, name string, startDate time.Time, numPhases, weeksPerPhase, workoutsPerWeek, defaultRepMin, defaultRepMax int) (*models.Program, error) {
+func (m *mockProgramRepo) Create(userID int64, name string, startDate time.Time, numPhases, weeksPerPhase, workoutsPerWeek, defaultRepMin, defaultRepMax, defaultSets int) (*models.Program, error) {
 	if m.CreateFn != nil {
-		return m.CreateFn(userID, name, startDate, numPhases, weeksPerPhase, workoutsPerWeek, defaultRepMin, defaultRepMax)
+		return m.CreateFn(userID, name, startDate, numPhases, weeksPerPhase, workoutsPerWeek, defaultRepMin, defaultRepMax, defaultSets)
 	}
 	return &models.Program{ID: testProgramID, UserID: userID, Name: name, NumPhases: numPhases, WeeksPerPhase: weeksPerPhase, WorkoutsPerWeek: workoutsPerWeek}, nil
 }
@@ -547,7 +547,7 @@ var lastProgramCreate struct {
 
 // captureProgramCreate makes CreateFn capture the call args and return a valid program.
 func captureProgramCreate() {
-	mockPrograms.CreateFn = func(userID int64, name string, startDate time.Time, numPhases, weeksPerPhase, workoutsPerWeek, defaultRepMin, defaultRepMax int) (*models.Program, error) {
+	mockPrograms.CreateFn = func(userID int64, name string, startDate time.Time, numPhases, weeksPerPhase, workoutsPerWeek, defaultRepMin, defaultRepMax, defaultSets int) (*models.Program, error) {
 		lastProgramCreate.name = name
 		lastProgramCreate.numPhases = numPhases
 		lastProgramCreate.weeksPerPhase = weeksPerPhase

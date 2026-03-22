@@ -89,6 +89,7 @@ func TestProgramsCreate_Success(t *testing.T) {
 		"workouts_per_week": {"5"},
 		"default_rep_min":   {"10"},
 		"default_rep_max":   {"12"},
+		"default_sets":      {"3"},
 	}, cookies)
 
 	assert.Equal(t, http.StatusFound, w.Code)
@@ -308,8 +309,8 @@ func TestUpdatePhases_Success(t *testing.T) {
 	cookies := loginAs(t, "prog_update_phases_ok", "lb")
 
 	w := postForm("/programs/1", url.Values{
-		"rep_min_1": {"10"}, "rep_max_1": {"12"},
-		"rep_min_2": {"8"}, "rep_max_2": {"10"},
+		"rep_min_1": {"10"}, "rep_max_1": {"12"}, "sets_1": {"3"},
+		"rep_min_2": {"8"}, "rep_max_2": {"10"}, "sets_2": {"4"},
 	}, cookies)
 
 	assert.Equal(t, http.StatusFound, w.Code)

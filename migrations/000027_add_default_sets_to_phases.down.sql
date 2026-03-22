@@ -1,0 +1,1 @@
+ALTER TABLE phases DROP COLUMN IF EXISTS default_sets;

@@ -39,6 +39,7 @@
     {{$exID := .Exercise.ID}}
     {{$exName := .Exercise.Name}}
     {{range .CardioLogs}}
+
     <div class="card mb-2">
         <div class="card-body py-2">
             <div class="d-flex align-items-center justify-content-between">
@@ -63,7 +64,7 @@
     <div class="card mb-3">
         <div class="card-body pb-2">
             <div class="d-flex align-items-baseline justify-content-between mb-2">
-                <h2 class="h6 fw-semibold mb-0 text-capitalize">{{.Exercise.Name}}</h2>
+                <h2 class="h6 fw-semibold mb-0 text-capitalize">{{.Exercise.Name}}{{if .HitMax}}&nbsp;<button type="button" class="btn btn-link p-0 border-0 hit-max-btn" data-bs-toggle="modal" data-bs-target="#goalWeightModal" data-ex-name="{{.Exercise.Name}}" data-goal-weight="{{.Exercise.GoalWeight}}" data-weight-unit="{{.Exercise.WeightUnit}}" title="Hit max reps last workout — tap to update goal weight" style="line-height:1;vertical-align:middle;"><i class="bi bi-arrow-up-circle-fill text-success" style="font-size:1.1em;"></i></button>{{end}}</h2>
                 <div class="d-flex align-items-center gap-2">
                     <span class="text-muted small">
                     {{if .Exercise.IsTimeBased}}
@@ -158,20 +159,21 @@
                 <button type="submit" class="btn btn-dark btn-sm mb-0">+ Set</button>
             </form>
             {{else}}
+            {{$last := .LastSet}}
             <form method="POST" action="/sessions/{{$.Session.ID}}/exercises/{{.Exercise.ID}}/sets" class="d-flex gap-2 align-items-end log-set-form">
                 <div>
                     <label class="form-label small mb-1">Weight</label>
                     <div class="input-group input-group-sm" style="width: 160px;">
-                        <input type="number" name="actual_weight" class="form-control" placeholder="0" min="0" step="0.5"{{if gt .Exercise.GoalWeight 0.0}} value="{{.Exercise.GoalWeight}}"{{end}}>
+                        <input type="number" name="actual_weight" class="form-control" placeholder="0" min="0" step="0.5"{{if $last}} value="{{$last.ActualWeight}}"{{else if gt .Exercise.GoalWeight 0.0}} value="{{.Exercise.GoalWeight}}"{{end}}>
                         <select name="weight_unit" class="form-select" style="max-width: 90px;">
-                            <option value="lb" {{if eq $.WeightUnit "lb"}}selected{{end}}>lb</option>
-                            <option value="kg" {{if eq $.WeightUnit "kg"}}selected{{end}}>kg</option>
+                            <option value="lb" {{if $last}}{{if eq $last.WeightUnit "lb"}}selected{{end}}{{else if eq .Exercise.WeightUnit "lb"}}selected{{end}}>lb</option>
+                            <option value="kg" {{if $last}}{{if eq $last.WeightUnit "kg"}}selected{{end}}{{else if eq .Exercise.WeightUnit "kg"}}selected{{end}}>kg</option>
                         </select>
                     </div>
                 </div>
                 <div>
                     <label class="form-label small mb-1">Reps</label>
-                    <input type="number" name="actual_reps" class="form-control form-control-sm" placeholder="0" min="1" required style="width: 70px;"{{if gt .Exercise.GoalReps 0}} value="{{.Exercise.GoalReps}}"{{end}}>
+                    <input type="number" name="actual_reps" class="form-control form-control-sm" placeholder="0" min="1" required style="width: 70px;"{{if $last}} value="{{$last.ActualReps}}"{{else if gt .Exercise.GoalReps 0}} value="{{.Exercise.GoalReps}}"{{end}}>
                 </div>
                 <button type="submit" class="btn btn-dark btn-sm mb-0">+ Set</button>
             </form>
@@ -190,7 +192,7 @@
     <div class="card mb-3">
         <div class="card-body pb-2">
             <div class="d-flex align-items-baseline justify-content-between mb-2">
-                <h2 class="h6 fw-semibold mb-0 text-capitalize">{{.Exercise.Name}}</h2>
+                <h2 class="h6 fw-semibold mb-0 text-capitalize">{{.Exercise.Name}}{{if .HitMax}}&nbsp;<button type="button" class="btn btn-link p-0 border-0 hit-max-btn" data-bs-toggle="modal" data-bs-target="#goalWeightModal" data-ex-name="{{.Exercise.Name}}" data-goal-weight="{{.Exercise.GoalWeight}}" data-weight-unit="{{.Exercise.WeightUnit}}" title="Hit max reps last workout — tap to update goal weight" style="line-height:1;vertical-align:middle;"><i class="bi bi-arrow-up-circle-fill text-success" style="font-size:1.1em;"></i></button>{{end}}</h2>
                 <div class="d-flex align-items-center gap-2">
                     <span class="text-muted small">
                     {{if .Exercise.IsTimeBased}}
@@ -264,30 +266,31 @@
             {{end}}
             {{end}}
 
+            {{$last := .LastSet}}
             {{if .Exercise.IsTimeBased}}
             <form method="POST" action="/sessions/{{$.Session.ID}}/exercises/{{.Exercise.ID}}/sets" class="d-flex gap-2 align-items-end flex-wrap log-set-form" data-time-based="1" data-goal-seconds="{{.Exercise.GoalSeconds}}">
                 <div>
                     <label class="form-label small mb-1">Type</label>
                     <select name="activity_type" class="form-select form-select-sm" style="width: 150px;">
                         <option value="">—</option>
-                        <option value="steady state">Steady State</option>
-                        <option value="fartlek">Fartlek</option>
-                        <option value="intervals">Intervals</option>
-                        <option value="hiit">HIIT</option>
-                        <option value="easy">Easy / Recovery</option>
+                        <option value="steady state"{{if $last}}{{if eq $last.ActivityType "steady state"}} selected{{end}}{{end}}>Steady State</option>
+                        <option value="fartlek"{{if $last}}{{if eq $last.ActivityType "fartlek"}} selected{{end}}{{end}}>Fartlek</option>
+                        <option value="intervals"{{if $last}}{{if eq $last.ActivityType "intervals"}} selected{{end}}{{end}}>Intervals</option>
+                        <option value="hiit"{{if $last}}{{if eq $last.ActivityType "hiit"}} selected{{end}}{{end}}>HIIT</option>
+                        <option value="easy"{{if $last}}{{if eq $last.ActivityType "easy"}} selected{{end}}{{end}}>Easy / Recovery</option>
                     </select>
                 </div>
                 <div>
                     <label class="form-label small mb-1">Duration (hrs:mins:secs)</label>
                     <div class="d-flex gap-1 align-items-end">
                         <div class="text-center">
-                            <input type="number" name="actual_h" class="form-control form-control-sm text-center" value="0" min="0" step="1" style="width: 56px;">
+                            <input type="number" name="actual_h" class="form-control form-control-sm text-center" value="{{if $last}}{{$last.Hours}}{{else}}0{{end}}" min="0" step="1" style="width: 56px;">
                         </div>
                         <div class="text-center">
-                            <input type="number" name="actual_m" class="form-control form-control-sm text-center" value="0" min="0" max="59" step="1" style="width: 56px;">
+                            <input type="number" name="actual_m" class="form-control form-control-sm text-center" value="{{if $last}}{{$last.Minutes}}{{else}}0{{end}}" min="0" max="59" step="1" style="width: 56px;">
                         </div>
                         <div class="text-center">
-                            <input type="number" name="actual_s" class="form-control form-control-sm text-center" value="0" min="0" max="59" step="1" style="width: 56px;">
+                            <input type="number" name="actual_s" class="form-control form-control-sm text-center" value="{{if $last}}{{$last.Secs}}{{else}}0{{end}}" min="0" max="59" step="1" style="width: 56px;">
                         </div>
                     </div>
                 </div>
@@ -298,16 +301,16 @@
                 <div>
                     <label class="form-label small mb-1">Weight</label>
                     <div class="input-group input-group-sm" style="width: 160px;">
-                        <input type="number" name="actual_weight" class="form-control" placeholder="0" min="0" step="0.5"{{if gt .Exercise.GoalWeight 0.0}} value="{{.Exercise.GoalWeight}}"{{end}}>
+                        <input type="number" name="actual_weight" class="form-control" placeholder="0" min="0" step="0.5"{{if $last}} value="{{$last.ActualWeight}}"{{else if gt .Exercise.GoalWeight 0.0}} value="{{.Exercise.GoalWeight}}"{{end}}>
                         <select name="weight_unit" class="form-select" style="max-width: 90px;">
-                            <option value="lb" {{if eq $.WeightUnit "lb"}}selected{{end}}>lb</option>
-                            <option value="kg" {{if eq $.WeightUnit "kg"}}selected{{end}}>kg</option>
+                            <option value="lb" {{if $last}}{{if eq $last.WeightUnit "lb"}}selected{{end}}{{else if eq .Exercise.WeightUnit "lb"}}selected{{end}}>lb</option>
+                            <option value="kg" {{if $last}}{{if eq $last.WeightUnit "kg"}}selected{{end}}{{else if eq .Exercise.WeightUnit "kg"}}selected{{end}}>kg</option>
                         </select>
                     </div>
                 </div>
                 <div>
                     <label class="form-label small mb-1">Reps</label>
-                    <input type="number" name="actual_reps" class="form-control form-control-sm" placeholder="0" min="1" required style="width: 70px;"{{if gt .Exercise.GoalReps 0}} value="{{.Exercise.GoalReps}}"{{end}}>
+                    <input type="number" name="actual_reps" class="form-control form-control-sm" placeholder="0" min="1" required style="width: 70px;"{{if $last}} value="{{$last.ActualReps}}"{{else if gt .Exercise.GoalReps 0}} value="{{.Exercise.GoalReps}}"{{end}}>
                 </div>
                 <button type="submit" class="btn btn-dark btn-sm mb-0">+ Set</button>
             </form>
@@ -337,6 +340,33 @@
         <button type="submit" class="btn btn-dark btn-sm mb-4">Add Exercise</button>
     </form>
 </main>
+
+<!-- Goal weight update modal -->
+<div class="modal fade" id="goalWeightModal" tabindex="-1" aria-labelledby="goalWeightModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="goalWeightModalLabel">Update Goal Weight</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted small mb-3">You hit the max reps last session. Set a new goal weight for <strong id="goalWeightExName"></strong>.</p>
+                <div class="input-group">
+                    <input type="number" id="goalWeightInput" class="form-control" min="0" step="0.5" placeholder="New goal weight">
+                    <select id="goalWeightUnit" class="form-select" style="max-width: 90px;">
+                        <option value="lb">lb</option>
+                        <option value="kg">kg</option>
+                    </select>
+                </div>
+                <div id="goalWeightError" class="text-danger small mt-2" style="display:none;"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-dark btn-sm" id="goalWeightSaveBtn">Save</button>
+            </div>
+        </div>
+    </div>
+</div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
@@ -453,5 +483,67 @@ document.querySelectorAll('.log-set-form').forEach(form => {
 });
 </script>
 <script>if ('serviceWorker' in navigator) { navigator.serviceWorker.register('/sw.js').catch(console.error); }</script>
+<script>
+(function () {
+    let activeBtn = null;
+
+    document.getElementById('goalWeightModal').addEventListener('show.bs.modal', function (e) {
+        activeBtn = e.relatedTarget;
+        const name       = activeBtn.dataset.exName;
+        const goalWeight = parseFloat(activeBtn.dataset.goalWeight) || 0;
+        const unit       = activeBtn.dataset.weightUnit || 'lb';
+
+        document.getElementById('goalWeightExName').textContent = name;
+        document.getElementById('goalWeightInput').value = goalWeight > 0 ? goalWeight : '';
+        document.getElementById('goalWeightUnit').value  = unit === 'kg' ? 'kg' : 'lb';
+        document.getElementById('goalWeightError').style.display = 'none';
+    });
+
+    document.getElementById('goalWeightSaveBtn').addEventListener('click', async function () {
+        if (!activeBtn) return;
+        const name       = activeBtn.dataset.exName;
+        const goalWeight = document.getElementById('goalWeightInput').value;
+        const unit       = document.getElementById('goalWeightUnit').value;
+        const errEl      = document.getElementById('goalWeightError');
+        errEl.style.display = 'none';
+
+        try {
+            const res = await fetch('/exercises/goal-weight', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: new URLSearchParams({ name, goal_weight: goalWeight, weight_unit: unit }),
+            });
+            const data = await res.json();
+            if (data.error) {
+                errEl.textContent = data.error;
+                errEl.style.display = '';
+                return;
+            }
+            // Update the goal text displayed on the card.
+            const card = activeBtn.closest('.card');
+            if (card) {
+                const goalSpan = card.querySelector('.text-muted.small');
+                if (goalSpan) {
+                    const newGoalText = goalSpan.textContent.replace(/Goal:\s*[\d.]+ (?:lb|kg)/, `Goal: ${data.goal_weight} ${data.weight_unit}`);
+                    goalSpan.textContent = newGoalText;
+                }
+                // Also update the weight input default in the log form.
+                const weightInput = card.querySelector('input[name="actual_weight"]');
+                if (weightInput && !weightInput.value) {
+                    weightInput.value = data.goal_weight;
+                }
+                const unitSelect = card.querySelector('select[name="weight_unit"]');
+                if (unitSelect) {
+                    unitSelect.value = data.weight_unit;
+                }
+            }
+            bootstrap.Modal.getInstance(document.getElementById('goalWeightModal')).hide();
+        } catch {
+            errEl.textContent = 'Something went wrong. Please try again.';
+            errEl.style.display = '';
+        }
+    });
+})();
+</script>
 </body>
 </html>

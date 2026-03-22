@@ -252,6 +252,47 @@ func (c *ExerciseController) Delete() {
 	c.Redirect("/exercises", 302)
 }
 
+// UpdateGoalWeightJSON handles AJAX requests to update an exercise's goal weight.
+// Looks up the exercise by name (enforcing ownership), then updates the goal weight and unit.
+func (c *ExerciseController) UpdateGoalWeightJSON() {
+	userID := c.GetSession("user_id")
+	if userID == nil {
+		c.Data["json"] = map[string]string{"error": "unauthenticated"}
+		c.ServeJSON()
+		return
+	}
+
+	name := c.GetString("name")
+	goalWeightStr := c.GetString("goal_weight")
+	goalWeight, err := strconv.ParseFloat(goalWeightStr, 64)
+	if err != nil || goalWeight < 0 {
+		c.Data["json"] = map[string]string{"error": "invalid goal weight"}
+		c.ServeJSON()
+		return
+	}
+	weightUnit := c.GetString("weight_unit")
+	if weightUnit != "kg" {
+		weightUnit = "lb"
+	}
+
+	libEx, err := Exercises.GetByName(userID.(int64), name)
+	if err != nil {
+		c.Data["json"] = map[string]string{"error": "exercise not found"}
+		c.ServeJSON()
+		return
+	}
+
+	if _, err := Exercises.Update(libEx.ID, userID.(int64), libEx.Name, libEx.IsBodyweight, goalWeight, weightUnit, libEx.IsTimeBased, libEx.GoalSeconds); err != nil {
+		logs.Error("ExerciseController.UpdateGoalWeightJSON: %v", err)
+		c.Data["json"] = map[string]string{"error": err.Error()}
+		c.ServeJSON()
+		return
+	}
+
+	c.Data["json"] = map[string]interface{}{"ok": true, "goal_weight": goalWeight, "weight_unit": weightUnit}
+	c.ServeJSON()
+}
+
 // exerciseLibraryJSON fetches the user's exercise library and returns a template.JS
 // value safe for direct embedding in a <script> tag without HTML escaping.
 func exerciseLibraryJSON(userID int64) template.JS {

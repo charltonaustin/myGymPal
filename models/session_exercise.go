@@ -40,11 +40,24 @@ func (s *SessionSet) TableName() string {
 	return "session_sets"
 }
 
+func (s *SessionSet) Hours() int   { return s.ActualSeconds / 3600 }
+func (s *SessionSet) Minutes() int { return (s.ActualSeconds % 3600) / 60 }
+func (s *SessionSet) Secs() int    { return s.ActualSeconds % 60 }
+
 // SessionExerciseView bundles an exercise with its logged sets and cardio logs for display.
 type SessionExerciseView struct {
 	Exercise   *SessionExercise
 	Sets       []*SessionSet
 	CardioLogs []*CardioLog
+	HitMax     bool // true if the user hit max reps at goal weight for all required sets in the previous session
+}
+
+// LastSet returns the most recently logged set, or nil if none exist.
+func (v *SessionExerciseView) LastSet() *SessionSet {
+	if len(v.Sets) == 0 {
+		return nil
+	}
+	return v.Sets[len(v.Sets)-1]
 }
 
 func init() {

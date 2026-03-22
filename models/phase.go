@@ -12,6 +12,7 @@ type Phase struct {
 	PhaseNumber int   `orm:"column(phase_number)"`
 	RepMin      int   `orm:"column(rep_min)"`
 	RepMax      int   `orm:"column(rep_max)"`
+	DefaultSets int   `orm:"column(default_sets)"`
 }
 
 func (p *Phase) TableName() string {
@@ -33,6 +34,7 @@ type PhaseUpdate struct {
 	PhaseNumber int
 	RepMin      int
 	RepMax      int
+	DefaultSets int
 }
 
 func UpdatePhaseRepRanges(programID int64, updates []PhaseUpdate) error {
@@ -43,6 +45,9 @@ func UpdatePhaseRepRanges(programID int64, updates []PhaseUpdate) error {
 		if u.RepMax < u.RepMin {
 			return errors.New("rep_max must be at least rep_min")
 		}
+		if u.DefaultSets <= 0 {
+			return errors.New("default_sets must be greater than 0")
+		}
 	}
 
 	o := orm.NewOrm()
@@ -51,8 +56,9 @@ func UpdatePhaseRepRanges(programID int64, updates []PhaseUpdate) error {
 			Filter("ProgramID", programID).
 			Filter("PhaseNumber", u.PhaseNumber).
 			Update(orm.Params{
-				"rep_min": u.RepMin,
-				"rep_max": u.RepMax,
+				"rep_min":      u.RepMin,
+				"rep_max":      u.RepMax,
+				"default_sets": u.DefaultSets,
 			})
 		if err != nil {
 			return err

@@ -120,6 +120,22 @@
             <div class="invalid-feedback">Enter a valid rep range (min ≥ 1, max ≥ min).</div>
         </div>
 
+        <div class="mb-3">
+            <label for="default_sets" class="form-label">Default Sets per Exercise</label>
+            <input
+                type="number"
+                class="form-control"
+                id="default_sets"
+                name="default_sets"
+                value="{{.DefaultSets}}"
+                min="1"
+                required
+                style="max-width: 100px;"
+            >
+            <div class="form-text">Applied to all phases — adjust per phase after creating.</div>
+            <div class="invalid-feedback">Enter a number of sets (at least 1).</div>
+        </div>
+
         <div class="d-flex gap-2">
             <button type="submit" class="btn btn-dark">Create Program</button>
             <a href="/programs" class="btn btn-outline-secondary">Cancel</a>

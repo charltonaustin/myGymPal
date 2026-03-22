@@ -27,7 +27,7 @@ func init() {
 	orm.RegisterModel(&Program{})
 }
 
-func CreateProgram(userID int64, name string, startDate time.Time, numPhases, weeksPerPhase, workoutsPerWeek, defaultRepMin, defaultRepMax int) (*Program, error) {
+func CreateProgram(userID int64, name string, startDate time.Time, numPhases, weeksPerPhase, workoutsPerWeek, defaultRepMin, defaultRepMax, defaultSets int) (*Program, error) {
 	if name == "" {
 		return nil, errors.New("program name is required")
 	}
@@ -67,7 +67,7 @@ func CreateProgram(userID int64, name string, startDate time.Time, numPhases, we
 	}
 
 	for i := 1; i <= numPhases; i++ {
-		ph := &Phase{ProgramID: p.ID, PhaseNumber: i, RepMin: defaultRepMin, RepMax: defaultRepMax}
+		ph := &Phase{ProgramID: p.ID, PhaseNumber: i, RepMin: defaultRepMin, RepMax: defaultRepMax, DefaultSets: defaultSets}
 		if _, err := tx.Insert(ph); err != nil {
 			tx.Rollback()
 			return nil, err
