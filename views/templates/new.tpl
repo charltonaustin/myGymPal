@@ -5,7 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>New Template — My Gym Pal</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
     <link rel="manifest" href="/manifest.json">
+    <style>.drag-handle { cursor: grab; touch-action: none; } .sortable-ghost { opacity: 0.4; }</style>
 </head>
 <body>
 
@@ -53,36 +55,30 @@
         <div id="exercises-container">
             {{range $i, $ex := .Exercises}}
             <div class="exercise-row card mb-3 p-3" data-index="{{$i}}">
-                <div class="mb-2">
-                    <input
-                        type="text"
-                        class="form-control"
-                        name="exercise_name_{{$i}}"
-                        value="{{$ex.Name}}"
-                        placeholder="Exercise name"
-                        required
-                    >
+                <div class="mb-2 d-flex align-items-center gap-2">
+                    <i class="bi bi-grip-vertical text-muted drag-handle flex-shrink-0" style="font-size:1.1rem;"></i>
+                    <input type="text" class="form-control" name="exercise_name_{{$i}}" value="{{$ex.Name}}" placeholder="Exercise name" required>
                 </div>
-                <div class="d-flex align-items-center justify-content-between">
-                    <div class="d-flex align-items-center gap-3">
-                        <div class="form-check mb-0">
-                            <input
-                                type="checkbox"
-                                class="form-check-input bw-check"
-                                name="is_bodyweight_{{$i}}"
-                                id="bw_{{$i}}"
-                                {{if $ex.IsBodyweight}}checked{{end}}
-                            >
-                            <label class="form-check-label" for="bw_{{$i}}">Bodyweight</label>
-                        </div>
-                        <select class="form-select form-select-sm" name="block_{{$i}}" style="width: auto;">
-                            <option value="main" {{if or (eq $ex.Block "") (eq $ex.Block "main")}}selected{{end}}>Main</option>
-                            <option value="abs" {{if eq $ex.Block "abs"}}selected{{end}}>Abs</option>
-                            <option value="cardio" {{if eq $ex.Block "cardio"}}selected{{end}}>Cardio</option>
-                            <option value="stretch" {{if eq $ex.Block "stretch"}}selected{{end}}>Stretch</option>
-                        </select>
+                <div class="mb-2">
+                    <div class="btn-group w-100" role="group">
+                        <input type="radio" class="btn-check" name="ex_type_{{$i}}" id="ex_weighted_{{$i}}" value="weighted" autocomplete="off" {{if and (not $ex.IsBodyweight) (not $ex.IsTimeBased)}}checked{{end}}>
+                        <label class="btn btn-outline-secondary btn-sm" for="ex_weighted_{{$i}}">Weighted</label>
+                        <input type="radio" class="btn-check" name="ex_type_{{$i}}" id="ex_bw_{{$i}}" value="bodyweight" autocomplete="off" {{if $ex.IsBodyweight}}checked{{end}}>
+                        <label class="btn btn-outline-secondary btn-sm" for="ex_bw_{{$i}}">Bodyweight</label>
+                        <input type="radio" class="btn-check" name="ex_type_{{$i}}" id="ex_tb_{{$i}}" value="time_based" autocomplete="off" {{if $ex.IsTimeBased}}checked{{end}}>
+                        <label class="btn btn-outline-secondary btn-sm" for="ex_tb_{{$i}}">Time-based</label>
                     </div>
-                    <button type="button" class="btn btn-sm btn-outline-danger remove-exercise">Remove</button>
+                    <input type="hidden" name="is_bodyweight_{{$i}}" class="ex-bw-hidden" value="{{if $ex.IsBodyweight}}on{{end}}">
+                    <input type="hidden" name="is_time_based_{{$i}}" class="ex-tb-hidden" value="{{if $ex.IsTimeBased}}on{{end}}">
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <select class="form-select form-select-sm flex-grow-1" name="block_{{$i}}">
+                        <option value="main" {{if or (eq $ex.Block "") (eq $ex.Block "main")}}selected{{end}}>Main</option>
+                        <option value="abs" {{if eq $ex.Block "abs"}}selected{{end}}>Abs</option>
+                        <option value="cardio" {{if eq $ex.Block "cardio"}}selected{{end}}>Cardio</option>
+                        <option value="stretch" {{if eq $ex.Block "stretch"}}selected{{end}}>Stretch</option>
+                    </select>
+                    <button type="button" class="btn btn-sm btn-outline-danger remove-exercise flex-shrink-0">Remove</button>
                 </div>
             </div>
             {{end}}
@@ -100,6 +96,7 @@
 </main>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
 <script>
     const alertEl = document.getElementById('error-alert');
     if (alertEl) setTimeout(() => alertEl.remove(), 4000);
@@ -112,8 +109,18 @@
     function autofillFromLibrary(row, nameVal) {
         const entry = exerciseLibrary[nameVal];
         if (!entry) return;
-        const bwCheck = row.querySelector('.bw-check');
-        if (bwCheck) bwCheck.checked = entry.isBodyweight;
+        const type = entry.isTimeBased ? 'time_based' : entry.isBodyweight ? 'bodyweight' : 'weighted';
+        const radio = row.querySelector(`input[value="${type}"]`);
+        if (radio) { radio.checked = true; syncHiddens(row); }
+    }
+
+    function syncHiddens(row) {
+        const checked = row.querySelector('input[name^="ex_type_"]:checked');
+        const val = checked ? checked.value : 'weighted';
+        const bwHidden = row.querySelector('.ex-bw-hidden');
+        const tbHidden = row.querySelector('.ex-tb-hidden');
+        if (bwHidden) bwHidden.value = val === 'bodyweight' ? 'on' : '';
+        if (tbHidden) tbHidden.value = val === 'time_based' ? 'on' : '';
     }
 
     function attachAutocomplete(input, row) {
@@ -162,39 +169,69 @@
 
     let exerciseCount = parseInt(document.getElementById('exercise_count').value, 10);
 
+    function reindexRows() {
+        document.querySelectorAll('.exercise-row').forEach((row, i) => {
+            row.dataset.index = i;
+            const nameInput = row.querySelector('[name^="exercise_name_"]');
+            if (nameInput) nameInput.name = `exercise_name_${i}`;
+            row.querySelectorAll('input[type="radio"]').forEach(radio => {
+                const oldId = radio.id;
+                const newId = oldId.replace(/_\d+$/, `_${i}`);
+                const label = row.querySelector(`label[for="${oldId}"]`);
+                radio.name = `ex_type_${i}`;
+                radio.id = newId;
+                if (label) label.htmlFor = newId;
+            });
+            const bwHidden = row.querySelector('.ex-bw-hidden');
+            if (bwHidden) bwHidden.name = `is_bodyweight_${i}`;
+            const tbHidden = row.querySelector('.ex-tb-hidden');
+            if (tbHidden) tbHidden.name = `is_time_based_${i}`;
+            const blockSelect = row.querySelector('[name^="block_"]');
+            if (blockSelect) blockSelect.name = `block_${i}`;
+        });
+        document.getElementById('exercise_count').value = document.querySelectorAll('.exercise-row').length;
+    }
+
     function bindRow(row) {
-        row.querySelector('.remove-exercise').addEventListener('click', () => row.remove());
+        row.querySelector('.remove-exercise').addEventListener('click', () => { row.remove(); reindexRows(); });
         const nameInput = row.querySelector('[name^="exercise_name_"]');
         if (nameInput) attachAutocomplete(nameInput, row);
+        row.querySelectorAll('input[name^="ex_type_"]').forEach(r => r.addEventListener('change', () => syncHiddens(row)));
     }
 
     document.querySelectorAll('.exercise-row').forEach(bindRow);
 
     document.getElementById('add-exercise').addEventListener('click', () => {
         const i = exerciseCount++;
-        document.getElementById('exercise_count').value = exerciseCount;
 
         const row = document.createElement('div');
         row.className = 'exercise-row card mb-3 p-3';
         row.dataset.index = i;
         row.innerHTML = `
-            <div class="mb-2">
+            <div class="mb-2 d-flex align-items-center gap-2">
+                <i class="bi bi-grip-vertical text-muted drag-handle flex-shrink-0" style="font-size:1.1rem;"></i>
                 <input type="text" class="form-control" name="exercise_name_${i}" placeholder="Exercise name" required>
             </div>
-            <div class="d-flex align-items-center justify-content-between">
-                <div class="d-flex align-items-center gap-3">
-                    <div class="form-check mb-0">
-                        <input type="checkbox" class="form-check-input bw-check" name="is_bodyweight_${i}" id="bw_${i}">
-                        <label class="form-check-label" for="bw_${i}">Bodyweight</label>
-                    </div>
-                    <select class="form-select form-select-sm" name="block_${i}" style="width: auto;">
-                        <option value="main" selected>Main</option>
-                        <option value="abs">Abs</option>
-                        <option value="cardio">Cardio</option>
-                        <option value="stretch">Stretch</option>
-                    </select>
+            <div class="mb-2">
+                <div class="btn-group w-100" role="group">
+                    <input type="radio" class="btn-check" name="ex_type_${i}" id="ex_weighted_${i}" value="weighted" autocomplete="off" checked>
+                    <label class="btn btn-outline-secondary btn-sm" for="ex_weighted_${i}">Weighted</label>
+                    <input type="radio" class="btn-check" name="ex_type_${i}" id="ex_bw_${i}" value="bodyweight" autocomplete="off">
+                    <label class="btn btn-outline-secondary btn-sm" for="ex_bw_${i}">Bodyweight</label>
+                    <input type="radio" class="btn-check" name="ex_type_${i}" id="ex_tb_${i}" value="time_based" autocomplete="off">
+                    <label class="btn btn-outline-secondary btn-sm" for="ex_tb_${i}">Time-based</label>
                 </div>
-                <button type="button" class="btn btn-sm btn-outline-danger remove-exercise">Remove</button>
+                <input type="hidden" name="is_bodyweight_${i}" class="ex-bw-hidden" value="">
+                <input type="hidden" name="is_time_based_${i}" class="ex-tb-hidden" value="">
+            </div>
+            <div class="d-flex align-items-center gap-2">
+                <select class="form-select form-select-sm flex-grow-1" name="block_${i}">
+                    <option value="main" selected>Main</option>
+                    <option value="abs">Abs</option>
+                    <option value="cardio">Cardio</option>
+                    <option value="stretch">Stretch</option>
+                </select>
+                <button type="button" class="btn btn-sm btn-outline-danger remove-exercise flex-shrink-0">Remove</button>
             </div>
         `;
         document.getElementById('exercises-container').appendChild(row);
@@ -202,11 +239,19 @@
     });
 
     document.getElementById('template-form').addEventListener('submit', function (e) {
+        reindexRows();
         if (!this.checkValidity()) {
             e.preventDefault();
             e.stopPropagation();
         }
         this.classList.add('was-validated');
+    });
+
+    Sortable.create(document.getElementById('exercises-container'), {
+        handle: '.drag-handle',
+        animation: 150,
+        ghostClass: 'sortable-ghost',
+        onEnd: reindexRows,
     });
 </script>
 <script>if ('serviceWorker' in navigator) { navigator.serviceWorker.register('/sw.js').catch(console.error); }</script>

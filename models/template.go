@@ -25,6 +25,7 @@ type TemplateExercise struct {
 	TemplateID   int64  `orm:"column(template_id)"`
 	Name         string `orm:"column(name)"`
 	IsBodyweight bool   `orm:"column(is_bodyweight)"`
+	IsTimeBased  bool   `orm:"column(is_time_based)"`
 	Block        string `orm:"column(block)"`
 	SortOrder    int    `orm:"column(sort_order)"`
 }
@@ -36,6 +37,7 @@ func (e *TemplateExercise) TableName() string {
 type TemplateExerciseInput struct {
 	Name         string
 	IsBodyweight bool
+	IsTimeBased  bool
 	Block        string
 	SortOrder    int
 }
@@ -75,6 +77,7 @@ func CreateTemplate(name, focus string, exercises []TemplateExerciseInput) (*Tem
 			TemplateID:   t.ID,
 			Name:         ex.Name,
 			IsBodyweight: ex.IsBodyweight,
+			IsTimeBased:  ex.IsTimeBased,
 			Block:        ex.Block,
 			SortOrder:    ex.SortOrder,
 		}

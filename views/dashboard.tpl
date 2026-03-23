@@ -16,10 +16,10 @@
     <h1 class="h4 fw-bold mb-4">Welcome back, {{.Username}}!</h1>
 
     <div class="row g-3 mb-4">
-        <div class="col-6">
+        <div class="col-12 col-sm-6">
             <div class="card h-100">
                 <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-start mb-2">
+                    <div class="mb-2">
                         <h2 class="h6 fw-semibold mb-0">Weight</h2>
                         <a href="/weight" class="text-muted small">Log Weight</a>
                     </div>
@@ -32,10 +32,10 @@
                 </div>
             </div>
         </div>
-        <div class="col-6">
+        <div class="col-12 col-sm-6">
             <div class="card h-100">
                 <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-start mb-2">
+                    <div class="mb-2">
                         <h2 class="h6 fw-semibold mb-0">Macros</h2>
                         <a href="/macros" class="text-muted small">Log Macros</a>
                     </div>

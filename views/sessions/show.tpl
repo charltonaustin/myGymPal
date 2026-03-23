@@ -158,7 +158,7 @@
                         </div>
                     </div>
                 </div>
-                <button type="submit" class="btn btn-dark btn-sm mb-0">+ Set</button>
+                <button type="submit" class="btn btn-dark btn-sm mb-0" style="white-space:nowrap">+ Set</button>
             </form>
             {{else}}
             {{$last := .LastSet}}
@@ -177,7 +177,7 @@
                     <label class="form-label small mb-1">Reps</label>
                     <input type="number" name="actual_reps" class="form-control form-control-sm" placeholder="0" min="1" required style="width: 70px;"{{if $last}} value="{{$last.ActualReps}}"{{else if gt .Exercise.GoalReps 0}} value="{{.Exercise.GoalReps}}"{{end}}>
                 </div>
-                <button type="submit" class="btn btn-dark btn-sm mb-0">+ Set</button>
+                <button type="submit" class="btn btn-dark btn-sm mb-0" style="white-space:nowrap">+ Set</button>
             </form>
             {{end}}
         </div>
@@ -194,30 +194,28 @@
     {{$exID := .Exercise.ID}}
     <div class="card mb-3" data-ex-id="{{$exID}}">
         <div class="card-body pb-2">
-            <div class="d-flex align-items-center justify-content-between mb-2">
+            <div class="d-flex align-items-center justify-content-between mb-1">
                 <div class="d-flex align-items-center gap-2 flex-grow-1 min-w-0">
                     <i class="bi bi-grip-vertical text-muted drag-handle flex-shrink-0" style="font-size:1.1rem;"></i>
                     <h2 class="h6 fw-semibold mb-0 text-capitalize text-truncate">{{if .HitMax}}<button type="button" class="btn btn-link p-0 border-0 hit-max-btn" data-bs-toggle="modal" data-bs-target="#goalWeightModal" data-ex-name="{{.Exercise.Name}}" data-goal-weight="{{.Exercise.GoalWeight}}" data-weight-unit="{{.Exercise.WeightUnit}}" data-direction="up" title="Hit max reps last workout — tap to update goal weight" style="line-height:1;vertical-align:middle;"><i class="bi bi-arrow-up-circle-fill text-black" style="font-size:1.0em;"></i></button>&nbsp;{{else}}{{if and (not .Exercise.IsTimeBased) (gt .Exercise.GoalWeight 0.0)}}<button type="button" class="btn btn-link p-0 border-0 hit-max-btn" data-bs-toggle="modal" data-bs-target="#goalWeightModal" data-ex-name="{{.Exercise.Name}}" data-goal-weight="{{.Exercise.GoalWeight}}" data-weight-unit="{{.Exercise.WeightUnit}}" data-direction="down" title="Missed max reps — tap to adjust goal weight" style="line-height:1;vertical-align:middle;"><i class="bi bi-dash-circle-fill text-black" style="font-size:1.0em;"></i></button>&nbsp;{{end}}{{end}}{{.Exercise.Name}}</h2>
                 </div>
-                <div class="d-flex align-items-center gap-2 flex-shrink-0">
-                    <span class="text-muted small">
-                    {{if .Exercise.IsTimeBased}}
-                    {{if gt .Exercise.GoalSeconds 0}}Goal: {{fmtDuration .Exercise.GoalSeconds}}{{end}}
-                    {{else}}
-                    {{if gt .Exercise.GoalWeight 0.0}}
-                    Goal: {{.Exercise.GoalWeight}} {{.Exercise.WeightUnit}}
-                    {{end}}
-                    {{if and .Exercise.IsBodyweight (gt .GoalRepMax 0)}}
-                    {{.GoalRepMin}}–{{.GoalRepMax}} reps
-                    {{else if and (gt $.PhaseRepMin 0) (gt $.PhaseRepMax 0)}}
-                    {{$.PhaseRepMin}}–{{$.PhaseRepMax}} reps
-                    {{end}}
-                    {{end}}
-                    </span>
+                <div class="flex-shrink-0">
                     <form method="POST" action="/sessions/{{$.Session.ID}}/exercises/{{$exID}}/delete" class="d-inline">
-                        <button type="submit" class="btn btn-link btn-sm text-danger p-0" title="Remove exercise"><i class="bi bi-trash"></i></i></button>
+                        <button type="submit" class="btn btn-link btn-sm text-danger p-0" title="Remove exercise"><i class="bi bi-trash"></i></button>
                     </form>
                 </div>
+            </div>
+            <div class="text-muted small mb-2 ps-1">
+            {{if .Exercise.IsTimeBased}}
+            {{if gt .Exercise.GoalSeconds 0}}Goal: {{fmtDuration .Exercise.GoalSeconds}}{{end}}
+            {{else}}
+            {{if gt .Exercise.GoalWeight 0.0}}Goal: {{.Exercise.GoalWeight}} {{.Exercise.WeightUnit}}{{end}}
+            {{if and .Exercise.IsBodyweight (gt .GoalRepMax 0)}}
+            &nbsp;{{.GoalRepMin}}–{{.GoalRepMax}} reps
+            {{else if and (gt $.PhaseRepMin 0) (gt $.PhaseRepMax 0)}}
+            &nbsp;{{$.PhaseRepMin}}–{{$.PhaseRepMax}} reps
+            {{end}}
+            {{end}}
             </div>
 
             {{if .Sets}}
@@ -302,7 +300,7 @@
                         </div>
                     </div>
                 </div>
-                <button type="submit" class="btn btn-dark btn-sm mb-0">+ Set</button>
+                <button type="submit" class="btn btn-dark btn-sm mb-0" style="white-space:nowrap">+ Set</button>
             </form>
             {{else}}
             <form method="POST" action="/sessions/{{$.Session.ID}}/exercises/{{.Exercise.ID}}/sets" class="d-flex gap-2 align-items-end w-100 log-set-form">
@@ -320,7 +318,7 @@
                     <label class="form-label small mb-1">Reps</label>
                     <input type="number" name="actual_reps" class="form-control form-control-sm" placeholder="0" min="1" required style="width: 70px;"{{if $last}} value="{{$last.ActualReps}}"{{else if gt .Exercise.GoalReps 0}} value="{{.Exercise.GoalReps}}"{{end}}>
                 </div>
-                <button type="submit" class="btn btn-dark btn-sm mb-0">+ Set</button>
+                <button type="submit" class="btn btn-dark btn-sm mb-0" style="white-space:nowrap">+ Set</button>
             </form>
             {{end}}
         </div>

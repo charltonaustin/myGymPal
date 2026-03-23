@@ -56,6 +56,7 @@ func exercisesToForms(exercises []*models.TemplateExercise) []exerciseForm {
 		forms[i] = exerciseForm{
 			Name:         ex.Name,
 			IsBodyweight: ex.IsBodyweight,
+			IsTimeBased:  ex.IsTimeBased,
 			Block:        ex.Block,
 		}
 	}
@@ -70,6 +71,7 @@ type TemplateController struct {
 type exerciseForm struct {
 	Name         string
 	IsBodyweight bool
+	IsTimeBased  bool
 	Block        string
 }
 
@@ -131,11 +133,13 @@ func (c *TemplateController) Create() {
 			continue
 		}
 		isBodyweight := c.GetString(fmt.Sprintf("is_bodyweight_%d", i)) != ""
+		isTimeBased := c.GetString(fmt.Sprintf("is_time_based_%d", i)) != ""
 		block := validBlock(c.GetString(fmt.Sprintf("block_%d", i)))
-		forms = append(forms, exerciseForm{Name: exName, IsBodyweight: isBodyweight, Block: block})
+		forms = append(forms, exerciseForm{Name: exName, IsBodyweight: isBodyweight, IsTimeBased: isTimeBased, Block: block})
 		inputs = append(inputs, models.TemplateExerciseInput{
 			Name:         exName,
 			IsBodyweight: isBodyweight,
+			IsTimeBased:  isTimeBased,
 			Block:        block,
 			SortOrder:    len(inputs),
 		})
@@ -261,11 +265,13 @@ func (c *TemplateController) Update() {
 			continue
 		}
 		isBodyweight := c.GetString(fmt.Sprintf("is_bodyweight_%d", i)) != ""
+		isTimeBased := c.GetString(fmt.Sprintf("is_time_based_%d", i)) != ""
 		block := validBlock(c.GetString(fmt.Sprintf("block_%d", i)))
-		forms = append(forms, exerciseForm{Name: exName, IsBodyweight: isBodyweight, Block: block})
+		forms = append(forms, exerciseForm{Name: exName, IsBodyweight: isBodyweight, IsTimeBased: isTimeBased, Block: block})
 		inputs = append(inputs, models.TemplateExerciseInput{
 			Name:         exName,
 			IsBodyweight: isBodyweight,
+			IsTimeBased:  isTimeBased,
 			Block:        block,
 			SortOrder:    len(inputs),
 		})
