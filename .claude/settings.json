@@ -5,7 +5,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "cd /Users/timbrown/GolandProjects/myGymPal && ./bin/ci 2>&1",
+            "command": "cd ~/GolandProjects/myGymPal && ./bin/ci 2>&1",
             "statusMessage": "Running CI..."
           }
         ]

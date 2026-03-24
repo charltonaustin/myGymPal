@@ -72,70 +72,29 @@
             <div class="card">
                 <ul class="list-group list-group-flush">
                     {{range .Phases}}
-                    <li class="list-group-item">
+                    <li class="list-group-item py-2">
+                        <div class="d-flex align-items-center justify-content-between mb-2">
+                            <span class="fw-semibold small">Phase {{.PhaseNumber}}</span>
+                            <button type="button" class="btn btn-outline-secondary btn-sm copy-to-all" title="Copy to all phases"><i class="bi bi-copy"></i></button>
+                        </div>
                         <div class="d-flex align-items-center gap-3 flex-wrap">
-                            <span class="fw-semibold" style="min-width: 64px;">Phase {{.PhaseNumber}}</span>
-                            <div class="d-flex align-items-center gap-2">
-                                <input
-                                    type="number"
-                                    class="form-control form-control-sm phase-min"
-                                    name="rep_min_{{.PhaseNumber}}"
-                                    value="{{if gt .RepMin 0}}{{.RepMin}}{{end}}"
-                                    placeholder="Min"
-                                    min="1"
-                                    required
-                                    style="max-width: 72px;"
-                                >
-                                <span class="text-muted">–</span>
-                                <input
-                                    type="number"
-                                    class="form-control form-control-sm phase-max"
-                                    name="rep_max_{{.PhaseNumber}}"
-                                    value="{{if gt .RepMax 0}}{{.RepMax}}{{end}}"
-                                    placeholder="Max"
-                                    min="1"
-                                    required
-                                    style="max-width: 72px;"
-                                >
-                                <span class="text-muted small">reps</span>
-                            </div>
-                            <div class="d-flex align-items-center gap-2">
-                                <input
-                                    type="number"
-                                    class="form-control form-control-sm phase-sets"
-                                    name="sets_{{.PhaseNumber}}"
-                                    value="{{if gt .DefaultSets 0}}{{.DefaultSets}}{{else}}3{{end}}"
-                                    placeholder="Sets"
-                                    min="1"
-                                    required
-                                    style="max-width: 72px;"
-                                >
-                                <span class="text-muted small">sets</span>
+                            <div class="d-flex align-items-center gap-1">
+                                <span class="text-muted small">Reps</span>
+                                <input type="number" class="form-control form-control-sm phase-min text-center" name="rep_min_{{.PhaseNumber}}" value="{{if gt .RepMin 0}}{{.RepMin}}{{end}}" placeholder="–" min="1" required style="width:56px;">
+                                <span class="text-muted small">–</span>
+                                <input type="number" class="form-control form-control-sm phase-max text-center" name="rep_max_{{.PhaseNumber}}" value="{{if gt .RepMax 0}}{{.RepMax}}{{end}}" placeholder="–" min="1" required style="width:56px;">
                             </div>
                             <div class="d-flex align-items-center gap-1">
-                                <input
-                                    type="number"
-                                    class="form-control form-control-sm phase-rest-m text-center"
-                                    name="rest_m_{{.PhaseNumber}}"
-                                    value="{{.RestSeconds | restMinutes}}"
-                                    placeholder="0"
-                                    min="0"
-                                    style="max-width: 56px;"
-                                >
-                                <span class="text-muted small">m</span>
-                                <input
-                                    type="number"
-                                    class="form-control form-control-sm phase-rest-s text-center"
-                                    name="rest_s_{{.PhaseNumber}}"
-                                    value="{{.RestSeconds | restSecs}}"
-                                    placeholder="0"
-                                    min="0"
-                                    max="59"
-                                    style="max-width: 56px;"
-                                >
-                                <span class="text-muted small">s rest</span>
+                                <span class="text-muted small">Sets</span>
+                                <input type="number" class="form-control form-control-sm phase-sets text-center" name="sets_{{.PhaseNumber}}" value="{{if gt .DefaultSets 0}}{{.DefaultSets}}{{else}}3{{end}}" min="1" required style="width:56px;">
                             </div>
-                            <button type="button" class="btn btn-outline-secondary btn-sm copy-to-all ms-auto" title="Copy to all phases"><i class="bi bi-copy"></i></button>
+                            <div class="d-flex align-items-center gap-1">
+                                <span class="text-muted small">Rest</span>
+                                <input type="number" class="form-control form-control-sm phase-rest-m text-center" name="rest_m_{{.PhaseNumber}}" value="{{.RestSeconds | restMinutes}}" placeholder="0" min="0" style="width:52px;">
+                                <span class="text-muted small">m</span>
+                                <input type="number" class="form-control form-control-sm phase-rest-s text-center" name="rest_s_{{.PhaseNumber}}" value="{{.RestSeconds | restSecs}}" placeholder="0" min="0" max="59" style="width:52px;">
+                                <span class="text-muted small">s</span>
+                            </div>
                         </div>
                     </li>
                     {{end}}
