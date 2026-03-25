@@ -1,0 +1,16 @@
+{
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd ${MY_GYM_PAL_HOME} && ${MY_GYM_PAL_HOME}/bin/ci 2>&1",
+            "statusMessage": "Running CI..."
+          }
+        ]
+      }
+    ]
+  },
+
+}
