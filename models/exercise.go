@@ -19,6 +19,7 @@ type Exercise struct {
 	GoalSeconds  int       `orm:"column(goal_seconds)"`
 	GoalRepMin   int       `orm:"column(goal_rep_min)"`
 	GoalRepMax   int       `orm:"column(goal_rep_max)"`
+	DefaultBlock string    `orm:"column(default_block)"`
 	CreatedAt    time.Time `orm:"column(created_at);auto_now_add"`
 	UpdatedAt    time.Time `orm:"column(updated_at);auto_now"`
 }
@@ -29,7 +30,16 @@ func init() {
 	orm.RegisterModel(&Exercise{})
 }
 
-func CreateExercise(userID int64, name string, isBodyweight bool, goalWeight float64, weightUnit string, isTimeBased bool, goalSeconds int, goalRepMin int, goalRepMax int) (*Exercise, error) {
+func validDefaultBlock(b string) string {
+	switch b {
+	case "abs", "cardio", "stretch":
+		return b
+	default:
+		return "main"
+	}
+}
+
+func CreateExercise(userID int64, name string, isBodyweight bool, goalWeight float64, weightUnit string, isTimeBased bool, goalSeconds int, goalRepMin int, goalRepMax int, defaultBlock string) (*Exercise, error) {
 	name = strings.ToLower(strings.TrimSpace(name))
 	if name == "" {
 		return nil, errors.New("exercise name is required")
@@ -45,6 +55,7 @@ func CreateExercise(userID int64, name string, isBodyweight bool, goalWeight flo
 		GoalSeconds:  goalSeconds,
 		GoalRepMin:   goalRepMin,
 		GoalRepMax:   goalRepMax,
+		DefaultBlock: validDefaultBlock(defaultBlock),
 	}
 	if _, err := o.Insert(ex); err != nil {
 		return nil, err
@@ -84,7 +95,7 @@ func GetExerciseByName(userID int64, name string) (*Exercise, error) {
 	return exercises[0], nil
 }
 
-func UpdateExercise(id, userID int64, name string, isBodyweight bool, goalWeight float64, weightUnit string, isTimeBased bool, goalSeconds int, goalRepMin int, goalRepMax int) (*Exercise, error) {
+func UpdateExercise(id, userID int64, name string, isBodyweight bool, goalWeight float64, weightUnit string, isTimeBased bool, goalSeconds int, goalRepMin int, goalRepMax int, defaultBlock string) (*Exercise, error) {
 	name = strings.ToLower(strings.TrimSpace(name))
 	if name == "" {
 		return nil, errors.New("exercise name is required")
@@ -101,6 +112,7 @@ func UpdateExercise(id, userID int64, name string, isBodyweight bool, goalWeight
 	ex.GoalSeconds = goalSeconds
 	ex.GoalRepMin = goalRepMin
 	ex.GoalRepMax = goalRepMax
+	ex.DefaultBlock = validDefaultBlock(defaultBlock)
 	o := orm.NewOrm()
 	if _, err := o.Update(ex); err != nil {
 		return nil, err

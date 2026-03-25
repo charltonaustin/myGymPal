@@ -52,6 +52,18 @@
     </div>
 </div>
 
+{{if .ShowDefaultBlock}}
+<div class="mb-3 mt-3">
+    <label class="form-label">Default Section</label>
+    <select name="default_block" class="form-select form-select-sm">
+        <option value="main" {{if or (eq .DefaultBlock "") (eq .DefaultBlock "main")}}selected{{end}}>Main</option>
+        <option value="abs" {{if eq .DefaultBlock "abs"}}selected{{end}}>Abs</option>
+        <option value="cardio" {{if eq .DefaultBlock "cardio"}}selected{{end}}>Cardio</option>
+        <option value="stretch" {{if eq .DefaultBlock "stretch"}}selected{{end}}>Stretch</option>
+    </select>
+</div>
+{{end}}
+
 <script>
 (function () {
     const radios    = document.querySelectorAll('input[name="ex_type_radio"]');

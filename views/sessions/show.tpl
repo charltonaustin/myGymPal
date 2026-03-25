@@ -666,6 +666,10 @@ document.querySelectorAll('.sortable-block').forEach(function (container) {
             if (mInput) mInput.value = Math.floor((secs % 3600) / 60);
             if (sInput) sInput.value = secs % 60;
         }
+        if (entry.defaultBlock) {
+            var blockSelect = document.querySelector('select[name="block"]');
+            if (blockSelect) blockSelect.value = entry.defaultBlock;
+        }
     }
 
     input.addEventListener('input', function () {

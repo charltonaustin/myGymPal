@@ -55,6 +55,8 @@ func (c *ExerciseController) New() {
 	c.Data["ActivePage"] = "exercises"
 	c.Data["WeightUnit"] = weightUnit
 	c.Data["ExWeightUnit"] = weightUnit
+	c.Data["DefaultBlock"] = ""
+	c.Data["ShowDefaultBlock"] = true
 	c.TplName = "exercises/new.tpl"
 }
 
@@ -85,6 +87,7 @@ func (c *ExerciseController) Create() {
 	if exWeightUnit != "kg" {
 		exWeightUnit = "lb"
 	}
+	defaultBlock := c.GetString("default_block")
 
 	renderForm := func(errMsg string) {
 		c.Data["LoggedIn"] = true
@@ -101,6 +104,8 @@ func (c *ExerciseController) Create() {
 		c.Data["GoalRepMax"] = goalRepMax
 		c.Data["WeightUnit"] = weightUnit
 		c.Data["ExWeightUnit"] = exWeightUnit
+		c.Data["DefaultBlock"] = defaultBlock
+		c.Data["ShowDefaultBlock"] = true
 		c.TplName = "exercises/new.tpl"
 	}
 
@@ -109,7 +114,7 @@ func (c *ExerciseController) Create() {
 		return
 	}
 
-	if _, err := Exercises.Create(userID.(int64), name, isBodyweight, goalWeight, exWeightUnit, isTimeBased, goalSeconds, goalRepMin, goalRepMax); err != nil {
+	if _, err := Exercises.Create(userID.(int64), name, isBodyweight, goalWeight, exWeightUnit, isTimeBased, goalSeconds, goalRepMin, goalRepMax, defaultBlock); err != nil {
 		logs.Error("ExerciseController.Create: %v", err)
 		renderForm(err.Error())
 		return
@@ -159,6 +164,8 @@ func (c *ExerciseController) Edit() {
 	c.Data["GoalRepMin"] = ex.GoalRepMin
 	c.Data["GoalRepMax"] = ex.GoalRepMax
 	c.Data["ExWeightUnit"] = ex.WeightUnit
+	c.Data["DefaultBlock"] = ex.DefaultBlock
+	c.Data["ShowDefaultBlock"] = true
 	c.TplName = "exercises/edit.tpl"
 }
 
@@ -201,6 +208,7 @@ func (c *ExerciseController) Update() {
 	if exWeightUnit != "kg" {
 		exWeightUnit = "lb"
 	}
+	defaultBlock := c.GetString("default_block")
 
 	renderForm := func(errMsg string) {
 		c.Data["LoggedIn"] = true
@@ -218,6 +226,8 @@ func (c *ExerciseController) Update() {
 		c.Data["GoalRepMin"] = goalRepMin
 		c.Data["GoalRepMax"] = goalRepMax
 		c.Data["ExWeightUnit"] = exWeightUnit
+		c.Data["DefaultBlock"] = defaultBlock
+		c.Data["ShowDefaultBlock"] = true
 		c.TplName = "exercises/edit.tpl"
 	}
 
@@ -226,7 +236,7 @@ func (c *ExerciseController) Update() {
 		return
 	}
 
-	if _, err := Exercises.Update(id, userID.(int64), name, isBodyweight, goalWeight, exWeightUnit, isTimeBased, goalSeconds, goalRepMin, goalRepMax); err != nil {
+	if _, err := Exercises.Update(id, userID.(int64), name, isBodyweight, goalWeight, exWeightUnit, isTimeBased, goalSeconds, goalRepMin, goalRepMax, defaultBlock); err != nil {
 		logs.Error("ExerciseController.Update: %v", err)
 		renderForm(err.Error())
 		return
@@ -292,7 +302,7 @@ func (c *ExerciseController) UpdateGoalWeightJSON() {
 		return
 	}
 
-	if _, err := Exercises.Update(libEx.ID, userID.(int64), libEx.Name, libEx.IsBodyweight, goalWeight, weightUnit, libEx.IsTimeBased, libEx.GoalSeconds, libEx.GoalRepMin, libEx.GoalRepMax); err != nil {
+	if _, err := Exercises.Update(libEx.ID, userID.(int64), libEx.Name, libEx.IsBodyweight, goalWeight, weightUnit, libEx.IsTimeBased, libEx.GoalSeconds, libEx.GoalRepMin, libEx.GoalRepMax, libEx.DefaultBlock); err != nil {
 		logs.Error("ExerciseController.UpdateGoalWeightJSON: %v", err)
 		c.Data["json"] = map[string]string{"error": err.Error()}
 		c.ServeJSON()
@@ -333,7 +343,7 @@ func (c *ExerciseController) UpdateGoalRepsJSON() {
 		return
 	}
 
-	if _, err := Exercises.Update(libEx.ID, userID.(int64), libEx.Name, libEx.IsBodyweight, libEx.GoalWeight, libEx.WeightUnit, libEx.IsTimeBased, libEx.GoalSeconds, goalRepMin, goalRepMax); err != nil {
+	if _, err := Exercises.Update(libEx.ID, userID.(int64), libEx.Name, libEx.IsBodyweight, libEx.GoalWeight, libEx.WeightUnit, libEx.IsTimeBased, libEx.GoalSeconds, goalRepMin, goalRepMax, libEx.DefaultBlock); err != nil {
 		logs.Error("ExerciseController.UpdateGoalRepsJSON: %v", err)
 		c.Data["json"] = map[string]string{"error": err.Error()}
 		c.ServeJSON()
@@ -371,7 +381,7 @@ func (c *ExerciseController) UpdateGoalSecondsJSON() {
 		return
 	}
 
-	if _, err := Exercises.Update(libEx.ID, userID.(int64), libEx.Name, libEx.IsBodyweight, libEx.GoalWeight, libEx.WeightUnit, libEx.IsTimeBased, goalSeconds, libEx.GoalRepMin, libEx.GoalRepMax); err != nil {
+	if _, err := Exercises.Update(libEx.ID, userID.(int64), libEx.Name, libEx.IsBodyweight, libEx.GoalWeight, libEx.WeightUnit, libEx.IsTimeBased, goalSeconds, libEx.GoalRepMin, libEx.GoalRepMax, libEx.DefaultBlock); err != nil {
 		logs.Error("ExerciseController.UpdateGoalSecondsJSON: %v", err)
 		c.Data["json"] = map[string]string{"error": err.Error()}
 		c.ServeJSON()
@@ -396,9 +406,14 @@ func exerciseLibraryJSON(userID int64) template.JS {
 		IsBodyweight bool    `json:"isBodyweight"`
 		IsTimeBased  bool    `json:"isTimeBased"`
 		GoalSeconds  int     `json:"goalSeconds"`
+		DefaultBlock string  `json:"defaultBlock"`
 	}
 	entries := make([]libEntry, len(exercises))
 	for i, ex := range exercises {
+		block := ex.DefaultBlock
+		if block == "" {
+			block = "main"
+		}
 		entries[i] = libEntry{
 			Name:         ex.Name,
 			GoalWeight:   ex.GoalWeight,
@@ -406,6 +421,7 @@ func exerciseLibraryJSON(userID int64) template.JS {
 			IsBodyweight: ex.IsBodyweight,
 			IsTimeBased:  ex.IsTimeBased,
 			GoalSeconds:  ex.GoalSeconds,
+			DefaultBlock: block,
 		}
 	}
 	b, err := json.Marshal(entries)
