@@ -303,6 +303,47 @@ func (c *ExerciseController) UpdateGoalWeightJSON() {
 	c.ServeJSON()
 }
 
+// UpdateGoalRepsJSON handles AJAX requests to update a bodyweight exercise's goal rep range.
+func (c *ExerciseController) UpdateGoalRepsJSON() {
+	userID := c.GetSession("user_id")
+	if userID == nil {
+		c.Data["json"] = map[string]string{"error": "unauthenticated"}
+		c.ServeJSON()
+		return
+	}
+
+	name := c.GetString("name")
+	goalRepMin, err := strconv.Atoi(c.GetString("goal_rep_min"))
+	if err != nil || goalRepMin < 0 {
+		c.Data["json"] = map[string]string{"error": "invalid goal rep min"}
+		c.ServeJSON()
+		return
+	}
+	goalRepMax, err := strconv.Atoi(c.GetString("goal_rep_max"))
+	if err != nil || goalRepMax < goalRepMin {
+		c.Data["json"] = map[string]string{"error": "invalid goal rep max"}
+		c.ServeJSON()
+		return
+	}
+
+	libEx, err := Exercises.GetByName(userID.(int64), name)
+	if err != nil {
+		c.Data["json"] = map[string]string{"error": "exercise not found"}
+		c.ServeJSON()
+		return
+	}
+
+	if _, err := Exercises.Update(libEx.ID, userID.(int64), libEx.Name, libEx.IsBodyweight, libEx.GoalWeight, libEx.WeightUnit, libEx.IsTimeBased, libEx.GoalSeconds, goalRepMin, goalRepMax); err != nil {
+		logs.Error("ExerciseController.UpdateGoalRepsJSON: %v", err)
+		c.Data["json"] = map[string]string{"error": err.Error()}
+		c.ServeJSON()
+		return
+	}
+
+	c.Data["json"] = map[string]interface{}{"ok": true, "goal_rep_min": goalRepMin, "goal_rep_max": goalRepMax}
+	c.ServeJSON()
+}
+
 // exerciseLibraryJSON fetches the user's exercise library and returns a template.JS
 // value safe for direct embedding in a <script> tag without HTML escaping.
 func exerciseLibraryJSON(userID int64) template.JS {

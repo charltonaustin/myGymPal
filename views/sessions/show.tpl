@@ -66,7 +66,7 @@
     <div class="card mb-3">
         <div class="card-body pb-2">
             <div class="d-flex align-items-baseline justify-content-between mb-2">
-                <h2 class="h6 fw-semibold mb-0 text-capitalize">{{if .HitMax}}<button type="button" class="btn btn-link p-0 border-0 hit-max-btn" data-bs-toggle="modal" data-bs-target="#goalWeightModal" data-ex-name="{{.Exercise.Name}}" data-goal-weight="{{.Exercise.GoalWeight}}" data-weight-unit="{{.Exercise.WeightUnit}}" data-direction="up" title="Hit max reps last workout — tap to update goal weight" style="line-height:1;vertical-align:middle;"><i class="bi bi-arrow-up-circle-fill text-black" style="font-size:1.0em;"></i></button>&nbsp;{{else}}{{if (not .Exercise.IsTimeBased)}}<button type="button" class="btn btn-link p-0 border-0 hit-max-btn" data-bs-toggle="modal" data-bs-target="#goalWeightModal" data-ex-name="{{.Exercise.Name}}" data-goal-weight="{{.Exercise.GoalWeight}}" data-weight-unit="{{.Exercise.WeightUnit}}" data-direction="down" title="{{if gt .Exercise.GoalWeight 0.0}}Missed max reps — tap to adjust goal weight{{else}}Set goal weight{{end}}" style="line-height:1;vertical-align:middle;"><i class="bi bi-{{if gt .Exercise.GoalWeight 0.0}}dash-circle-fill{{else}}pencil{{end}} text-black" style="font-size:1.0em;"></i></button>&nbsp;{{end}}{{end}}{{.Exercise.Name}}</h2>
+                <h2 class="h6 fw-semibold mb-0 text-capitalize">{{if .HitMax}}<button type="button" class="btn btn-link p-0 border-0 hit-max-btn" data-bs-toggle="modal" data-bs-target="#goalWeightModal" data-ex-name="{{.Exercise.Name}}" data-goal-weight="{{.Exercise.GoalWeight}}" data-weight-unit="{{.Exercise.WeightUnit}}" data-direction="up" title="Hit max reps last workout — tap to update goal weight" style="line-height:1;vertical-align:middle;"><i class="bi bi-arrow-up-circle-fill text-black" style="font-size:1.0em;"></i></button>&nbsp;{{else}}{{if (not .Exercise.IsTimeBased)}}{{if .Exercise.IsBodyweight}}<button type="button" class="btn btn-link p-0 border-0" data-bs-toggle="modal" data-bs-target="#goalRepsModal" data-ex-name="{{.Exercise.Name}}" data-goal-rep-min="{{.GoalRepMin}}" data-goal-rep-max="{{.GoalRepMax}}" title="Set goal reps" style="line-height:1;vertical-align:middle;"><i class="bi bi-pencil text-black" style="font-size:1.0em;"></i></button>{{else}}<button type="button" class="btn btn-link p-0 border-0 hit-max-btn" data-bs-toggle="modal" data-bs-target="#goalWeightModal" data-ex-name="{{.Exercise.Name}}" data-goal-weight="{{.Exercise.GoalWeight}}" data-weight-unit="{{.Exercise.WeightUnit}}" data-direction="down" title="{{if gt .Exercise.GoalWeight 0.0}}Missed max reps — tap to adjust goal weight{{else}}Set goal weight{{end}}" style="line-height:1;vertical-align:middle;"><i class="bi bi-{{if gt .Exercise.GoalWeight 0.0}}dash-circle-fill{{else}}pencil{{end}} text-black" style="font-size:1.0em;"></i></button>{{end}}&nbsp;{{end}}{{end}}{{.Exercise.Name}}</h2>
                 <div class="d-flex align-items-center gap-2">
                     <span class="text-muted small">
                     {{if .Exercise.IsTimeBased}}
@@ -197,7 +197,12 @@
             <div class="d-flex align-items-center justify-content-between mb-1">
                 <div class="d-flex align-items-center gap-2 flex-grow-1 min-w-0">
                     <i class="bi bi-grip-vertical text-muted drag-handle flex-shrink-0" style="font-size:1.1rem;"></i>
-                    <h2 class="h6 fw-semibold mb-0 text-capitalize text-truncate">{{if .HitMax}}<button type="button" class="btn btn-link p-0 border-0 hit-max-btn" data-bs-toggle="modal" data-bs-target="#goalWeightModal" data-ex-name="{{.Exercise.Name}}" data-goal-weight="{{.Exercise.GoalWeight}}" data-weight-unit="{{.Exercise.WeightUnit}}" data-direction="up" title="Hit max reps last workout — tap to update goal weight" style="line-height:1;vertical-align:middle;"><i class="bi bi-arrow-up-circle-fill text-black" style="font-size:1.0em;"></i></button>&nbsp;{{else}}{{if (not .Exercise.IsTimeBased)}}<button type="button" class="btn btn-link p-0 border-0 hit-max-btn" data-bs-toggle="modal" data-bs-target="#goalWeightModal" data-ex-name="{{.Exercise.Name}}" data-goal-weight="{{.Exercise.GoalWeight}}" data-weight-unit="{{.Exercise.WeightUnit}}" data-direction="down" title="{{if gt .Exercise.GoalWeight 0.0}}Missed max reps — tap to adjust goal weight{{else}}Set goal weight{{end}}" style="line-height:1;vertical-align:middle;"><i class="bi bi-{{if gt .Exercise.GoalWeight 0.0}}dash-circle-fill{{else}}pencil{{end}} text-black" style="font-size:1.0em;"></i></button>&nbsp;{{end}}{{end}}{{.Exercise.Name}}</h2>
+                    <h2 class="h6 fw-semibold mb-0 text-capitalize text-truncate">{{if .HitMax}}
+                      <button type="button" class="btn btn-link p-0 border-0 hit-max-btn" data-bs-toggle="modal" data-bs-target="#goalWeightModal" data-ex-name="{{.Exercise.Name}}" data-goal-weight="{{.Exercise.GoalWeight}}" data-weight-unit="{{.Exercise.WeightUnit}}" data-direction="up" title="Hit max reps last workout — tap to update goal weight" style="line-height:1;vertical-align:middle;">
+                        <i class="bi bi-arrow-up-circle-fill text-black" style="font-size:1.0em;"></i>
+                      </button>
+                      &nbsp;{{else}}{{if (not .Exercise.IsTimeBased)}}{{if .Exercise.IsBodyweight}}
+                      <button type="button" class="btn btn-link p-0 border-0" data-bs-toggle="modal" data-bs-target="#goalRepsModal" data-ex-name="{{.Exercise.Name}}" data-goal-rep-min="{{.GoalRepMin}}" data-goal-rep-max="{{.GoalRepMax}}" title="Set goal reps" style="line-height:1;vertical-align:middle;"><i class="bi bi-pencil text-black" style="font-size:1.0em;"></i></button>{{else}}<button type="button" class="btn btn-link p-0 border-0 hit-max-btn" data-bs-toggle="modal" data-bs-target="#goalWeightModal" data-ex-name="{{.Exercise.Name}}" data-goal-weight="{{.Exercise.GoalWeight}}" data-weight-unit="{{.Exercise.WeightUnit}}" data-direction="down" title="{{if gt .Exercise.GoalWeight 0.0}}Missed max reps — tap to adjust goal weight{{else}}Set goal weight{{end}}" style="line-height:1;vertical-align:middle;"><i class="bi bi-{{if gt .Exercise.GoalWeight 0.0}}dash-circle-fill{{else}}pencil{{end}} text-black" style="font-size:1.0em;"></i></button>{{end}}&nbsp;{{end}}{{end}}{{.Exercise.Name}}</h2>
                 </div>
                 <div class="flex-shrink-0">
                     <form method="POST" action="/sessions/{{$.Session.ID}}/exercises/{{$exID}}/delete" class="d-inline">
@@ -370,6 +375,37 @@
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
                 <button type="button" class="btn btn-dark btn-sm" id="goalWeightSaveBtn">Save</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Goal reps update modal -->
+<div class="modal fade" id="goalRepsModal" tabindex="-1" aria-labelledby="goalRepsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="goalRepsModalLabel">Update Goal Reps</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted small mb-3">Set a new goal rep range for <strong id="goalRepsExName"></strong>.</p>
+                <div class="d-flex gap-2 align-items-center">
+                    <div class="flex-grow-1">
+                        <label class="form-label small text-muted mb-1">Min reps</label>
+                        <input type="number" id="goalRepMinInput" class="form-control" min="0" step="1" placeholder="Min">
+                    </div>
+                    <div class="pt-3 text-muted">–</div>
+                    <div class="flex-grow-1">
+                        <label class="form-label small text-muted mb-1">Max reps</label>
+                        <input type="number" id="goalRepMaxInput" class="form-control" min="0" step="1" placeholder="Max">
+                    </div>
+                </div>
+                <div id="goalRepsError" class="text-danger small mt-2" style="display:none;"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-dark btn-sm" id="goalRepsSaveBtn">Save</button>
             </div>
         </div>
     </div>
@@ -664,12 +700,26 @@ document.querySelectorAll('.sortable-block').forEach(function (container) {
             if (card) {
                 const goalSpan = card.querySelector('.text-muted.small');
                 if (goalSpan) {
-                    const newGoalText = goalSpan.textContent.replace(/Goal:\s*[\d.]+ (?:lb|kg)/, `Goal: ${data.goal_weight} ${data.weight_unit}`);
-                    goalSpan.textContent = newGoalText;
+                    const goalLabel = `Goal: ${data.goal_weight} ${data.weight_unit}`;
+                    if (/Goal:\s*[\d.]+ (?:lb|kg)/.test(goalSpan.textContent)) {
+                        goalSpan.textContent = goalSpan.textContent.replace(/Goal:\s*[\d.]+ (?:lb|kg)/, goalLabel);
+                    } else {
+                        // No goal text yet — prepend it.
+                        const existing = goalSpan.textContent.trim();
+                        goalSpan.textContent = existing ? `${goalLabel}  ${existing}` : goalLabel;
+                    }
                 }
-                // Also update the weight input default in the log form.
+                // Update the button's data attributes for the next modal open.
+                activeBtn.dataset.goalWeight = data.goal_weight;
+                activeBtn.dataset.weightUnit = data.weight_unit;
+                // Swap pencil icon to dash-circle-fill now that a goal weight is set.
+                const icon = activeBtn.querySelector('i');
+                if (icon) {
+                    icon.classList.replace('bi-pencil', 'bi-dash-circle-fill');
+                }
+                // Update the weight input if it's empty or showing the old default of 0.
                 const weightInput = card.querySelector('input[name="actual_weight"]');
-                if (weightInput && !weightInput.value) {
+                if (weightInput && (!weightInput.value || weightInput.value === '0')) {
                     weightInput.value = data.goal_weight;
                 }
                 const unitSelect = card.querySelector('select[name="weight_unit"]');
@@ -678,6 +728,61 @@ document.querySelectorAll('.sortable-block').forEach(function (container) {
                 }
             }
             bootstrap.Modal.getInstance(document.getElementById('goalWeightModal')).hide();
+        } catch {
+            errEl.textContent = 'Something went wrong. Please try again.';
+            errEl.style.display = '';
+        }
+    });
+})();
+
+// Goal reps modal
+(function () {
+    let activeRepsBtn = null;
+
+    document.getElementById('goalRepsModal').addEventListener('show.bs.modal', function (e) {
+        activeRepsBtn = e.relatedTarget;
+        const name      = activeRepsBtn.dataset.exName;
+        const repMin    = parseInt(activeRepsBtn.dataset.goalRepMin, 10) || 0;
+        const repMax    = parseInt(activeRepsBtn.dataset.goalRepMax, 10) || 0;
+
+        document.getElementById('goalRepsExName').textContent = name;
+        document.getElementById('goalRepMinInput').value = repMin > 0 ? repMin : '';
+        document.getElementById('goalRepMaxInput').value = repMax > 0 ? repMax : '';
+        document.getElementById('goalRepsError').style.display = 'none';
+    });
+
+    document.getElementById('goalRepsSaveBtn').addEventListener('click', async function () {
+        if (!activeRepsBtn) return;
+        const name    = activeRepsBtn.dataset.exName;
+        const repMin  = document.getElementById('goalRepMinInput').value;
+        const repMax  = document.getElementById('goalRepMaxInput').value;
+        const errEl   = document.getElementById('goalRepsError');
+        errEl.style.display = 'none';
+
+        try {
+            const res = await fetch('/exercises/goal-reps', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: new URLSearchParams({ name, goal_rep_min: repMin, goal_rep_max: repMax }),
+            });
+            const data = await res.json();
+            if (data.error) {
+                errEl.textContent = data.error;
+                errEl.style.display = '';
+                return;
+            }
+            // Update the rep range text displayed on the card.
+            const card = activeRepsBtn.closest('.card');
+            if (card) {
+                const goalDiv = card.querySelector('.text-muted.small');
+                if (goalDiv) {
+                    goalDiv.textContent = goalDiv.textContent.replace(/\d+–\d+ reps/, `${data.goal_rep_min}–${data.goal_rep_max} reps`);
+                }
+                // Update the button's data attributes for next open.
+                activeRepsBtn.dataset.goalRepMin = data.goal_rep_min;
+                activeRepsBtn.dataset.goalRepMax = data.goal_rep_max;
+            }
+            bootstrap.Modal.getInstance(document.getElementById('goalRepsModal')).hide();
         } catch {
             errEl.textContent = 'Something went wrong. Please try again.';
             errEl.style.display = '';

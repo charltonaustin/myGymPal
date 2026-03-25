@@ -259,6 +259,7 @@ func (c *SessionController) Show() {
 			ev.Exercise.WeightUnit = libEx.WeightUnit
 			ev.Exercise.IsTimeBased = libEx.IsTimeBased
 			ev.Exercise.GoalSeconds = libEx.GoalSeconds
+			ev.Exercise.IsBodyweight = libEx.IsBodyweight
 			if libEx.IsBodyweight {
 				ev.GoalRepMin = libEx.GoalRepMin
 				ev.GoalRepMax = libEx.GoalRepMax

@@ -88,6 +88,7 @@ func Register() {
 	beego.Router("/exercises", &controllers.ExerciseController{}, "get:Index")
 	beego.Router("/exercises/new", &controllers.ExerciseController{}, "get:New;post:Create")
 	beego.Router("/exercises/goal-weight", &controllers.ExerciseController{}, "post:UpdateGoalWeightJSON")
+	beego.Router("/exercises/goal-reps", &controllers.ExerciseController{}, "post:UpdateGoalRepsJSON")
 	beego.Router("/exercises/:id/edit", &controllers.ExerciseController{}, "get:Edit;post:Update")
 	beego.Router("/exercises/:id/delete", &controllers.ExerciseController{}, "post:Delete")
 
