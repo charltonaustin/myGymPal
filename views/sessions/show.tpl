@@ -66,7 +66,7 @@
     <div class="card mb-3">
         <div class="card-body pb-2">
             <div class="d-flex align-items-baseline justify-content-between mb-2">
-                <h2 class="h6 fw-semibold mb-0 text-capitalize">{{if .HitMax}}<button type="button" class="btn btn-link p-0 border-0 hit-max-btn" data-bs-toggle="modal" data-bs-target="#goalWeightModal" data-ex-name="{{.Exercise.Name}}" data-goal-weight="{{.Exercise.GoalWeight}}" data-weight-unit="{{.Exercise.WeightUnit}}" data-direction="up" title="Hit max reps last workout — tap to update goal weight" style="line-height:1;vertical-align:middle;"><i class="bi bi-arrow-up-circle-fill text-black" style="font-size:1.0em;"></i></button>&nbsp;{{else}}{{if (not .Exercise.IsTimeBased)}}{{if .Exercise.IsBodyweight}}<button type="button" class="btn btn-link p-0 border-0" data-bs-toggle="modal" data-bs-target="#goalRepsModal" data-ex-name="{{.Exercise.Name}}" data-goal-rep-min="{{.GoalRepMin}}" data-goal-rep-max="{{.GoalRepMax}}" title="Set goal reps" style="line-height:1;vertical-align:middle;"><i class="bi bi-pencil text-black" style="font-size:1.0em;"></i></button>{{else}}<button type="button" class="btn btn-link p-0 border-0 hit-max-btn" data-bs-toggle="modal" data-bs-target="#goalWeightModal" data-ex-name="{{.Exercise.Name}}" data-goal-weight="{{.Exercise.GoalWeight}}" data-weight-unit="{{.Exercise.WeightUnit}}" data-direction="down" title="{{if gt .Exercise.GoalWeight 0.0}}Missed max reps — tap to adjust goal weight{{else}}Set goal weight{{end}}" style="line-height:1;vertical-align:middle;"><i class="bi bi-{{if gt .Exercise.GoalWeight 0.0}}dash-circle-fill{{else}}pencil{{end}} text-black" style="font-size:1.0em;"></i></button>{{end}}&nbsp;{{end}}{{end}}{{.Exercise.Name}}</h2>
+                <h2 class="h6 fw-semibold mb-0 text-capitalize">{{if .HitMax}}<button type="button" class="btn btn-link p-0 border-0 hit-max-btn" data-bs-toggle="modal" data-bs-target="#goalWeightModal" data-ex-name="{{.Exercise.Name}}" data-goal-weight="{{.Exercise.GoalWeight}}" data-weight-unit="{{.Exercise.WeightUnit}}" data-direction="up" title="Hit max reps last workout — tap to update goal weight" style="line-height:1;vertical-align:middle;"><i class="bi bi-arrow-up-circle-fill text-black" style="font-size:1.0em;"></i></button>&nbsp;{{else}}{{if .Exercise.IsTimeBased}}<button type="button" class="btn btn-link p-0 border-0" data-bs-toggle="modal" data-bs-target="#goalSecondsModal" data-ex-name="{{.Exercise.Name}}" data-goal-seconds="{{.Exercise.GoalSeconds}}" title="Set goal duration" style="line-height:1;vertical-align:middle;"><i class="bi bi-pencil text-black" style="font-size:1.0em;"></i></button>&nbsp;{{else}}{{if .Exercise.IsBodyweight}}<button type="button" class="btn btn-link p-0 border-0" data-bs-toggle="modal" data-bs-target="#goalRepsModal" data-ex-name="{{.Exercise.Name}}" data-goal-rep-min="{{.GoalRepMin}}" data-goal-rep-max="{{.GoalRepMax}}" title="Set goal reps" style="line-height:1;vertical-align:middle;"><i class="bi bi-pencil text-black" style="font-size:1.0em;"></i></button>{{else}}<button type="button" class="btn btn-link p-0 border-0 hit-max-btn" data-bs-toggle="modal" data-bs-target="#goalWeightModal" data-ex-name="{{.Exercise.Name}}" data-goal-weight="{{.Exercise.GoalWeight}}" data-weight-unit="{{.Exercise.WeightUnit}}" data-direction="down" title="{{if gt .Exercise.GoalWeight 0.0}}Missed max reps — tap to adjust goal weight{{else}}Set goal weight{{end}}" style="line-height:1;vertical-align:middle;"><i class="bi bi-{{if gt .Exercise.GoalWeight 0.0}}dash-circle-fill{{else}}pencil{{end}} text-black" style="font-size:1.0em;"></i></button>{{end}}&nbsp;{{end}}{{end}}{{.Exercise.Name}}</h2>
                 <div class="d-flex align-items-center gap-2">
                     <span class="text-muted small">
                     {{if .Exercise.IsTimeBased}}
@@ -406,6 +406,42 @@
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
                 <button type="button" class="btn btn-dark btn-sm" id="goalRepsSaveBtn">Save</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Goal seconds update modal -->
+<div class="modal fade" id="goalSecondsModal" tabindex="-1" aria-labelledby="goalSecondsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="goalSecondsModalLabel">Update Goal Duration</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted small mb-3">Set a new goal duration for <strong id="goalSecondsExName"></strong>.</p>
+                <div class="d-flex gap-2 align-items-center">
+                    <div class="flex-grow-1">
+                        <label class="form-label small text-muted mb-1">Hours</label>
+                        <input type="number" id="goalSecondsH" class="form-control text-center" min="0" step="1" placeholder="0">
+                    </div>
+                    <div class="pt-3 text-muted">:</div>
+                    <div class="flex-grow-1">
+                        <label class="form-label small text-muted mb-1">Minutes</label>
+                        <input type="number" id="goalSecondsM" class="form-control text-center" min="0" max="59" step="1" placeholder="00">
+                    </div>
+                    <div class="pt-3 text-muted">:</div>
+                    <div class="flex-grow-1">
+                        <label class="form-label small text-muted mb-1">Seconds</label>
+                        <input type="number" id="goalSecondsS" class="form-control text-center" min="0" max="59" step="1" placeholder="00">
+                    </div>
+                </div>
+                <div id="goalSecondsError" class="text-danger small mt-2" style="display:none;"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-dark btn-sm" id="goalSecondsSaveBtn">Save</button>
             </div>
         </div>
     </div>
@@ -783,6 +819,81 @@ document.querySelectorAll('.sortable-block').forEach(function (container) {
                 activeRepsBtn.dataset.goalRepMax = data.goal_rep_max;
             }
             bootstrap.Modal.getInstance(document.getElementById('goalRepsModal')).hide();
+        } catch {
+            errEl.textContent = 'Something went wrong. Please try again.';
+            errEl.style.display = '';
+        }
+    });
+})();
+
+// Goal seconds modal
+(function () {
+    let activeSecsBtn = null;
+
+    function secsToHMS(total) {
+        return {
+            h: Math.floor(total / 3600),
+            m: Math.floor((total % 3600) / 60),
+            s: total % 60,
+        };
+    }
+
+    function fmtHMS(h, m, s) {
+        if (h > 0) return `${h}h ${String(m).padStart(2,'0')}m ${String(s).padStart(2,'0')}s`;
+        if (m > 0) return `${m}m ${String(s).padStart(2,'0')}s`;
+        return `${s}s`;
+    }
+
+    document.getElementById('goalSecondsModal').addEventListener('show.bs.modal', function (e) {
+        activeSecsBtn = e.relatedTarget;
+        const name  = activeSecsBtn.dataset.exName;
+        const total = parseInt(activeSecsBtn.dataset.goalSeconds, 10) || 0;
+        const {h, m, s} = secsToHMS(total);
+
+        document.getElementById('goalSecondsExName').textContent = name;
+        document.getElementById('goalSecondsH').value = h || '';
+        document.getElementById('goalSecondsM').value = m || '';
+        document.getElementById('goalSecondsS').value = s || '';
+        document.getElementById('goalSecondsError').style.display = 'none';
+    });
+
+    document.getElementById('goalSecondsSaveBtn').addEventListener('click', async function () {
+        if (!activeSecsBtn) return;
+        const name  = activeSecsBtn.dataset.exName;
+        const h     = document.getElementById('goalSecondsH').value || 0;
+        const m     = document.getElementById('goalSecondsM').value || 0;
+        const s     = document.getElementById('goalSecondsS').value || 0;
+        const errEl = document.getElementById('goalSecondsError');
+        errEl.style.display = 'none';
+
+        try {
+            const res = await fetch('/exercises/goal-seconds', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: new URLSearchParams({ name, goal_h: h, goal_m: m, goal_s: s }),
+            });
+            const data = await res.json();
+            if (data.error) {
+                errEl.textContent = data.error;
+                errEl.style.display = '';
+                return;
+            }
+            // Update the goal text displayed on the card.
+            const card = activeSecsBtn.closest('.card');
+            if (card) {
+                const goalDiv = card.querySelector('.text-muted.small');
+                if (goalDiv) {
+                    const {h: rh, m: rm, s: rs} = secsToHMS(data.goal_seconds);
+                    const newLabel = `Goal: ${fmtHMS(rh, rm, rs)}`;
+                    if (/Goal:/.test(goalDiv.textContent)) {
+                        goalDiv.textContent = goalDiv.textContent.replace(/Goal:\s*[\dhms ]+/, newLabel);
+                    } else {
+                        goalDiv.textContent = newLabel;
+                    }
+                }
+                activeSecsBtn.dataset.goalSeconds = data.goal_seconds;
+            }
+            bootstrap.Modal.getInstance(document.getElementById('goalSecondsModal')).hide();
         } catch {
             errEl.textContent = 'Something went wrong. Please try again.';
             errEl.style.display = '';
