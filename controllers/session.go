@@ -354,6 +354,7 @@ func (c *SessionController) Show() {
 	c.Data["PhaseRepMin"] = phaseRepMin
 	c.Data["PhaseRepMax"] = phaseRepMax
 	c.Data["PhaseRestSeconds"] = phaseRestSeconds
+	c.Data["ExerciseLibraryJSON"] = exerciseLibraryJSON(userID.(int64))
 	c.TplName = "sessions/show.tpl"
 }
 

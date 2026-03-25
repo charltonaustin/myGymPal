@@ -597,5 +597,87 @@ document.querySelectorAll('.sortable-block').forEach(function (container) {
 })();
 </script>
 <!-- goal modal scripts are in their respective partials -->
+<script>
+(function () {
+    const exerciseLibraryArr = {{.ExerciseLibraryJSON}};
+    const exerciseLibrary = {};
+    exerciseLibraryArr.forEach(function (ex) { exerciseLibrary[ex.name] = ex; });
+
+    const input = document.getElementById('ex_name');
+    if (!input) return;
+
+    const wrapper = input.parentElement;
+    wrapper.style.position = 'relative';
+    let dropdown = null;
+
+    function showDropdown(matches) {
+        if (!dropdown) {
+            dropdown = document.createElement('div');
+            dropdown.className = 'list-group shadow';
+            dropdown.style.cssText = 'position:absolute;top:100%;left:0;right:0;z-index:1050;max-height:220px;overflow-y:auto;border-radius:0 0 .375rem .375rem;';
+            wrapper.appendChild(dropdown);
+        }
+        dropdown.innerHTML = '';
+        matches.forEach(function (ex) {
+            var btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'list-group-item list-group-item-action py-2 px-3';
+            btn.style.fontSize = '0.95rem';
+            btn.textContent = ex.name;
+            btn.addEventListener('mousedown', function (e) {
+                e.preventDefault();
+                input.value = ex.name;
+                autofillFromLibrary(ex.name);
+                hideDropdown();
+            });
+            dropdown.appendChild(btn);
+        });
+    }
+
+    function hideDropdown() {
+        if (dropdown) { dropdown.remove(); dropdown = null; }
+    }
+
+    function autofillFromLibrary(name) {
+        var entry = exerciseLibrary[name];
+        if (!entry) return;
+        var type = entry.isTimeBased ? 'time_based' : entry.isBodyweight ? 'bodyweight' : 'weighted';
+        var radio = document.querySelector('input[name="ex_type_radio"][value="' + type + '"]');
+        if (radio) {
+            radio.checked = true;
+            radio.dispatchEvent(new Event('change'));
+        }
+        if (type === 'weighted') {
+            var gwInput = document.querySelector('input[name="goal_weight"]');
+            var wuSelect = document.querySelector('select[name="weight_unit"]');
+            if (gwInput && entry.goalWeight > 0) gwInput.value = entry.goalWeight;
+            if (wuSelect && entry.weightUnit) wuSelect.value = entry.weightUnit;
+        } else if (type === 'bodyweight') {
+            var minInput = document.querySelector('input[name="goal_rep_min"]');
+            var maxInput = document.querySelector('input[name="goal_rep_max"]');
+            if (minInput && entry.goalRepMin > 0) minInput.value = entry.goalRepMin;
+            if (maxInput && entry.goalRepMax > 0) maxInput.value = entry.goalRepMax;
+        } else if (type === 'time_based') {
+            var secs = entry.goalSeconds || 0;
+            var hInput = document.querySelector('input[name="goal_h"]');
+            var mInput = document.querySelector('input[name="goal_m"]');
+            var sInput = document.querySelector('input[name="goal_s"]');
+            if (hInput) hInput.value = Math.floor(secs / 3600);
+            if (mInput) mInput.value = Math.floor((secs % 3600) / 60);
+            if (sInput) sInput.value = secs % 60;
+        }
+    }
+
+    input.addEventListener('input', function () {
+        var val = input.value.toLowerCase().trim();
+        if (!val) { hideDropdown(); return; }
+        var matches = exerciseLibraryArr.filter(function (ex) { return ex.name.includes(val); }).slice(0, 10);
+        if (matches.length) showDropdown(matches);
+        else hideDropdown();
+    });
+
+    input.addEventListener('blur', function () { setTimeout(hideDropdown, 150); });
+})();
+</script>
 </body>
 </html>
