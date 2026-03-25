@@ -9,6 +9,10 @@ import (
 )
 
 func init() {
+	beego.AddFuncMap("isDev", func() bool {
+		env, _ := beego.AppConfig.String("env")
+		return env == "dev"
+	})
 	beego.AddFuncMap("fmtDuration", func(secs int) string {
 		h := secs / 3600
 		m := (secs % 3600) / 60

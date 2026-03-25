@@ -31,3 +31,9 @@
         </div>
     </div>
 </nav>
+{{if isDev}}
+  <div class="text-center text-white fw-bold py-1"
+       style="background:#c0392b;letter-spacing:0.05em;font-size:0.85rem;">
+    DEVELOPMENT
+  </div>
+{{end}}
