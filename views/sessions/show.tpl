@@ -132,10 +132,10 @@
             {{end}}
 
             {{if .Exercise.IsTimeBased}}
-            <form method="POST" action="/sessions/{{$.Session.ID}}/exercises/{{.Exercise.ID}}/sets" class="d-flex gap-2 align-items-end flex-wrap log-set-form" data-time-based="1" data-goal-seconds="{{.Exercise.GoalSeconds}}">
-                <div>
+            <form method="POST" action="/sessions/{{$.Session.ID}}/exercises/{{.Exercise.ID}}/sets" class="d-flex gap-2 align-items-end flex-wrap w-100 log-set-form" data-time-based="1" data-goal-seconds="{{.Exercise.GoalSeconds}}">
+                <div class="flex-grow-1">
                     <label class="form-label small mb-1">Type</label>
-                    <select name="activity_type" class="form-select form-select-sm" style="width: 150px;">
+                    <select name="activity_type" class="form-select form-select-sm">
                         <option value="">—</option>
                         <option value="steady state">Steady State</option>
                         <option value="fartlek">Fartlek</option>
@@ -279,10 +279,10 @@
 
             {{$last := .LastSet}}
             {{if .Exercise.IsTimeBased}}
-            <form method="POST" action="/sessions/{{$.Session.ID}}/exercises/{{.Exercise.ID}}/sets" class="d-flex gap-2 align-items-end flex-wrap log-set-form" data-time-based="1" data-goal-seconds="{{.Exercise.GoalSeconds}}">
-                <div>
+            <form method="POST" action="/sessions/{{$.Session.ID}}/exercises/{{.Exercise.ID}}/sets" class="d-flex gap-2 align-items-end flex-wrap w-100 log-set-form" data-time-based="1" data-goal-seconds="{{.Exercise.GoalSeconds}}">
+                <div class="flex-grow-1">
                     <label class="form-label small mb-1">Type</label>
-                    <select name="activity_type" class="form-select form-select-sm" style="width: 150px;">
+                    <select name="activity_type" class="form-select form-select-sm">
                         <option value="">—</option>
                         <option value="steady state"{{if $last}}{{if eq $last.ActivityType "steady state"}} selected{{end}}{{end}}>Steady State</option>
                         <option value="fartlek"{{if $last}}{{if eq $last.ActivityType "fartlek"}} selected{{end}}{{end}}>Fartlek</option>

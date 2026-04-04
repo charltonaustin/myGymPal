@@ -175,13 +175,17 @@ func (c *SessionController) Create() {
 				weightUnit := defaultUnit
 				isTimeBased := false
 				goalSeconds := 0
+				exGoalReps := goalReps
 				if libEx, err := Exercises.GetByName(userID.(int64), ex.Name); err == nil {
 					goalWeight = libEx.GoalWeight
 					weightUnit = libEx.WeightUnit
 					isTimeBased = libEx.IsTimeBased
 					goalSeconds = libEx.GoalSeconds
+					if libEx.GoalRepMin > 0 {
+						exGoalReps = libEx.GoalRepMin
+					}
 				}
-				SessionExercises.Create(session.ID, ex.Name, ex.IsBodyweight, goalWeight, weightUnit, goalReps, ex.Block, isTimeBased, goalSeconds)
+				SessionExercises.Create(session.ID, ex.Name, ex.IsBodyweight, goalWeight, weightUnit, exGoalReps, ex.Block, isTimeBased, goalSeconds)
 			}
 		}
 	}
