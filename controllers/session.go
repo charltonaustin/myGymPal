@@ -705,6 +705,12 @@ func (c *SessionController) DeleteSet() {
 	}
 
 	SessionExercises.DeleteSet(setID)
+
+	if c.Ctx.Input.Header("X-Requested-With") == "XMLHttpRequest" {
+		c.Data["json"] = map[string]string{"status": "ok"}
+		c.ServeJSON()
+		return
+	}
 	c.Redirect(fmt.Sprintf("/sessions/%d", sessionID), 302)
 }
 

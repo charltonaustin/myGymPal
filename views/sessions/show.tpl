@@ -97,7 +97,7 @@
                         <td class="text-capitalize">{{if .ActivityType}}{{.ActivityType}}{{else}}&mdash;{{end}}</td>
                         <td>{{fmtDuration .ActualSeconds}}</td>
                         <td class="text-end">
-                            <form method="POST" action="/sessions/{{$.Session.ID}}/exercises/{{$exID}}/sets/{{.ID}}/delete" class="d-inline">
+                            <form method="POST" action="/sessions/{{$.Session.ID}}/exercises/{{$exID}}/sets/{{.ID}}/delete" class="d-inline delete-set-form">
                                 <button type="submit" class="btn btn-link btn-sm text-danger p-0" title="Delete set"><i class="bi bi-trash"></i></button>
                             </form>
                         </td>
@@ -120,7 +120,7 @@
                         <td>{{.ActualWeight}} {{.WeightUnit}}</td>
                         <td>{{.ActualReps}}</td>
                         <td class="text-end">
-                            <form method="POST" action="/sessions/{{$.Session.ID}}/exercises/{{$exID}}/sets/{{.ID}}/delete" class="d-inline">
+                            <form method="POST" action="/sessions/{{$.Session.ID}}/exercises/{{$exID}}/sets/{{.ID}}/delete" class="d-inline delete-set-form">
                                 <button type="submit" class="btn btn-link btn-sm text-danger p-0" title="Delete set"><i class="bi bi-trash"></i></button>
                             </form>
                         </td>
@@ -241,7 +241,7 @@
                         <td class="text-capitalize">{{if .ActivityType}}{{.ActivityType}}{{else}}&mdash;{{end}}</td>
                         <td>{{fmtDuration .ActualSeconds}}</td>
                         <td class="text-end">
-                            <form method="POST" action="/sessions/{{$.Session.ID}}/exercises/{{$exID}}/sets/{{.ID}}/delete" class="d-inline">
+                            <form method="POST" action="/sessions/{{$.Session.ID}}/exercises/{{$exID}}/sets/{{.ID}}/delete" class="d-inline delete-set-form">
                                 <button type="submit" class="btn btn-link btn-sm text-danger p-0" title="Delete set"><i class="bi bi-trash"></i></button>
                             </form>
                         </td>
@@ -266,7 +266,7 @@
                         <td>{{.ActualWeight}} {{.WeightUnit}}</td>
                         <td>{{.ActualReps}}</td>
                         <td class="text-end">
-                            <form method="POST" action="/sessions/{{$.Session.ID}}/exercises/{{$exID}}/sets/{{.ID}}/delete" class="d-inline">
+                            <form method="POST" action="/sessions/{{$.Session.ID}}/exercises/{{$exID}}/sets/{{.ID}}/delete" class="d-inline delete-set-form">
                                 <button type="submit" class="btn btn-link btn-sm text-danger p-0" title="Delete set"><i class="bi bi-trash"></i></button>
                             </form>
                         </td>
@@ -453,7 +453,7 @@ document.querySelectorAll('.log-set-form').forEach(form => {
                 `<td class="ps-0">${setNum}</td>` +
                 `<td>${actTypeDisplay}</td>` +
                 `<td>${fmtDuration(totalSecs)}</td>` +
-                `<td class="text-end"><form method="POST" action="${deleteAction}" class="d-inline">` +
+                `<td class="text-end"><form method="POST" action="${deleteAction}" class="d-inline delete-set-form">` +
                 `<button type="submit" class="btn btn-link btn-sm text-danger p-0" title="Delete set"><i class="bi bi-trash"></i></button>` +
                 `</form></td>`;
         } else {
@@ -464,13 +464,40 @@ document.querySelectorAll('.log-set-form').forEach(form => {
                 `<td class="ps-0">${setNum}</td>` +
                 `<td>${weight} ${unit}</td>` +
                 `<td>${reps}</td>` +
-                `<td class="text-end"><form method="POST" action="${deleteAction}" class="d-inline">` +
+                `<td class="text-end"><form method="POST" action="${deleteAction}" class="d-inline delete-set-form">` +
                 `<button type="submit" class="btn btn-link btn-sm text-danger p-0" title="Delete set"><i class="bi bi-trash"></i></button>` +
                 `</form></td>`;
         }
         tbody.appendChild(row);
 
         if (typeof window.startRestTimer === 'function') window.startRestTimer();
+    });
+});
+
+// Delete set via AJAX so the page never reloads and the rest timer keeps running.
+document.addEventListener('submit', async function (e) {
+    const form = e.target.closest('.delete-set-form');
+    if (!form) return;
+    e.preventDefault();
+
+    try {
+        const res = await fetch(form.action, {
+            method: 'POST',
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        });
+        if (!res.ok) { form.submit(); return; }
+    } catch {
+        form.submit();
+        return;
+    }
+
+    const row = form.closest('tr');
+    const tbody = row.closest('tbody');
+    row.remove();
+
+    // Renumber remaining set rows.
+    Array.from(tbody.querySelectorAll('tr')).forEach(function (r, i) {
+        r.querySelector('td').textContent = i + 1;
     });
 });
 </script>
@@ -627,6 +654,10 @@ document.querySelectorAll('.sortable-block').forEach(function (container) {
     const savedStart = localStorage.getItem(KEY_START);
     const savedDur   = localStorage.getItem(KEY_DUR);
     if (savedStart && savedDur) {
+        // Attempt to create the AudioContext now; it will likely start suspended
+        // without a user gesture, so also re-unlock on the first tap.
+        unlockAudio();
+        document.addEventListener('pointerdown', unlockAudio, { once: true });
         show(parseInt(savedStart, 10), parseInt(savedDur, 10));
     }
 
