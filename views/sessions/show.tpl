@@ -528,11 +528,50 @@ document.querySelectorAll('.sortable-block').forEach(function (container) {
         return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
     }
 
+    // Audio — created during a user gesture so iOS/Android will allow playback.
+    // Web Audio API bypasses the silent/vibrate switch on Android; on iOS it
+    // respects the ringer switch but is still the best available web option.
+    let audioCtx = null;
+
+    function unlockAudio() {
+        if (audioCtx) return;
+        try {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            // Play a one-frame silent buffer to unlock the context on iOS.
+            const buf = audioCtx.createBuffer(1, 1, 22050);
+            const src = audioCtx.createBufferSource();
+            src.buffer = buf;
+            src.connect(audioCtx.destination);
+            src.start(0);
+        } catch (e) { audioCtx = null; }
+    }
+
+    function playAlarm() {
+        if (!audioCtx) return;
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        // Three short rising beeps.
+        [0, 0.35, 0.7].forEach(function (offset, i) {
+            const osc  = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.type = 'sine';
+            osc.frequency.value = 660 + i * 220; // 660 → 880 → 1100 Hz
+            const t = audioCtx.currentTime + offset;
+            gain.gain.setValueAtTime(0, t);
+            gain.gain.linearRampToValueAtTime(0.9, t + 0.02);
+            gain.gain.exponentialRampToValueAtTime(0.001, t + 0.25);
+            osc.start(t);
+            osc.stop(t + 0.25);
+        });
+    }
+
     let notified = false;
 
     function notify() {
         if (notified) return;
         notified = true;
+        playAlarm();
         if (Notification.permission !== 'granted') return;
         const opts = {
             body: 'Time to get back to it.',
@@ -572,6 +611,14 @@ document.querySelectorAll('.sortable-block').forEach(function (container) {
         localStorage.removeItem(KEY_START);
         localStorage.removeItem(KEY_DUR);
         timerEl.classList.add('d-none');
+        // Dismiss any pending rest-timer notification.
+        if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+            navigator.serviceWorker.ready.then(function (reg) {
+                reg.getNotifications({ tag: 'rest-timer' }).then(function (notes) {
+                    notes.forEach(function (n) { n.close(); });
+                });
+            });
+        }
     }
 
     closeBtn.addEventListener('click', stop);
@@ -585,7 +632,8 @@ document.querySelectorAll('.sortable-block').forEach(function (container) {
 
     window.startRestTimer = function () {
         if (PHASE_REST <= 0) return;
-        // Request permission on first use (must be called during a user gesture)
+        // Unlock audio and request notification permission on the first user gesture.
+        unlockAudio();
         if ('Notification' in window && Notification.permission === 'default') {
             Notification.requestPermission();
         }
