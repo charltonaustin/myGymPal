@@ -2,6 +2,7 @@ package models
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/beego/beego/v2/client/orm"
 	beego "github.com/beego/beego/v2/server/web"
@@ -11,13 +12,33 @@ import (
 	_ "github.com/lib/pq"
 )
 
+func envOrConfig(envKey, configKey string) string {
+	if v := os.Getenv(envKey); v != "" {
+		return v
+	}
+	v, _ := beego.AppConfig.String(configKey)
+	return v
+}
+
+func dbConfig() (host, port, name, user, password, sslmode string) {
+	host = envOrConfig("DB_HOST", "db_host")
+	port = envOrConfig("DB_PORT", "db_port")
+	name = envOrConfig("DB_NAME", "db_name")
+	user = envOrConfig("DB_USER", "db_user")
+	password = envOrConfig("DB_PASSWORD", "db_password")
+	sslmode = envOrConfig("DB_SSLMODE", "db_sslmode")
+	return
+}
+
+// SessionProviderDSN returns the PostgreSQL connection string for Beego's session provider.
+func SessionProviderDSN() string {
+	host, port, name, user, password, sslmode := dbConfig()
+	return fmt.Sprintf("user=%s password=%s dbname=%s host=%s port=%s sslmode=%s",
+		user, password, name, host, port, sslmode)
+}
+
 func Init() error {
-	host, _ := beego.AppConfig.String("db_host")
-	port, _ := beego.AppConfig.String("db_port")
-	name, _ := beego.AppConfig.String("db_name")
-	user, _ := beego.AppConfig.String("db_user")
-	password, _ := beego.AppConfig.String("db_password")
-	sslmode, _ := beego.AppConfig.String("db_sslmode")
+	host, port, name, user, password, sslmode := dbConfig()
 
 	dsn := fmt.Sprintf(
 		"host=%s port=%s dbname=%s user=%s password=%s sslmode=%s",

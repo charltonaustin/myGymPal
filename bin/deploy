@@ -19,10 +19,14 @@ GOOS=linux GOARCH=amd64 go build -o "bin/$BINARY_NAME" .
 echo "==> Copying binary to $REMOTE_USER@$SERVER:$REMOTE_DIR/..."
 scp "bin/$BINARY_NAME" "$REMOTE_USER@$SERVER:$REMOTE_DIR/$BINARY_NAME.new"
 
-echo "==> Syncing views, static assets, and migrations..."
+echo "==> Syncing views, static assets, migrations, and config..."
 rsync -az --delete views/      "$REMOTE_USER@$SERVER:$REMOTE_DIR/views/"
 rsync -az --delete static/     "$REMOTE_USER@$SERVER:$REMOTE_DIR/static/"
 rsync -az --delete migrations/ "$REMOTE_USER@$SERVER:$REMOTE_DIR/migrations/"
+rsync -az conf/app.conf        "$REMOTE_USER@$SERVER:$REMOTE_DIR/conf/app.conf"
+# DB credentials are read from environment variables on the server (DB_HOST, DB_PORT,
+# DB_NAME, DB_USER, DB_PASSWORD, DB_SSLMODE). Set these in the systemd service file
+# at /etc/systemd/system/mygympal.service under [Service] as Environment= lines.
 
 echo "==> Swapping binary and restarting service..."
 ssh "$REMOTE_USER@$SERVER" bash <<EOF

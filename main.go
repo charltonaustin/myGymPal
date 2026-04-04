@@ -15,6 +15,8 @@ func main() {
 		log.Fatalf("failed to connect to database: %v", err)
 	}
 
+	beego.BConfig.WebConfig.Session.SessionProviderConfig = models.SessionProviderDSN()
+
 	beego.SetStaticPath("/static", "static")
 	routers.Register()
 	beego.Run()
