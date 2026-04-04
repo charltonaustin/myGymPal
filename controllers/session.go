@@ -404,7 +404,11 @@ func (c *SessionController) AddExercise() {
 	goalSeconds := goalH*3600 + goalM*60 + goalS
 
 	block := validBlock(c.GetString("block"))
-	_, err = SessionExercises.Create(sessionID, name, isBodyweight, goalWeight, weightUnit, 0, block, isTimeBased, goalSeconds)
+	goalReps := 0
+	if libEx, err := Exercises.GetByName(userID.(int64), name); err == nil && libEx.GoalRepMin > 0 {
+		goalReps = libEx.GoalRepMin
+	}
+	_, err = SessionExercises.Create(sessionID, name, isBodyweight, goalWeight, weightUnit, goalReps, block, isTimeBased, goalSeconds)
 	if err != nil {
 		c.Redirect(fmt.Sprintf("/sessions/%d", sessionID), 302)
 		return

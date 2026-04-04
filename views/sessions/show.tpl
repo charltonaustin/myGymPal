@@ -175,7 +175,7 @@
                 </div>
                 <div>
                     <label class="form-label small mb-1">Reps</label>
-                    <input type="number" name="actual_reps" class="form-control form-control-sm" placeholder="0" min="1" required style="width: 70px;"{{if $last}} value="{{$last.ActualReps}}"{{else if gt .Exercise.GoalReps 0}} value="{{.Exercise.GoalReps}}"{{end}}>
+                    <input type="number" name="actual_reps" class="form-control form-control-sm" placeholder="0" min="1" required style="width: 70px;"{{if $last}} value="{{$last.ActualReps}}"{{else if gt .GoalRepMin 0}} value="{{.GoalRepMin}}"{{else if gt .Exercise.GoalReps 0}} value="{{.Exercise.GoalReps}}"{{end}}>
                 </div>
                 <button type="submit" class="btn btn-dark btn-sm mb-0" style="white-space:nowrap">+ Set</button>
             </form>
@@ -321,7 +321,7 @@
                 </div>
                 <div>
                     <label class="form-label small mb-1">Reps</label>
-                    <input type="number" name="actual_reps" class="form-control form-control-sm" placeholder="0" min="1" required style="width: 70px;"{{if $last}} value="{{$last.ActualReps}}"{{else if gt .Exercise.GoalReps 0}} value="{{.Exercise.GoalReps}}"{{end}}>
+                    <input type="number" name="actual_reps" class="form-control form-control-sm" placeholder="0" min="1" required style="width: 70px;"{{if $last}} value="{{$last.ActualReps}}"{{else if gt .GoalRepMin 0}} value="{{.GoalRepMin}}"{{else if gt .Exercise.GoalReps 0}} value="{{.Exercise.GoalReps}}"{{end}}>
                 </div>
                 <button type="submit" class="btn btn-dark btn-sm mb-0" style="white-space:nowrap">+ Set</button>
             </form>
