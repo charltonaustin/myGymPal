@@ -72,7 +72,7 @@
                     {{if .Exercise.IsTimeBased}}
                     {{if gt .Exercise.GoalSeconds 0}}Goal: {{fmtDuration .Exercise.GoalSeconds}}{{end}}
                     {{else}}
-                    {{if gt .Exercise.GoalWeight 0.0}}Goal: {{.Exercise.GoalWeight}} {{.Exercise.WeightUnit}}{{end}}
+                    {{if gt .Exercise.GoalWeight 0.0}}Goal: {{printf "%.0f" .Exercise.GoalWeight}} {{.Exercise.WeightUnit}}{{end}}
                     {{end}}
                     </span>
                     <form method="POST" action="/sessions/{{$.Session.ID}}/exercises/{{$exID}}/delete" class="d-inline">
@@ -117,7 +117,7 @@
                     {{range .Sets}}
                     <tr>
                         <td class="ps-0">{{.SetNumber}}</td>
-                        <td>{{.ActualWeight}} {{.WeightUnit}}</td>
+                        <td>{{printf "%.0f" .ActualWeight}} {{.WeightUnit}}</td>
                         <td>{{.ActualReps}}</td>
                         <td class="text-end">
                             <form method="POST" action="/sessions/{{$.Session.ID}}/exercises/{{$exID}}/sets/{{.ID}}/delete" class="d-inline delete-set-form">
@@ -166,7 +166,7 @@
                 <div class="flex-grow-1">
                     <label class="form-label small mb-1">Weight</label>
                     <div class="input-group input-group-sm">
-                        <input type="number" name="actual_weight" class="form-control" placeholder="0" min="0" step="0.5"{{if $last}} value="{{$last.ActualWeight}}"{{else if gt .Exercise.GoalWeight 0.0}} value="{{.Exercise.GoalWeight}}"{{end}}>
+                        <input type="number" name="actual_weight" class="form-control" placeholder="0" min="0" step="0.5"{{if $last}} value="{{printf "%.0f" $last.ActualWeight}}"{{else if gt .Exercise.GoalWeight 0.0}} value="{{printf "%.0f" .Exercise.GoalWeight}}"{{end}}>
                         <select name="weight_unit" class="form-select" style="max-width: 80px;">
                             <option value="lb" {{if $last}}{{if eq $last.WeightUnit "lb"}}selected{{end}}{{else if eq .Exercise.WeightUnit "lb"}}selected{{end}}>lb</option>
                             <option value="kg" {{if $last}}{{if eq $last.WeightUnit "kg"}}selected{{end}}{{else if eq .Exercise.WeightUnit "kg"}}selected{{end}}>kg</option>
@@ -263,7 +263,7 @@
                     {{range .Sets}}
                     <tr>
                         <td class="ps-0">{{.SetNumber}}</td>
-                        <td>{{.ActualWeight}} {{.WeightUnit}}</td>
+                        <td>{{printf "%.0f" .ActualWeight}} {{.WeightUnit}}</td>
                         <td>{{.ActualReps}}</td>
                         <td class="text-end">
                             <form method="POST" action="/sessions/{{$.Session.ID}}/exercises/{{$exID}}/sets/{{.ID}}/delete" class="d-inline delete-set-form">
@@ -312,7 +312,7 @@
                 <div class="flex-grow-1">
                     <label class="form-label small mb-1">Weight</label>
                     <div class="input-group input-group-sm">
-                        <input type="number" name="actual_weight" class="form-control" placeholder="0" min="0" step="0.5"{{if $last}} value="{{$last.ActualWeight}}"{{else if gt .Exercise.GoalWeight 0.0}} value="{{.Exercise.GoalWeight}}"{{end}}>
+                        <input type="number" name="actual_weight" class="form-control" placeholder="0" min="0" step="0.5"{{if $last}} value="{{printf "%.0f" $last.ActualWeight}}"{{else if gt .Exercise.GoalWeight 0.0}} value="{{printf "%.0f" .Exercise.GoalWeight}}"{{end}}>
                         <select name="weight_unit" class="form-select" style="max-width: 80px;">
                             <option value="lb" {{if $last}}{{if eq $last.WeightUnit "lb"}}selected{{end}}{{else if eq .Exercise.WeightUnit "lb"}}selected{{end}}>lb</option>
                             <option value="kg" {{if $last}}{{if eq $last.WeightUnit "kg"}}selected{{end}}{{else if eq .Exercise.WeightUnit "kg"}}selected{{end}}>kg</option>

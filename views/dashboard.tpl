@@ -24,7 +24,7 @@
                         <a href="/weight" class="text-muted small">Log Weight</a>
                     </div>
                     {{if .WeightAvg}}
-                    <p class="fs-4 fw-bold mb-0">{{printf "%.1f" .WeightAvg.Weight}} <span class="fs-6 fw-normal text-muted">{{.WeightAvg.Unit}}</span></p>
+                    <p class="fs-4 fw-bold mb-0">{{printf "%.0f" .WeightAvg.Weight}} <span class="fs-6 fw-normal text-muted">{{.WeightAvg.Unit}}</span></p>
                     <p class="text-muted small mb-0">{{.WeightAvg.Days}}-day avg</p>
                     {{else}}
                     <p class="text-muted small mb-0">No entries yet.</p>

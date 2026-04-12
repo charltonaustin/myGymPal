@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"html/template"
+	"myGymPal/models"
 	"strconv"
 
 	"github.com/beego/beego/v2/core/logs"
@@ -26,6 +27,15 @@ func (c *ExerciseController) Index() {
 		logs.Error("ExerciseController.Index: GetAllByUser: %v", err)
 		c.Redirect("/error", 302)
 		return
+	}
+
+	preferredUnit := "lb"
+	if user, err := Users.GetByID(userID.(int64)); err == nil {
+		preferredUnit = user.WeightUnit
+	}
+	for _, ex := range exercises {
+		ex.GoalWeight = models.ConvertWeight(ex.GoalWeight, ex.WeightUnit, preferredUnit)
+		ex.WeightUnit = preferredUnit
 	}
 
 	flash := beego.ReadFromRequest(&c.Controller)
@@ -157,13 +167,14 @@ func (c *ExerciseController) Edit() {
 	c.Data["Name"] = ex.Name
 	c.Data["IsBodyweight"] = ex.IsBodyweight
 	c.Data["IsTimeBased"] = ex.IsTimeBased
-	c.Data["GoalWeight"] = fmt.Sprintf("%g", ex.GoalWeight)
+	displayWeight := models.ConvertWeight(ex.GoalWeight, ex.WeightUnit, weightUnit)
+	c.Data["GoalWeight"] = fmt.Sprintf("%.0f", displayWeight)
 	c.Data["GoalHours"] = ex.GoalSeconds / 3600
 	c.Data["GoalMinutes"] = (ex.GoalSeconds % 3600) / 60
 	c.Data["GoalSecsRemainder"] = ex.GoalSeconds % 60
 	c.Data["GoalRepMin"] = ex.GoalRepMin
 	c.Data["GoalRepMax"] = ex.GoalRepMax
-	c.Data["ExWeightUnit"] = ex.WeightUnit
+	c.Data["ExWeightUnit"] = weightUnit
 	c.Data["DefaultBlock"] = ex.DefaultBlock
 	c.Data["ShowDefaultBlock"] = true
 	c.TplName = "exercises/edit.tpl"
@@ -394,11 +405,18 @@ func (c *ExerciseController) UpdateGoalSecondsJSON() {
 
 // exerciseLibraryJSON fetches the user's exercise library and returns a template.JS
 // value safe for direct embedding in a <script> tag without HTML escaping.
+// Goal weights are converted to the user's preferred unit.
 func exerciseLibraryJSON(userID int64) template.JS {
 	exercises, err := Exercises.GetAllByUser(userID)
 	if err != nil || len(exercises) == 0 {
 		return "[]"
 	}
+
+	preferredUnit := "lb"
+	if user, err := Users.GetByID(userID); err == nil {
+		preferredUnit = user.WeightUnit
+	}
+
 	type libEntry struct {
 		Name         string  `json:"name"`
 		GoalWeight   float64 `json:"goalWeight"`
@@ -416,8 +434,8 @@ func exerciseLibraryJSON(userID int64) template.JS {
 		}
 		entries[i] = libEntry{
 			Name:         ex.Name,
-			GoalWeight:   ex.GoalWeight,
-			WeightUnit:   ex.WeightUnit,
+			GoalWeight:   models.ConvertWeight(ex.GoalWeight, ex.WeightUnit, preferredUnit),
+			WeightUnit:   preferredUnit,
 			IsBodyweight: ex.IsBodyweight,
 			IsTimeBased:  ex.IsTimeBased,
 			GoalSeconds:  ex.GoalSeconds,

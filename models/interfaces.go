@@ -47,7 +47,7 @@ type ExerciseRepository interface {
 	GetByID(id, userID int64) (*Exercise, error)
 	GetByName(userID int64, name string) (*Exercise, error)
 	Update(id, userID int64, name string, isBodyweight bool, goalWeight float64, weightUnit string, isTimeBased bool, goalSeconds int, goalRepMin int, goalRepMax int, defaultBlock string) (*Exercise, error)
-	UpdateGoalWeight(id int64, goalWeight float64) error
+	UpdateGoalWeight(id int64, goalWeight float64, weightUnit string) error
 	Delete(id, userID int64) error
 }
 

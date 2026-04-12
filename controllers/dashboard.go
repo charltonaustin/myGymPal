@@ -1,6 +1,8 @@
 package controllers
 
 import (
+	"myGymPal/models"
+
 	"github.com/beego/beego/v2/core/logs"
 	beego "github.com/beego/beego/v2/server/web"
 )
@@ -36,11 +38,21 @@ func (c *DashboardController) Get() {
 		logs.Error("DashboardController.Get: MacroGoals.Get: %v", err)
 	}
 
+	preferredUnit := "lb"
+	if user, err := Users.GetByID(userID.(int64)); err == nil {
+		preferredUnit = user.WeightUnit
+	}
+	// Convert weight entries to preferred unit before computing dashboard average.
+	for _, e := range weightEntries {
+		e.Weight = models.ConvertWeight(e.Weight, e.WeightUnit, preferredUnit)
+		e.WeightUnit = preferredUnit
+	}
+
 	c.Data["LoggedIn"] = true
 	c.Data["ActivePage"] = "dashboard"
 	c.Data["Username"] = c.GetSession("username")
 	c.Data["RecentSessions"] = recent
-	c.Data["WeightAvg"] = computeWeightAverage(weightEntries)
+	c.Data["WeightAvg"] = computeWeightAverage(weightEntries, preferredUnit)
 	c.Data["MacroSummary"] = buildMacroSummary(macroDays, macroGoal)
 	c.TplName = "dashboard.tpl"
 }

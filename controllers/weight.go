@@ -15,7 +15,7 @@ type weightAverage struct {
 	Unit   string
 }
 
-func computeWeightAverage(entries []*models.BodyWeight) *weightAverage {
+func computeWeightAverage(entries []*models.BodyWeight, targetUnit string) *weightAverage {
 	n := len(entries)
 	if n == 0 {
 		return nil
@@ -25,12 +25,12 @@ func computeWeightAverage(entries []*models.BodyWeight) *weightAverage {
 	}
 	var sum float64
 	for i := 0; i < n; i++ {
-		sum += entries[i].Weight
+		sum += models.ConvertWeight(entries[i].Weight, entries[i].WeightUnit, targetUnit)
 	}
 	return &weightAverage{
 		Days:   n,
 		Weight: sum / float64(n),
-		Unit:   entries[0].WeightUnit,
+		Unit:   targetUnit,
 	}
 }
 
@@ -61,12 +61,21 @@ func (c *WeightController) Index() {
 		c.Data["Success"] = msg
 	}
 
+	// Compute average first (before in-place conversion, using stored units).
+	avg := computeWeightAverage(entries, weightUnit)
+
+	// Convert all stored entries to the user's preferred unit for display.
+	for _, e := range entries {
+		e.Weight = models.ConvertWeight(e.Weight, e.WeightUnit, weightUnit)
+		e.WeightUnit = weightUnit
+	}
+
 	c.Data["LoggedIn"] = true
 	c.Data["ActivePage"] = "weight"
 	c.Data["Entries"] = entries
 	c.Data["WeightUnit"] = weightUnit
 	c.Data["DefaultDate"] = time.Now().Format("2006-01-02")
-	c.Data["WeightAvg"] = computeWeightAverage(entries)
+	c.Data["WeightAvg"] = avg
 	c.TplName = "weight/index.tpl"
 }
 

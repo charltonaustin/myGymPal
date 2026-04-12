@@ -332,7 +332,7 @@ type mockExerciseRepo struct {
 	GetByIDFn          func(id, userID int64) (*models.Exercise, error)
 	GetByNameFn        func(userID int64, name string) (*models.Exercise, error)
 	UpdateFn           func(id, userID int64, name string, isBodyweight bool, goalWeight float64, weightUnit string, isTimeBased bool, goalSeconds int, goalRepMin int, goalRepMax int, defaultBlock string) (*models.Exercise, error)
-	UpdateGoalWeightFn func(id int64, goalWeight float64) error
+	UpdateGoalWeightFn func(id int64, goalWeight float64, weightUnit string) error
 	DeleteFn           func(id, userID int64) error
 }
 
@@ -371,9 +371,9 @@ func (m *mockExerciseRepo) Update(id, userID int64, name string, isBodyweight bo
 	return &models.Exercise{ID: id, UserID: userID, Name: name, IsBodyweight: isBodyweight, GoalWeight: goalWeight, WeightUnit: weightUnit}, nil
 }
 
-func (m *mockExerciseRepo) UpdateGoalWeight(id int64, goalWeight float64) error {
+func (m *mockExerciseRepo) UpdateGoalWeight(id int64, goalWeight float64, weightUnit string) error {
 	if m.UpdateGoalWeightFn != nil {
-		return m.UpdateGoalWeightFn(id, goalWeight)
+		return m.UpdateGoalWeightFn(id, goalWeight, weightUnit)
 	}
 	return nil
 }

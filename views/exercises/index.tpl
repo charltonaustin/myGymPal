@@ -39,7 +39,7 @@
                 <div class="text-muted small">Goal: {{.GoalRepMin}}–{{.GoalRepMax}} reps</div>
                 {{end}}
                 {{else}}
-                <div class="text-muted small">Goal: {{.GoalWeight}} {{.WeightUnit}}</div>
+                <div class="text-muted small">Goal: {{printf "%.0f" .GoalWeight}} {{.WeightUnit}}</div>
                 {{end}}
             </div>
             <div class="d-flex gap-2 flex-shrink-0 ms-3">

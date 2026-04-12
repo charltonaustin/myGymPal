@@ -26,8 +26,8 @@ func (r *ormExerciseRepository) Update(id, userID int64, name string, isBodyweig
 	return UpdateExercise(id, userID, name, isBodyweight, goalWeight, weightUnit, isTimeBased, goalSeconds, goalRepMin, goalRepMax, defaultBlock)
 }
 
-func (r *ormExerciseRepository) UpdateGoalWeight(id int64, goalWeight float64) error {
-	return UpdateExerciseGoalWeight(id, goalWeight)
+func (r *ormExerciseRepository) UpdateGoalWeight(id int64, goalWeight float64, weightUnit string) error {
+	return UpdateExerciseGoalWeight(id, goalWeight, weightUnit)
 }
 
 func (r *ormExerciseRepository) Delete(id, userID int64) error {

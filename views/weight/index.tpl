@@ -58,7 +58,7 @@
             <li class="list-group-item" id="entry-{{.ID}}">
                 <div class="d-flex align-items-center justify-content-between view-row-{{.ID}}">
                     <div>
-                        <span class="fw-semibold">{{.Weight}} {{.WeightUnit}}</span>
+                        <span class="fw-semibold">{{printf "%.1f" .Weight}} {{.WeightUnit}}</span>
                         <span class="text-muted small ms-2">{{.Date.Format "Jan 2, 2006"}}</span>
                     </div>
                     <div class="d-flex gap-2">
@@ -71,7 +71,7 @@
                 <form method="POST" action="/weight/{{.ID}}" class="d-none edit-row-{{.ID}} d-flex gap-2 align-items-end flex-wrap mt-2">
                     <div>
                         <div class="input-group input-group-sm" style="width: 160px;">
-                            <input type="number" name="weight" class="form-control" value="{{.Weight}}" min="0" step="0.1" required>
+                            <input type="number" name="weight" class="form-control" value="{{printf "%.1f" .Weight}}" min="0" step="0.1" required>
                             <select name="weight_unit" class="form-select" style="max-width: 72px;">
                                 <option value="lb" {{if eq .WeightUnit "lb"}}selected{{end}}>lb</option>
                                 <option value="kg" {{if eq .WeightUnit "kg"}}selected{{end}}>kg</option>

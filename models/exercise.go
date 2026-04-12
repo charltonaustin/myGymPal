@@ -120,14 +120,15 @@ func UpdateExercise(id, userID int64, name string, isBodyweight bool, goalWeight
 	return ex, nil
 }
 
-func UpdateExerciseGoalWeight(id int64, goalWeight float64) error {
+func UpdateExerciseGoalWeight(id int64, goalWeight float64, weightUnit string) error {
 	o := orm.NewOrm()
 	ex := &Exercise{ID: id}
 	if err := o.Read(ex); err != nil {
 		return errors.New("not found")
 	}
 	ex.GoalWeight = goalWeight
-	_, err := o.Update(ex, "GoalWeight", "UpdatedAt")
+	ex.WeightUnit = weightUnit
+	_, err := o.Update(ex, "GoalWeight", "WeightUnit", "UpdatedAt")
 	return err
 }
 

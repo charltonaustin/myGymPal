@@ -277,6 +277,19 @@ func (c *SessionController) Show() {
 		weightUnit = user.WeightUnit
 	}
 
+	// Convert exercise goal weights and logged set weights to the user's preferred unit.
+	// This must happen before the HitMax check so goal/actual weight comparisons use the same unit.
+	for _, ev := range exercises {
+		if !ev.Exercise.IsBodyweight && !ev.Exercise.IsTimeBased {
+			ev.Exercise.GoalWeight = models.ConvertWeight(ev.Exercise.GoalWeight, ev.Exercise.WeightUnit, weightUnit)
+			ev.Exercise.WeightUnit = weightUnit
+		}
+		for _, s := range ev.Sets {
+			s.ActualWeight = models.ConvertWeight(s.ActualWeight, s.WeightUnit, weightUnit)
+			s.WeightUnit = weightUnit
+		}
+	}
+
 	// Find the rep range, default sets, and rest period for the session's phase.
 	phaseRepMin, phaseRepMax, phaseDefaultSets, phaseRestSeconds := 0, 0, 0, 0
 	if phases, err := Phases.GetByProgram(session.ProgramID); err == nil {
@@ -495,10 +508,11 @@ func (c *SessionController) LogSet() {
 	}
 
 	// After 3rd set at or above goal reps, update the exercise library entry (weight-based only).
+	// Save in whatever unit the user logged the set — no conversion.
 	newCount := count + 1
 	if !exercise.IsTimeBased && newCount >= 3 && actualReps >= exercise.GoalReps {
 		if ex, err := Exercises.GetByName(userID.(int64), exercise.Name); err == nil {
-			Exercises.UpdateGoalWeight(ex.ID, actualWeight)
+			Exercises.UpdateGoalWeight(ex.ID, actualWeight, weightUnit)
 		}
 	}
 
