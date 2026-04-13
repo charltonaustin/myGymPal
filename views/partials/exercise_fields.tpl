@@ -30,11 +30,11 @@
 
 <div class="ex-bw-row {{if not .IsBodyweight}}d-none{{end}} mb-3">
     <label class="form-label">Goal Rep Range</label>
-    <div class="d-flex align-items-center gap-2">
-        <input type="number" name="goal_rep_min" class="form-control form-control-sm text-center" value="{{.GoalRepMin}}" min="0" step="1" placeholder="Min" style="width: 80px;">
-        <span class="text-muted small">–</span>
-        <input type="number" name="goal_rep_max" class="form-control form-control-sm text-center" value="{{.GoalRepMax}}" min="0" step="1" placeholder="Max" style="width: 80px;">
-        <span class="text-muted small">reps</span>
+    <div class="input-group input-group-sm">
+        <input type="number" name="goal_rep_min" class="form-control text-center" value="{{.GoalRepMin}}" min="0" step="1" placeholder="Min">
+        <span class="input-group-text">–</span>
+        <input type="number" name="goal_rep_max" class="form-control text-center" value="{{.GoalRepMax}}" min="0" step="1" placeholder="Max">
+        <span class="input-group-text">reps</span>
     </div>
 </div>
 
