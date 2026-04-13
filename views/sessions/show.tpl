@@ -697,10 +697,13 @@ document.querySelectorAll('.sortable-block').forEach(function (container) {
         elapsedEl.textContent   = fmt(elapsed);
     }
 
+    const mainEl = document.querySelector('main');
+
     function show(startMs, durationSecs) {
         if (interval) clearInterval(interval);
         notified = false;
         timerEl.classList.remove('d-none');
+        if (mainEl) mainEl.style.paddingBottom = timerEl.offsetHeight + 'px';
         tick(startMs, durationSecs);
         interval = setInterval(function () { tick(startMs, durationSecs); }, 500);
     }
@@ -710,6 +713,7 @@ document.querySelectorAll('.sortable-block').forEach(function (container) {
         localStorage.removeItem(KEY_START);
         localStorage.removeItem(KEY_DUR);
         timerEl.classList.add('d-none');
+        if (mainEl) mainEl.style.paddingBottom = '';
         // Dismiss any pending rest-timer notification.
         if (navigator.serviceWorker && navigator.serviceWorker.controller) {
             navigator.serviceWorker.ready.then(function (reg) {
