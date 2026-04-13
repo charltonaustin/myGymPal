@@ -140,8 +140,8 @@
             {{end}}
 
             {{if .Exercise.IsTimeBased}}
-            <form method="POST" action="/sessions/{{$.Session.ID}}/exercises/{{.Exercise.ID}}/sets" class="d-flex gap-2 align-items-end w-100 log-set-form" data-time-based="1" data-goal-seconds="{{.Exercise.GoalSeconds}}">
-                <div class="flex-grow-1">
+            <form method="POST" action="/sessions/{{$.Session.ID}}/exercises/{{.Exercise.ID}}/sets" class="d-flex flex-wrap gap-2 align-items-end w-100 log-set-form" data-time-based="1" data-goal-seconds="{{.Exercise.GoalSeconds}}">
+                <div style="flex: 1 1 45%; min-width: 0;">
                     <label class="form-label small mb-1">Type</label>
                     <select name="activity_type" class="form-select form-select-sm">
                         <option value="">—</option>
@@ -152,21 +152,17 @@
                         <option value="easy">Easy / Recovery</option>
                     </select>
                 </div>
-                <div>
-                    <label class="form-label small mb-1">Duration (h:m:s)</label>
-                    <div class="d-flex gap-1 align-items-end">
-                        <div class="text-center">
-                            <input type="number" name="actual_h" class="form-control form-control-sm text-center" value="0" min="0" step="1" style="width: 44px;">
-                        </div>
-                        <div class="text-center">
-                            <input type="number" name="actual_m" class="form-control form-control-sm text-center" value="0" min="0" max="59" step="1" style="width: 44px;">
-                        </div>
-                        <div class="text-center">
-                            <input type="number" name="actual_s" class="form-control form-control-sm text-center" value="0" min="0" max="59" step="1" style="width: 44px;">
+                <div class="d-flex gap-2 align-items-end" style="flex: 1 1 180px; min-width: 0;">
+                    <div class="flex-grow-1">
+                        <label class="form-label small mb-1">Duration (h:m:s)</label>
+                        <div class="d-flex gap-1 align-items-end">
+                            <input type="number" name="actual_h" class="form-control form-control-sm text-center" value="0" min="0" step="1" style="flex: 1 1 0; min-width: 0;">
+                            <input type="number" name="actual_m" class="form-control form-control-sm text-center" value="0" min="0" max="59" step="1" style="flex: 1 1 0; min-width: 0;">
+                            <input type="number" name="actual_s" class="form-control form-control-sm text-center" value="0" min="0" max="59" step="1" style="flex: 1 1 0; min-width: 0;">
                         </div>
                     </div>
+                    <button type="submit" class="btn btn-dark btn-sm mb-0" style="white-space:nowrap">+ Set</button>
                 </div>
-                <button type="submit" class="btn btn-dark btn-sm mb-0" style="white-space:nowrap">+ Set</button>
             </form>
             {{else}}
             {{$last := .LastSet}}
@@ -287,8 +283,8 @@
 
             {{$last := .LastSet}}
             {{if .Exercise.IsTimeBased}}
-            <form method="POST" action="/sessions/{{$.Session.ID}}/exercises/{{.Exercise.ID}}/sets" class="d-flex gap-2 align-items-end w-100 log-set-form" data-time-based="1" data-goal-seconds="{{.Exercise.GoalSeconds}}">
-                <div class="flex-grow-1">
+            <form method="POST" action="/sessions/{{$.Session.ID}}/exercises/{{.Exercise.ID}}/sets" class="d-flex flex-wrap gap-2 align-items-end w-100 log-set-form" data-time-based="1" data-goal-seconds="{{.Exercise.GoalSeconds}}">
+                <div style="flex: 1 1 45%; min-width: 0;">
                     <label class="form-label small mb-1">Type</label>
                     <select name="activity_type" class="form-select form-select-sm">
                         <option value="">—</option>
@@ -299,21 +295,17 @@
                         <option value="easy"{{if $last}}{{if eq $last.ActivityType "easy"}} selected{{end}}{{end}}>Easy / Recovery</option>
                     </select>
                 </div>
-                <div>
-                    <label class="form-label small mb-1">Duration (h:m:s)</label>
-                    <div class="d-flex gap-1 align-items-end">
-                        <div class="text-center">
-                            <input type="number" name="actual_h" class="form-control form-control-sm text-center" value="{{if $last}}{{$last.Hours}}{{else}}0{{end}}" min="0" step="1" style="width: 44px;">
-                        </div>
-                        <div class="text-center">
-                            <input type="number" name="actual_m" class="form-control form-control-sm text-center" value="{{if $last}}{{$last.Minutes}}{{else}}0{{end}}" min="0" max="59" step="1" style="width: 44px;">
-                        </div>
-                        <div class="text-center">
-                            <input type="number" name="actual_s" class="form-control form-control-sm text-center" value="{{if $last}}{{$last.Secs}}{{else}}0{{end}}" min="0" max="59" step="1" style="width: 44px;">
+                <div class="d-flex gap-2 align-items-end" style="flex: 1 1 180px; min-width: 0;">
+                    <div class="flex-grow-1">
+                        <label class="form-label small mb-1">Duration (h:m:s)</label>
+                        <div class="d-flex gap-1 align-items-end">
+                            <input type="number" name="actual_h" class="form-control form-control-sm text-center" value="{{if $last}}{{$last.Hours}}{{else}}0{{end}}" min="0" step="1" style="flex: 1 1 0; min-width: 0;">
+                            <input type="number" name="actual_m" class="form-control form-control-sm text-center" value="{{if $last}}{{$last.Minutes}}{{else}}0{{end}}" min="0" max="59" step="1" style="flex: 1 1 0; min-width: 0;">
+                            <input type="number" name="actual_s" class="form-control form-control-sm text-center" value="{{if $last}}{{$last.Secs}}{{else}}0{{end}}" min="0" max="59" step="1" style="flex: 1 1 0; min-width: 0;">
                         </div>
                     </div>
+                    <button type="submit" class="btn btn-dark btn-sm mb-0" style="white-space:nowrap">+ Set</button>
                 </div>
-                <button type="submit" class="btn btn-dark btn-sm mb-0" style="white-space:nowrap">+ Set</button>
             </form>
             {{else}}
             <form method="POST" action="/sessions/{{$.Session.ID}}/exercises/{{.Exercise.ID}}/sets" class="d-flex gap-2 align-items-end w-100 log-set-form">
