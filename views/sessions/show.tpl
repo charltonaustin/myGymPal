@@ -22,11 +22,19 @@
             <span class="badge bg-secondary">Deload</span>
             {{end}}
         </div>
-        <p class="text-muted small mb-0 mt-1">
-            Phase {{.Session.PhaseNumber}} &middot; Week {{.Session.WeekNumber}}
-            &middot; {{.Session.Date.Format "Jan 2, 2006"}}
-            {{if gt .PhaseRestSeconds 0}}&middot; {{.PhaseRestSeconds | restMinutes}}m {{.PhaseRestSeconds | restSecs}}s rest{{end}}
-        </p>
+        <div class="d-flex align-items-center justify-content-between mt-1">
+            <p class="text-muted small mb-0">
+                Phase {{.Session.PhaseNumber}} &middot; Week {{.Session.WeekNumber}}
+                &middot; {{.Session.Date.Format "Jan 2, 2006"}}
+                {{if gt .PhaseRestSeconds 0}}&middot; {{.PhaseRestSeconds | restMinutes}}m {{.PhaseRestSeconds | restSecs}}s rest{{end}}
+            </p>
+            <div class="btn-group btn-group-sm" role="group">
+                <input type="radio" class="btn-check" name="unit_toggle" id="unit_lb" autocomplete="off" {{if eq .WeightUnit "lb"}}checked{{end}}>
+                <label class="btn btn-outline-secondary" for="unit_lb">lb</label>
+                <input type="radio" class="btn-check" name="unit_toggle" id="unit_kg" autocomplete="off" {{if eq .WeightUnit "kg"}}checked{{end}}>
+                <label class="btn btn-outline-secondary" for="unit_kg">kg</label>
+            </div>
+        </div>
     </div>
 
     {{range .ExerciseBlocks}}
@@ -72,7 +80,7 @@
                     {{if .Exercise.IsTimeBased}}
                     {{if gt .Exercise.GoalSeconds 0}}Goal: {{fmtDuration .Exercise.GoalSeconds}}{{end}}
                     {{else}}
-                    {{if gt .Exercise.GoalWeight 0.0}}Goal: {{printf "%.0f" .Exercise.GoalWeight}} {{.Exercise.WeightUnit}}{{end}}
+                    {{if gt .Exercise.GoalWeight 0.0}}<span class="goal-weight-val" data-w="{{.Exercise.GoalWeight}}" data-u="{{.Exercise.WeightUnit}}">Goal: {{printf "%.0f" .Exercise.GoalWeight}} {{.Exercise.WeightUnit}}</span>{{end}}
                     {{end}}
                     </span>
                     <form method="POST" action="/sessions/{{$.Session.ID}}/exercises/{{$exID}}/delete" class="d-inline">
@@ -117,7 +125,7 @@
                     {{range .Sets}}
                     <tr>
                         <td class="ps-0">{{.SetNumber}}</td>
-                        <td>{{printf "%.0f" .ActualWeight}} {{.WeightUnit}}</td>
+                        <td class="weight-cell" data-w="{{.ActualWeight}}" data-u="{{.WeightUnit}}">{{printf "%.0f" .ActualWeight}} {{.WeightUnit}}</td>
                         <td>{{.ActualReps}}</td>
                         <td class="text-end">
                             <form method="POST" action="/sessions/{{$.Session.ID}}/exercises/{{$exID}}/sets/{{.ID}}/delete" class="d-inline delete-set-form">
@@ -132,7 +140,7 @@
             {{end}}
 
             {{if .Exercise.IsTimeBased}}
-            <form method="POST" action="/sessions/{{$.Session.ID}}/exercises/{{.Exercise.ID}}/sets" class="d-flex gap-2 align-items-end flex-wrap w-100 log-set-form" data-time-based="1" data-goal-seconds="{{.Exercise.GoalSeconds}}">
+            <form method="POST" action="/sessions/{{$.Session.ID}}/exercises/{{.Exercise.ID}}/sets" class="d-flex gap-2 align-items-end w-100 log-set-form" data-time-based="1" data-goal-seconds="{{.Exercise.GoalSeconds}}">
                 <div class="flex-grow-1">
                     <label class="form-label small mb-1">Type</label>
                     <select name="activity_type" class="form-select form-select-sm">
@@ -145,16 +153,16 @@
                     </select>
                 </div>
                 <div>
-                    <label class="form-label small mb-1">Duration (hrs:mins:secs) </label>
+                    <label class="form-label small mb-1">Duration (h:m:s)</label>
                     <div class="d-flex gap-1 align-items-end">
                         <div class="text-center">
-                            <input type="number" name="actual_h" class="form-control form-control-sm text-center" value="0" min="0" step="1" style="width: 56px;">
+                            <input type="number" name="actual_h" class="form-control form-control-sm text-center" value="0" min="0" step="1" style="width: 44px;">
                         </div>
                         <div class="text-center">
-                            <input type="number" name="actual_m" class="form-control form-control-sm text-center" value="0" min="0" max="59" step="1" style="width: 56px;">
+                            <input type="number" name="actual_m" class="form-control form-control-sm text-center" value="0" min="0" max="59" step="1" style="width: 44px;">
                         </div>
                         <div class="text-center">
-                            <input type="number" name="actual_s" class="form-control form-control-sm text-center" value="0" min="0" max="59" step="1" style="width: 56px;">
+                            <input type="number" name="actual_s" class="form-control form-control-sm text-center" value="0" min="0" max="59" step="1" style="width: 44px;">
                         </div>
                     </div>
                 </div>
@@ -214,7 +222,7 @@
             {{if .Exercise.IsTimeBased}}
             {{if gt .Exercise.GoalSeconds 0}}Goal: {{fmtDuration .Exercise.GoalSeconds}}{{end}}
             {{else}}
-            {{if gt .Exercise.GoalWeight 0.0}}Goal: {{.Exercise.GoalWeight}} {{.Exercise.WeightUnit}}{{end}}
+            {{if gt .Exercise.GoalWeight 0.0}}<span class="goal-weight-val" data-w="{{.Exercise.GoalWeight}}" data-u="{{.Exercise.WeightUnit}}">Goal: {{printf "%.0f" .Exercise.GoalWeight}} {{.Exercise.WeightUnit}}</span>{{end}}
             {{if and .Exercise.IsBodyweight (gt .GoalRepMax 0)}}
             &nbsp;{{.GoalRepMin}}–{{.GoalRepMax}} reps
             {{else if and (gt $.PhaseRepMin 0) (gt $.PhaseRepMax 0)}}
@@ -263,7 +271,7 @@
                     {{range .Sets}}
                     <tr>
                         <td class="ps-0">{{.SetNumber}}</td>
-                        <td>{{printf "%.0f" .ActualWeight}} {{.WeightUnit}}</td>
+                        <td class="weight-cell" data-w="{{.ActualWeight}}" data-u="{{.WeightUnit}}">{{printf "%.0f" .ActualWeight}} {{.WeightUnit}}</td>
                         <td>{{.ActualReps}}</td>
                         <td class="text-end">
                             <form method="POST" action="/sessions/{{$.Session.ID}}/exercises/{{$exID}}/sets/{{.ID}}/delete" class="d-inline delete-set-form">
@@ -279,7 +287,7 @@
 
             {{$last := .LastSet}}
             {{if .Exercise.IsTimeBased}}
-            <form method="POST" action="/sessions/{{$.Session.ID}}/exercises/{{.Exercise.ID}}/sets" class="d-flex gap-2 align-items-end flex-wrap w-100 log-set-form" data-time-based="1" data-goal-seconds="{{.Exercise.GoalSeconds}}">
+            <form method="POST" action="/sessions/{{$.Session.ID}}/exercises/{{.Exercise.ID}}/sets" class="d-flex gap-2 align-items-end w-100 log-set-form" data-time-based="1" data-goal-seconds="{{.Exercise.GoalSeconds}}">
                 <div class="flex-grow-1">
                     <label class="form-label small mb-1">Type</label>
                     <select name="activity_type" class="form-select form-select-sm">
@@ -292,16 +300,16 @@
                     </select>
                 </div>
                 <div>
-                    <label class="form-label small mb-1">Duration (hrs:mins:secs)</label>
+                    <label class="form-label small mb-1">Duration (h:m:s)</label>
                     <div class="d-flex gap-1 align-items-end">
                         <div class="text-center">
-                            <input type="number" name="actual_h" class="form-control form-control-sm text-center" value="{{if $last}}{{$last.Hours}}{{else}}0{{end}}" min="0" step="1" style="width: 56px;">
+                            <input type="number" name="actual_h" class="form-control form-control-sm text-center" value="{{if $last}}{{$last.Hours}}{{else}}0{{end}}" min="0" step="1" style="width: 44px;">
                         </div>
                         <div class="text-center">
-                            <input type="number" name="actual_m" class="form-control form-control-sm text-center" value="{{if $last}}{{$last.Minutes}}{{else}}0{{end}}" min="0" max="59" step="1" style="width: 56px;">
+                            <input type="number" name="actual_m" class="form-control form-control-sm text-center" value="{{if $last}}{{$last.Minutes}}{{else}}0{{end}}" min="0" max="59" step="1" style="width: 44px;">
                         </div>
                         <div class="text-center">
-                            <input type="number" name="actual_s" class="form-control form-control-sm text-center" value="{{if $last}}{{$last.Secs}}{{else}}0{{end}}" min="0" max="59" step="1" style="width: 56px;">
+                            <input type="number" name="actual_s" class="form-control form-control-sm text-center" value="{{if $last}}{{$last.Secs}}{{else}}0{{end}}" min="0" max="59" step="1" style="width: 44px;">
                         </div>
                     </div>
                 </div>
@@ -360,6 +368,69 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.3/Sortable.min.js"></script>
 <script>
+
+const serverUnit = "{{.WeightUnit}}";
+let displayUnit  = serverUnit;
+
+function convertWeight(w, from, to) {
+    if (from === to) return w;
+    if (from === 'kg' && to === 'lb') return w * 2.20462;
+    if (from === 'lb' && to === 'kg') return w * 0.453592;
+    return w;
+}
+
+function applyUnitToggle(newUnit) {
+    if (newUnit === displayUnit) return;
+
+    document.querySelectorAll('.weight-cell').forEach(function (el) {
+        const w = parseFloat(el.dataset.w);
+        const u = el.dataset.u;
+        if (!isNaN(w)) {
+            const c = convertWeight(w, u, newUnit);
+            el.dataset.w = c;
+            el.dataset.u = newUnit;
+            el.textContent = Math.round(c) + ' ' + newUnit;
+        }
+    });
+
+    document.querySelectorAll('.goal-weight-val').forEach(function (el) {
+        const w = parseFloat(el.dataset.w);
+        const u = el.dataset.u;
+        if (!isNaN(w) && w > 0) {
+            const c = convertWeight(w, u, newUnit);
+            el.dataset.w = c;
+            el.dataset.u = newUnit;
+            el.textContent = 'Goal: ' + Math.round(c) + ' ' + newUnit;
+        }
+    });
+
+    document.querySelectorAll('[data-goal-weight]').forEach(function (btn) {
+        const w = parseFloat(btn.dataset.goalWeight);
+        const u = btn.dataset.weightUnit || displayUnit;
+        if (!isNaN(w) && w > 0) {
+            const c = convertWeight(w, u, newUnit);
+            btn.dataset.goalWeight = c;
+            btn.dataset.weightUnit = newUnit;
+        }
+    });
+
+    document.querySelectorAll('.log-set-form:not([data-time-based="1"])').forEach(function (form) {
+        const inp = form.querySelector('input[name="actual_weight"]');
+        const sel = form.querySelector('select[name="weight_unit"]');
+        if (inp) {
+            const v = parseFloat(inp.value);
+            if (!isNaN(v) && v > 0) {
+                inp.value = Math.round(convertWeight(v, displayUnit, newUnit));
+            }
+        }
+        if (sel) sel.value = newUnit;
+    });
+
+    displayUnit = newUnit;
+}
+
+document.getElementById('unit_lb').addEventListener('change', function () { if (this.checked) applyUnitToggle('lb'); });
+document.getElementById('unit_kg').addEventListener('change', function () { if (this.checked) applyUnitToggle('kg'); });
 
 function fmtDuration(secs) {
     const h = Math.floor(secs / 3600);
@@ -457,12 +528,13 @@ document.querySelectorAll('.log-set-form').forEach(form => {
                 `<button type="submit" class="btn btn-link btn-sm text-danger p-0" title="Delete set"><i class="bi bi-trash"></i></button>` +
                 `</form></td>`;
         } else {
-            const weight = formData.get('actual_weight') || '0';
-            const unit   = formData.get('weight_unit')   || 'lb';
-            const reps   = formData.get('actual_reps')   || '0';
+            const rawWeight  = parseFloat(formData.get('actual_weight') || '0');
+            const loggedUnit = formData.get('weight_unit') || 'lb';
+            const converted  = convertWeight(rawWeight, loggedUnit, displayUnit);
+            const reps       = formData.get('actual_reps') || '0';
             row.innerHTML =
                 `<td class="ps-0">${setNum}</td>` +
-                `<td>${weight} ${unit}</td>` +
+                `<td class="weight-cell" data-w="${converted}" data-u="${displayUnit}">${Math.round(converted)} ${displayUnit}</td>` +
                 `<td>${reps}</td>` +
                 `<td class="text-end"><form method="POST" action="${deleteAction}" class="d-inline delete-set-form">` +
                 `<button type="submit" class="btn btn-link btn-sm text-danger p-0" title="Delete set"><i class="bi bi-trash"></i></button>` +

@@ -37,7 +37,7 @@
         const direction  = activeBtn.dataset.direction || 'up';
 
         document.getElementById('goalWeightExName').textContent = name;
-        document.getElementById('goalWeightInput').value = goalWeight > 0 ? goalWeight : '';
+        document.getElementById('goalWeightInput').value = goalWeight > 0 ? Math.round(goalWeight) : '';
         document.getElementById('goalWeightUnit').value  = unit === 'kg' ? 'kg' : 'lb';
         document.getElementById('goalWeightError').style.display = 'none';
 
@@ -72,15 +72,22 @@
             // Update the goal text displayed on the card.
             const card = activeBtn.closest('.card');
             if (card) {
-                const goalSpan = card.querySelector('.text-muted.small');
-                if (goalSpan) {
-                    const goalLabel = `Goal: ${data.goal_weight} ${data.weight_unit}`;
-                    if (/Goal:\s*[\d.]+ (?:lb|kg)/.test(goalSpan.textContent)) {
-                        goalSpan.textContent = goalSpan.textContent.replace(/Goal:\s*[\d.]+ (?:lb|kg)/, goalLabel);
-                    } else {
-                        // No goal text yet — prepend it.
-                        const existing = goalSpan.textContent.trim();
-                        goalSpan.textContent = existing ? `${goalLabel}  ${existing}` : goalLabel;
+                const roundedWeight = Math.round(data.goal_weight);
+                const goalValEl = card.querySelector('.goal-weight-val');
+                if (goalValEl) {
+                    goalValEl.dataset.w = data.goal_weight;
+                    goalValEl.dataset.u = data.weight_unit;
+                    goalValEl.textContent = `Goal: ${roundedWeight} ${data.weight_unit}`;
+                } else {
+                    const goalSpan = card.querySelector('.text-muted.small');
+                    if (goalSpan) {
+                        const goalLabel = `Goal: ${roundedWeight} ${data.weight_unit}`;
+                        if (/Goal:\s*[\d.]+ (?:lb|kg)/.test(goalSpan.textContent)) {
+                            goalSpan.textContent = goalSpan.textContent.replace(/Goal:\s*[\d.]+ (?:lb|kg)/, goalLabel);
+                        } else {
+                            const existing = goalSpan.textContent.trim();
+                            goalSpan.textContent = existing ? `${goalLabel}  ${existing}` : goalLabel;
+                        }
                     }
                 }
                 // Update the button's data attributes for the next modal open.
@@ -94,7 +101,7 @@
                 // Update the weight input if it's empty or showing the old default of 0.
                 const weightInput = card.querySelector('input[name="actual_weight"]');
                 if (weightInput && (!weightInput.value || weightInput.value === '0')) {
-                    weightInput.value = data.goal_weight;
+                    weightInput.value = roundedWeight;
                 }
                 const unitSelect = card.querySelector('select[name="weight_unit"]');
                 if (unitSelect) {
