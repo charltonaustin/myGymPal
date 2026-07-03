@@ -1,2 +1,3 @@
 /bin/mygympal
 .playwright-mcp
+conf/app.prod.conf
