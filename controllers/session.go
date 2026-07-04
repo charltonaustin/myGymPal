@@ -355,6 +355,14 @@ func (c *SessionController) Show() {
 							}
 						}
 						ev.HitMax = hitMax
+						if !hitMax && !ev.Exercise.IsBodyweight && ev.Exercise.GoalWeight > 0 {
+							for _, s := range prevSets {
+								if s.ActualWeight < ev.Exercise.GoalWeight {
+									ev.BelowGoal = true
+									break
+								}
+							}
+						}
 					}
 				}
 			}
@@ -507,12 +515,14 @@ func (c *SessionController) LogSet() {
 		return
 	}
 
-	// After 3rd set at or above goal reps, update the exercise library entry (weight-based only).
-	// Save in whatever unit the user logged the set — no conversion.
+	// After 3rd set at or above goal reps AND at or above goal weight, update the exercise library entry.
 	newCount := count + 1
 	if !exercise.IsTimeBased && newCount >= 3 && actualReps >= exercise.GoalReps {
 		if ex, err := Exercises.GetByName(userID.(int64), exercise.Name); err == nil {
-			Exercises.UpdateGoalWeight(ex.ID, actualWeight, weightUnit)
+			convertedGoal := models.ConvertWeight(ex.GoalWeight, ex.WeightUnit, weightUnit)
+			if ex.GoalWeight == 0 || actualWeight >= convertedGoal {
+				Exercises.UpdateGoalWeight(ex.ID, actualWeight, weightUnit)
+			}
 		}
 	}
 

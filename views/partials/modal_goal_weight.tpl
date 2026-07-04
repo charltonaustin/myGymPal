@@ -43,7 +43,7 @@
 
         const desc = document.getElementById('goalWeightDesc');
         if (direction === 'down') {
-            desc.firstChild.textContent = 'Set a new goal weight for ';
+            desc.firstChild.textContent = 'You logged below goal weight last session. Set a new goal weight for ';
         } else {
             desc.firstChild.textContent = 'You hit the max reps last session. Set a new goal weight for ';
         }

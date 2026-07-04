@@ -50,6 +50,7 @@ type SessionExerciseView struct {
 	Sets       []*SessionSet
 	CardioLogs []*CardioLog
 	HitMax     bool // true if the user hit max reps at goal weight for all required sets in the previous session
+	BelowGoal  bool // true if the user logged any set below goal weight in the previous session
 	GoalRepMin int  // from exercise library; overrides phase rep range for bodyweight exercises when > 0
 	GoalRepMax int  // from exercise library; overrides phase rep range for bodyweight exercises when > 0
 }
