@@ -14,9 +14,8 @@ database layer.
 ### `users`
 
 ```sql
-CREATE TABLE users
-(
-    id            BIGSERIAL PRIMARY KEY,
+CREATE TABLE users (
+    id            BIGSERIAL   PRIMARY KEY,
     username      TEXT        NOT NULL UNIQUE,
     password_hash TEXT        NOT NULL,
     weight_unit   TEXT        NOT NULL DEFAULT 'lb'
@@ -28,123 +27,16 @@ CREATE TABLE users
 
 ---
 
-### `exercises`
+### `session`
 
-Global catalogue of exercises. Shared across all users and referenced by templates.
-
-```sql
-CREATE TABLE exercises
-(
-    id            BIGSERIAL PRIMARY KEY,
-    name          TEXT        NOT NULL UNIQUE,
-    exercise_type TEXT        NOT NULL
-        CHECK (exercise_type IN ('weighted', 'bodyweight')),
-    block_type    TEXT        NOT NULL
-        CHECK (block_type IN ('main', 'abs', 'cardio', 'stretch')),
-    created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-```
-
-`block_type` is stored on the exercise to prevent a main-block exercise from being placed in the abs block. Template
-editors can only select exercises whose `block_type` matches the block being configured.
-
----
-
-### `templates`
-
-Reusable workout blueprints, shared across all users.
+Beego HTTP session store. Not application data.
 
 ```sql
-CREATE TABLE templates
-(
-    id         BIGSERIAL PRIMARY KEY,
-    created_by BIGINT      REFERENCES users (id) ON DELETE SET NULL,
-    name       TEXT        NOT NULL,
-    focus      TEXT,
-    is_public  BOOLEAN     NOT NULL DEFAULT TRUE,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-```
-
-`created_by` is SET NULL if the creator deletes their account so templates persist for other users.
-
----
-
-### `template_main_exercises`
-
-Ordered main-block exercises within a template.
-
-```sql
-CREATE TABLE template_main_exercises
-(
-    id               BIGSERIAL PRIMARY KEY,
-    template_id      BIGINT        NOT NULL REFERENCES templates (id) ON DELETE CASCADE,
-    exercise_id      BIGINT        NOT NULL REFERENCES exercises (id),
-    position         INT           NOT NULL,
-    sets             INT           NOT NULL DEFAULT 3,
-    weight_increment NUMERIC(6, 2) NOT NULL DEFAULT 5.00,
-    rep_increment    INT           NOT NULL DEFAULT 1,
-    goal_weight      NUMERIC(6, 2), -- NULL for bodyweight exercises
-    goal_reps        INT,           -- NULL for weighted (phase rep range is used instead)
-    UNIQUE (template_id, position)
-);
-```
-
-For **weighted** exercises: `goal_weight` is set, `goal_reps` is NULL (the phase's `rep_min`/`rep_max` drives reps).
-For **bodyweight** exercises: `goal_reps` is set, `goal_weight` is NULL.
-
----
-
-### `template_abs_exercises`
-
-Abs-block exercises within a template. Goal reps are fixed by the template, not driven by the phase rep range.
-
-```sql
-CREATE TABLE template_abs_exercises
-(
-    id               BIGSERIAL PRIMARY KEY,
-    template_id      BIGINT        NOT NULL REFERENCES templates (id) ON DELETE CASCADE,
-    exercise_id      BIGINT        NOT NULL REFERENCES exercises (id),
-    position         INT           NOT NULL,
-    sets             INT           NOT NULL DEFAULT 3,
-    weight_increment NUMERIC(6, 2) NOT NULL DEFAULT 5.00,
-    rep_increment    INT           NOT NULL DEFAULT 1,
-    goal_weight      NUMERIC(6, 2),          -- NULL for bodyweight abs
-    goal_reps        INT           NOT NULL, -- always present; never derived from phase range
-    UNIQUE (template_id, position)
-);
-```
-
----
-
-### `template_cardio_blocks`
-
-```sql
-CREATE TABLE template_cardio_blocks
-(
-    id                    BIGSERIAL PRIMARY KEY,
-    template_id           BIGINT NOT NULL REFERENCES templates (id) ON DELETE CASCADE,
-    position              INT    NOT NULL,
-    cardio_type           TEXT   NOT NULL,
-    goal_duration_minutes INT    NOT NULL,
-    UNIQUE (template_id, position)
-);
-```
-
----
-
-### `template_stretch_blocks`
-
-```sql
-CREATE TABLE template_stretch_blocks
-(
-    id                BIGSERIAL PRIMARY KEY,
-    template_id       BIGINT NOT NULL REFERENCES templates (id) ON DELETE CASCADE,
-    exercise_id       BIGINT NOT NULL REFERENCES exercises (id),
-    position          INT    NOT NULL,
-    goal_hold_seconds INT    NOT NULL,
-    UNIQUE (template_id, position)
+CREATE TABLE session (
+    session_key    CHAR(64)  NOT NULL,
+    session_data   BYTEA,
+    session_expiry TIMESTAMP NOT NULL,
+    CONSTRAINT session_pkey PRIMARY KEY (session_key)
 );
 ```
 
@@ -155,17 +47,35 @@ CREATE TABLE template_stretch_blocks
 A user's training program. One user can have multiple programs.
 
 ```sql
-CREATE TABLE programs
-(
-    id              BIGSERIAL PRIMARY KEY,
-    user_id         BIGINT      NOT NULL REFERENCES users (id) ON DELETE CASCADE,
-    name            TEXT        NOT NULL,
-    start_date      DATE        NOT NULL,
-    num_phases      INT         NOT NULL DEFAULT 6,
-    weeks_per_phase INT         NOT NULL DEFAULT 8,
-    is_active       BOOLEAN     NOT NULL DEFAULT TRUE,
-    created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+CREATE TABLE programs (
+    id                BIGSERIAL   PRIMARY KEY,
+    user_id           BIGINT      NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    name              TEXT        NOT NULL,
+    start_date        DATE        NOT NULL,
+    num_phases        INT         NOT NULL CHECK (num_phases > 0),
+    weeks_per_phase   INT         NOT NULL DEFAULT 8 CHECK (weeks_per_phase > 0),
+    workouts_per_week INT         NOT NULL DEFAULT 4 CHECK (workouts_per_week > 0),
+    created_at        TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at        TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+```
+
+---
+
+### `phases`
+
+One row per phase within a program. Each phase has its own rep range, default set count, and rest period.
+
+```sql
+CREATE TABLE phases (
+    id           BIGSERIAL PRIMARY KEY,
+    program_id   BIGINT    NOT NULL REFERENCES programs(id) ON DELETE CASCADE,
+    phase_number INT       NOT NULL CHECK (phase_number > 0),
+    rep_min      INT       NOT NULL DEFAULT 0,
+    rep_max      INT       NOT NULL DEFAULT 0,
+    default_sets INT       NOT NULL DEFAULT 3,
+    rest_seconds INT       NOT NULL DEFAULT 0,
+    UNIQUE (program_id, phase_number)
 );
 ```
 
@@ -174,213 +84,203 @@ stored on the phase.
 
 ---
 
-### `phases`
+### `templates`
 
-One row per phase within a program. Each phase has its own rep range.
+Reusable workout blueprints. No user ownership — all templates are visible to all authenticated users.
 
 ```sql
-CREATE TABLE phases
-(
-    id           BIGSERIAL PRIMARY KEY,
-    program_id   BIGINT NOT NULL REFERENCES programs (id) ON DELETE CASCADE,
-    phase_number INT    NOT NULL,
-    rep_min      INT    NOT NULL,
-    rep_max      INT    NOT NULL,
-    UNIQUE (program_id, phase_number),
-    CONSTRAINT chk_rep_range CHECK (rep_min <= rep_max AND rep_min > 0)
+CREATE TABLE templates (
+    id         BIGSERIAL    PRIMARY KEY,
+    name       VARCHAR(255) NOT NULL,
+    focus      VARCHAR(255) NOT NULL DEFAULT '',
+    created_at TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ  NOT NULL DEFAULT NOW()
 );
 ```
 
 ---
 
-### `workouts`
+### `template_exercises`
 
-A single workout instance, linked to a program, phase, week, and the template it was built from.
+Ordered exercises within a template. Stores identity only — goal weight and rep targets come from the user's exercise
+library and the current phase at workout creation time.
 
 ```sql
-CREATE TABLE workouts
-(
-    id           BIGSERIAL PRIMARY KEY,
-    user_id      BIGINT      NOT NULL REFERENCES users (id) ON DELETE CASCADE,
-    program_id   BIGINT      NOT NULL REFERENCES programs (id) ON DELETE CASCADE,
-    phase_id     BIGINT      NOT NULL REFERENCES phases (id),
-    template_id  BIGINT      REFERENCES templates (id) ON DELETE SET NULL,
-    week_number  INT         NOT NULL,
-    workout_date DATE        NOT NULL DEFAULT CURRENT_DATE,
-    workout_type TEXT        NOT NULL DEFAULT 'normal'
-        CHECK (workout_type IN ('normal', 'deload')),
-    status       TEXT        NOT NULL DEFAULT 'in_progress'
-        CHECK (status IN ('in_progress', 'completed')),
-    created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    completed_at TIMESTAMPTZ
+CREATE TABLE template_exercises (
+    id            BIGSERIAL    PRIMARY KEY,
+    template_id   BIGINT       NOT NULL REFERENCES templates(id) ON DELETE CASCADE,
+    name          VARCHAR(255) NOT NULL,
+    is_bodyweight BOOLEAN      NOT NULL DEFAULT FALSE,
+    is_time_based BOOLEAN      NOT NULL DEFAULT FALSE,
+    sort_order    INT          NOT NULL DEFAULT 0,
+    block         VARCHAR(20)  NOT NULL DEFAULT 'main'
 );
 ```
 
-`workout_type` is stored explicitly (not computed from `week_number`) so that:
-
-1. Progression queries use a simple `WHERE workout_type = 'normal'` without joining back to `programs`.
-2. Historical workout types are preserved even if `weeks_per_phase` is later edited.
-3. New types (e.g. `'test'`, `'competition'`) can be added without a schema change.
+`name` is always stored lowercase and trimmed. Exercise names are the coupling point between templates and a user's
+exercise library — there is no FK to `exercises`.
 
 ---
 
-### `program_exercise_state`
+### `sessions`
 
-Live goal weight or goal reps for each exercise within a program. Evolves via progression events and carries across
-phases unchanged.
-
-```sql
-CREATE TABLE program_exercise_state
-(
-    id                       BIGSERIAL PRIMARY KEY,
-    program_id               BIGINT        NOT NULL REFERENCES programs (id) ON DELETE CASCADE,
-    exercise_id              BIGINT        NOT NULL REFERENCES exercises (id),
-    block_type               TEXT          NOT NULL CHECK (block_type IN ('main', 'abs')),
-    goal_weight              NUMERIC(6, 2), -- NULL for bodyweight
-    goal_reps                INT,           -- NULL for weighted main exercises
-    consecutive_max_workouts INT           NOT NULL DEFAULT 0,
-    weight_increment         NUMERIC(6, 2) NOT NULL DEFAULT 5.00,
-    rep_increment            INT           NOT NULL DEFAULT 1,
-    UNIQUE (program_id, exercise_id, block_type)
-);
-```
-
-`consecutive_max_workouts` is the progression state machine. On workout completion:
-
-- `workout_type != 'normal'` → skip all updates.
-- All sets hit `phase.rep_max` → increment; if reaches 3, apply increase and reset to 0.
-- Any set missed `phase.rep_min` → apply decrease and reset to 0.
-- Between min and max → reset to 0.
-
----
-
-### `progression_events`
-
-Immutable audit log of every auto-progression change. Powers the post-workout indicator and trend history.
+A single workout instance linked to a program and phase.
 
 ```sql
-CREATE TABLE progression_events
-(
-    id              BIGSERIAL PRIMARY KEY,
-    workout_id      BIGINT      NOT NULL REFERENCES workouts (id) ON DELETE CASCADE,
-    exercise_id     BIGINT      NOT NULL REFERENCES exercises (id),
-    block_type      TEXT        NOT NULL CHECK (block_type IN ('main', 'abs')),
-    event_type      TEXT        NOT NULL CHECK (event_type IN ('increase', 'decrease')),
-    old_goal_weight NUMERIC(6, 2),
-    new_goal_weight NUMERIC(6, 2),
-    old_goal_reps   INT,
-    new_goal_reps   INT,
-    created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-```
-
-The event is recorded against the triggering workout. The new goal is applied when the **next workout is created** — the
-application reads pending events for each exercise when pre-filling the new workout.
-
----
-
-### `workout_main_sets`
-
-Logged sets for main-block exercises. Goals are snapshotted from `program_exercise_state` and `phases` at workout
-creation so historical targets are preserved even after progression fires.
-
-```sql
-CREATE TABLE workout_main_sets
-(
-    id          BIGSERIAL PRIMARY KEY,
-    workout_id  BIGINT NOT NULL REFERENCES workouts (id) ON DELETE CASCADE,
-    exercise_id BIGINT NOT NULL REFERENCES exercises (id),
-    set_number  INT    NOT NULL,
-    goal_weight NUMERIC(6, 2),   -- NULL for bodyweight; snapshotted at workout creation
-    goal_reps   INT    NOT NULL, -- phase rep_max for weighted; goal_reps for bodyweight; rep_min-2 for deload
-    UNIQUE (workout_id, exercise_id, set_number)
+CREATE TABLE sessions (
+    id             BIGSERIAL   PRIMARY KEY,
+    program_id     BIGINT      NOT NULL REFERENCES programs(id) ON DELETE CASCADE,
+    user_id        BIGINT      NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    phase_number   INT         NOT NULL,
+    week_number    INT         NOT NULL,
+    workout_number INT         NOT NULL,
+    is_deload      BOOLEAN     NOT NULL DEFAULT FALSE,
+    date           DATE        NOT NULL DEFAULT CURRENT_DATE,
+    created_at     TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at     TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 ```
 
 ---
 
-### `workout_main_set_segments`
+### `session_exercises`
 
-Sub-rows within a single set to capture mid-set weight drops. A normal set has one segment; a drop set has two or more.
-
-```sql
-CREATE TABLE workout_main_set_segments
-(
-    id             BIGSERIAL PRIMARY KEY,
-    set_id         BIGINT NOT NULL REFERENCES workout_main_sets (id) ON DELETE CASCADE,
-    segment_number INT    NOT NULL,
-    actual_weight  NUMERIC(6, 2), -- NULL for bodyweight
-    actual_reps    INT    NOT NULL,
-    UNIQUE (set_id, segment_number)
-);
-```
-
-Progression logic sums `actual_reps` across all segments of a set before comparing to `goal_reps`.
-
----
-
-### `workout_abs_sets`
+Exercises logged within a session. Goals are snapshotted from the user's exercise library and the current phase at
+session creation so historical targets are preserved even after the library is updated.
 
 ```sql
-CREATE TABLE workout_abs_sets
-(
-    id          BIGSERIAL PRIMARY KEY,
-    workout_id  BIGINT NOT NULL REFERENCES workouts (id) ON DELETE CASCADE,
-    exercise_id BIGINT NOT NULL REFERENCES exercises (id),
-    set_number  INT    NOT NULL,
-    goal_weight NUMERIC(6, 2), -- NULL for bodyweight abs
-    goal_reps   INT    NOT NULL,
-    UNIQUE (workout_id, exercise_id, set_number)
-);
-```
-
-### `workout_abs_set_segments`
-
-```sql
-CREATE TABLE workout_abs_set_segments
-(
-    id             BIGSERIAL PRIMARY KEY,
-    set_id         BIGINT NOT NULL REFERENCES workout_abs_sets (id) ON DELETE CASCADE,
-    segment_number INT    NOT NULL,
-    actual_weight  NUMERIC(6, 2),
-    actual_reps    INT    NOT NULL,
-    UNIQUE (set_id, segment_number)
+CREATE TABLE session_exercises (
+    id            BIGSERIAL    PRIMARY KEY,
+    session_id    BIGINT       NOT NULL REFERENCES sessions(id) ON DELETE CASCADE,
+    name          TEXT         NOT NULL,
+    is_bodyweight BOOLEAN      NOT NULL DEFAULT FALSE,
+    is_time_based BOOLEAN      NOT NULL DEFAULT FALSE,
+    goal_weight   NUMERIC(6,2),
+    weight_unit   VARCHAR(8)   NOT NULL DEFAULT 'lb',
+    goal_reps     INT          NOT NULL DEFAULT 0,
+    goal_seconds  INT          NOT NULL DEFAULT 0,
+    block         VARCHAR(20)  NOT NULL DEFAULT 'main',
+    sort_order    INT          NOT NULL DEFAULT 0
 );
 ```
 
 ---
 
-### `workout_cardio_logs`
+### `session_sets`
+
+Individual sets logged within a session exercise.
 
 ```sql
-CREATE TABLE workout_cardio_logs
-(
-    id                      BIGSERIAL PRIMARY KEY,
-    workout_id              BIGINT NOT NULL REFERENCES workouts (id) ON DELETE CASCADE,
-    position                INT    NOT NULL,
-    cardio_type             TEXT   NOT NULL,
-    goal_duration_minutes   INT    NOT NULL,
-    actual_duration_minutes INT    NOT NULL,
-    notes                   TEXT
+CREATE TABLE session_sets (
+    id                  BIGSERIAL   PRIMARY KEY,
+    session_exercise_id BIGINT      NOT NULL REFERENCES session_exercises(id) ON DELETE CASCADE,
+    set_number          INT         NOT NULL,
+    actual_weight       NUMERIC(6,2),
+    weight_unit         VARCHAR(8)  NOT NULL DEFAULT 'lb',
+    actual_reps         INT         NOT NULL,
+    actual_seconds      INT         NOT NULL DEFAULT 0,
+    activity_type       VARCHAR(50) NOT NULL DEFAULT '',
+    UNIQUE (session_exercise_id, set_number)
 );
 ```
 
-`actual_duration_minutes` may be less than `goal_duration_minutes` — this is valid and never treated as an error.
+---
+
+### `cardio_logs`
+
+Cardio entries linked to a session exercise.
+
+```sql
+CREATE TABLE cardio_logs (
+    id                  BIGSERIAL    PRIMARY KEY,
+    session_exercise_id BIGINT       NOT NULL REFERENCES session_exercises(id) ON DELETE CASCADE,
+    cardio_type         VARCHAR(100) NOT NULL DEFAULT '',
+    goal_duration       INT          NOT NULL DEFAULT 0,
+    actual_duration     INT          NOT NULL DEFAULT 0,
+    created_at          TIMESTAMP    NOT NULL DEFAULT NOW()
+);
+```
 
 ---
 
-### `workout_stretch_logs`
+### `exercises`
+
+Per-user exercise library. Each user maintains their own named list of exercises with personal goal targets.
 
 ```sql
-CREATE TABLE workout_stretch_logs
-(
-    id                  BIGSERIAL PRIMARY KEY,
-    workout_id          BIGINT NOT NULL REFERENCES workouts (id) ON DELETE CASCADE,
-    exercise_id         BIGINT NOT NULL REFERENCES exercises (id),
-    position            INT    NOT NULL,
-    goal_hold_seconds   INT    NOT NULL,
-    actual_hold_seconds INT    NOT NULL
+CREATE TABLE exercises (
+    id            BIGSERIAL    PRIMARY KEY,
+    user_id       BIGINT       NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    name          TEXT         NOT NULL,
+    is_bodyweight BOOLEAN      NOT NULL DEFAULT FALSE,
+    is_time_based BOOLEAN      NOT NULL DEFAULT FALSE,
+    goal_weight   NUMERIC(6,2) NOT NULL DEFAULT 0,
+    weight_unit   VARCHAR(8)   NOT NULL DEFAULT 'lb',
+    goal_seconds  INT          NOT NULL DEFAULT 0,
+    goal_rep_min  INT          NOT NULL DEFAULT 0,
+    goal_rep_max  INT          NOT NULL DEFAULT 0,
+    default_block VARCHAR(20)  NOT NULL DEFAULT 'main',
+    created_at    TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    updated_at    TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    UNIQUE (user_id, name)
+);
+```
+
+`name` is always stored lowercase and trimmed. The `UNIQUE (user_id, name)` constraint enforces one entry per exercise
+name per user. There is no sharing between users — each user's library is fully independent.
+
+---
+
+### `body_weights`
+
+Daily body weight log per user.
+
+```sql
+CREATE TABLE body_weights (
+    id          BIGSERIAL    PRIMARY KEY,
+    user_id     BIGINT       NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    date        DATE         NOT NULL,
+    weight      NUMERIC(6,2) NOT NULL,
+    weight_unit VARCHAR(8)   NOT NULL DEFAULT 'lb',
+    UNIQUE (user_id, date)
+);
+```
+
+---
+
+### `macro_entries`
+
+Individual food entries per user per day.
+
+```sql
+CREATE TABLE macro_entries (
+    id             BIGSERIAL    PRIMARY KEY,
+    user_id        BIGINT       NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    date           DATE         NOT NULL,
+    food_name      TEXT         NOT NULL,
+    protein        NUMERIC(6,1) NOT NULL DEFAULT 0,
+    carbs          NUMERIC(6,1) NOT NULL DEFAULT 0,
+    fat            NUMERIC(6,1) NOT NULL DEFAULT 0,
+    serving_weight NUMERIC(7,1) NOT NULL DEFAULT 0,
+    serving_unit   VARCHAR(8)   NOT NULL DEFAULT 'g',
+    created_at     TIMESTAMP    NOT NULL DEFAULT NOW()
+);
+```
+
+---
+
+### `macro_goals`
+
+Daily macro targets per user. One row per user (enforced by UNIQUE on `user_id`).
+
+```sql
+CREATE TABLE macro_goals (
+    id         BIGSERIAL    PRIMARY KEY,
+    user_id    BIGINT       NOT NULL UNIQUE,
+    protein    NUMERIC(7,1) NOT NULL DEFAULT 0,
+    carbs      NUMERIC(7,1) NOT NULL DEFAULT 0,
+    fat        NUMERIC(7,1) NOT NULL DEFAULT 0,
+    updated_at TIMESTAMPTZ  NOT NULL DEFAULT NOW()
 );
 ```
 
@@ -388,19 +288,14 @@ CREATE TABLE workout_stretch_logs
 
 ## Index Summary
 
-| Table                    | Index                                             | Rationale                         |
-|--------------------------|---------------------------------------------------|-----------------------------------|
-| `users`                  | UNIQUE on `username`                              | Login lookup                      |
-| `templates`              | `(created_by)`                                    | "My templates" list               |
-| `templates`              | `(is_public)`                                     | Browse public templates           |
-| `programs`               | `(user_id, is_active)`                            | Find active program for a user    |
-| `workouts`               | `(user_id, status, workout_date DESC)`            | History list                      |
-| `workouts`               | `(program_id, phase_id, workout_type)`            | Progression look-back             |
-| `workout_main_sets`      | `(workout_id, exercise_id)`                       | Sets for an exercise in a workout |
-| `workout_abs_sets`       | `(workout_id, exercise_id)`                       | Same, for abs block               |
-| `program_exercise_state` | UNIQUE on `(program_id, exercise_id, block_type)` | State lookup                      |
-| `progression_events`     | `(workout_id)`                                    | Post-workout indicator display    |
-| `progression_events`     | `(exercise_id)`                                   | Exercise trend history            |
+| Table               | Index                                | Rationale                             |
+|---------------------|--------------------------------------|---------------------------------------|
+| `users`             | UNIQUE on `username`                 | Login lookup                          |
+| `exercises`         | UNIQUE on `(user_id, name)`          | Per-user exercise lookup by name      |
+| `phases`            | UNIQUE on `(program_id, phase_number)` | Phase lookup within a program       |
+| `session_sets`      | UNIQUE on `(session_exercise_id, set_number)` | Sets within an exercise      |
+| `body_weights`      | UNIQUE on `(user_id, date)`          | One entry per user per day            |
+| `macro_goals`       | UNIQUE on `user_id`                  | Single goal row per user              |
 
 ---
 
@@ -408,59 +303,56 @@ CREATE TABLE workout_stretch_logs
 
 ```
 users
-  └── programs
-        ├── phases
-        ├── program_exercise_state  → exercises
-        └── workouts
-              ├── workout_main_sets        → exercises
-              │     └── workout_main_set_segments
-              ├── workout_abs_sets         → exercises
-              │     └── workout_abs_set_segments
-              ├── workout_cardio_logs
-              └── workout_stretch_logs     → exercises
+  ├── programs
+  │     └── phases
+  │     └── sessions
+  │           ├── session_exercises
+  │           │     ├── session_sets
+  │           │     └── cardio_logs
+  ├── exercises       (per-user library)
+  ├── body_weights
+  ├── macro_entries
+  └── macro_goals
 
-exercises  (global catalogue)
-
-templates  (shared, owned by a user)
-  ├── template_main_exercises    → exercises
-  ├── template_abs_exercises     → exercises
-  ├── template_cardio_blocks
-  └── template_stretch_blocks    → exercises
-
-progression_events → workouts, exercises
+templates             (global, no user ownership)
+  └── template_exercises
 ```
 
 ---
 
 ## Key Design Decisions
 
-### `workout_type` stored explicitly on workouts
+### Exercise names are the coupling between templates and the exercise library
 
-Using a text enum (`'normal'`, `'deload'`) rather than a boolean avoids re-deriving the type from
-`programs.weeks_per_phase` on every progression query, protects historical data if the program config changes, and makes
-it easy to add new types (e.g. `'test'`, `'competition'`) in the future with only a CHECK constraint update.
+`template_exercises.name` is a plain text field, not a FK to `exercises`. When a session is created from a template,
+the app looks up each exercise by name in the user's personal exercise library to copy goal weight, reps, and seconds
+into the session snapshot. This means a user's library must contain matching names for template goals to populate —
+new users start blank and build their library over time.
 
-### Set segments for mid-set weight drops
+### Template exercises store identity only
 
-A drop set "55 lb x4 → 45 lb x6" is one logical set with two segments. This cleanly supports any number of drops without
-fixed-width columns.
+`template_exercises` holds only `name`, `is_bodyweight`, `is_time_based`, `block`, and `sort_order`. Goal values
+(weight, reps, seconds) are not stored on the template. They come from the user's exercise library at session creation
+time, so each user gets their own personalised targets from the same shared template.
 
-### `program_exercise_state` separate from templates
+### Goals snapshotted onto session rows at creation
 
-Template rows define starting goal values. Once a program is running, each user's goals drift independently via
-progression events. Storing live state on the template would corrupt it for all users.
+`session_exercises` copies goal weight, reps, and seconds from the exercise library at the moment the session is
+created. This preserves the historical target even if the user later updates their exercise goals.
 
-### Goals snapshotted onto workout set rows
+### `is_deload` stored explicitly on sessions
 
-The goal at workout creation is what the user was targeting. Snapshotting preserves the historical record even after
-future progression changes the goal.
+Deload status is stored as a boolean on `sessions` rather than computed from `week_number` and `programs.weeks_per_phase`.
+This protects historical records if the program config is later edited.
 
-### Deload target reps computed, not stored
+### Time-based exercises are a flag, not a separate type
 
-Deload reps = `phase.rep_min - 2`. The application computes this when creating the workout and writes it into
-`workout_main_sets.goal_reps`. The phase columns are the single source of truth.
+`is_time_based` is a boolean on `exercises`, `session_exercises`, and `template_exercises`. When true, `goal_seconds`
+(and `actual_seconds` on sets) is the relevant target; `goal_weight`/`actual_reps` are unused. This avoids a separate
+table or type hierarchy for what is a minor behavioural variant.
 
-### Template copying
+### Block stored on exercise entries, not inferred
 
-A copy creates a new `templates` row with `created_by` set to the copying user, then duplicates all child rows. No
-`source_template_id` link is maintained — the copy is fully independent.
+`block` (`'main'`, `'abs'`, `'cardio'`, `'stretch'`) is stored on `session_exercises` and `template_exercises` rather
+than looked up from the exercise library. The user's `exercises.default_block` is used as a suggestion at entry time
+but is not authoritative — the block is confirmed per-use.
