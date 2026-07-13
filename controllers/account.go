@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"github.com/beego/beego/v2/core/logs"
 	beego "github.com/beego/beego/v2/server/web"
 )
 
@@ -76,4 +77,21 @@ func (c *AccountController) SettingsPost() {
 	flash.Success("Settings saved.")
 	flash.Store(&c.Controller)
 	c.Redirect("/settings", 302)
+}
+
+// UpdateUnitJSON handles AJAX requests to update the user's global weight-unit preference.
+func (c *AccountController) UpdateUnitJSON() {
+	userID := c.GetSession("user_id")
+	if userID == nil {
+		c.Ctx.Output.SetStatus(401)
+		return
+	}
+	unit := c.GetString("weight_unit")
+	if err := Users.UpdateWeightUnit(userID.(int64), unit); err != nil {
+		logs.Error("AccountController.UpdateUnitJSON: %v", err)
+		c.Ctx.Output.SetStatus(400)
+		return
+	}
+	c.Data["json"] = map[string]interface{}{"ok": true}
+	c.ServeJSON()
 }

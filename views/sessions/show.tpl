@@ -71,7 +71,7 @@
     {{end}}
     {{else}}
     {{$exID := .Exercise.ID}}
-    <div class="card mb-3">
+    <div class="card mb-3" data-ex-id="{{$exID}}" data-server-unit="{{.Exercise.WeightUnit}}">
         <div class="card-body pb-2">
             <div class="d-flex align-items-baseline justify-content-between mb-2">
                 <h2 class="h6 fw-semibold mb-0 text-capitalize">{{if .HitMax}}<button type="button" class="btn btn-link p-0 border-0 hit-max-btn" data-bs-toggle="modal" data-bs-target="#goalWeightModal" data-ex-name="{{.Exercise.Name}}" data-goal-weight="{{.Exercise.GoalWeight}}" data-weight-unit="{{.Exercise.WeightUnit}}" data-direction="up" title="Hit max reps last workout — tap to update goal weight" style="line-height:1;vertical-align:middle;"><i class="bi bi-arrow-up-circle-fill text-black" style="font-size:1.0em;"></i></button>&nbsp;{{else if .BelowGoal}}<button type="button" class="btn btn-link p-0 border-0 hit-max-btn" data-bs-toggle="modal" data-bs-target="#goalWeightModal" data-ex-name="{{.Exercise.Name}}" data-goal-weight="{{.Exercise.GoalWeight}}" data-weight-unit="{{.Exercise.WeightUnit}}" data-direction="down" title="Logged below goal weight last workout — tap to update goal weight" style="line-height:1;vertical-align:middle;"><i class="bi bi-arrow-down-circle-fill text-black" style="font-size:1.0em;"></i></button>&nbsp;{{else}}{{if .Exercise.IsTimeBased}}<button type="button" class="btn btn-link p-0 border-0" data-bs-toggle="modal" data-bs-target="#goalSecondsModal" data-ex-name="{{.Exercise.Name}}" data-goal-seconds="{{.Exercise.GoalSeconds}}" title="Set goal duration" style="line-height:1;vertical-align:middle;"><i class="bi bi-pencil text-black" style="font-size:1.0em;"></i></button>&nbsp;{{else}}{{if .Exercise.IsBodyweight}}<button type="button" class="btn btn-link p-0 border-0" data-bs-toggle="modal" data-bs-target="#goalRepsModal" data-ex-name="{{.Exercise.Name}}" data-goal-rep-min="{{.GoalRepMin}}" data-goal-rep-max="{{.GoalRepMax}}" title="Set goal reps" style="line-height:1;vertical-align:middle;"><i class="bi bi-pencil text-black" style="font-size:1.0em;"></i></button>{{else}}<button type="button" class="btn btn-link p-0 border-0 hit-max-btn" data-bs-toggle="modal" data-bs-target="#goalWeightModal" data-ex-name="{{.Exercise.Name}}" data-goal-weight="{{.Exercise.GoalWeight}}" data-weight-unit="{{.Exercise.WeightUnit}}" data-direction="up" title="Set goal weight" style="line-height:1;vertical-align:middle;"><i class="bi bi-pencil text-black" style="font-size:1.0em;"></i></button>{{end}}&nbsp;{{end}}{{end}}{{.Exercise.Name}}</h2>
@@ -83,6 +83,14 @@
                     {{if gt .Exercise.GoalWeight 0.0}}<span class="goal-weight-val" data-w="{{.Exercise.GoalWeight}}" data-u="{{.Exercise.WeightUnit}}">Goal: {{printf "%.0f" .Exercise.GoalWeight}} {{.Exercise.WeightUnit}}</span>{{end}}
                     {{end}}
                     </span>
+                    {{if and (not .Exercise.IsTimeBased) (not .Exercise.IsBodyweight)}}
+                    <div class="btn-group btn-group-sm" role="group">
+                        <input type="radio" class="btn-check ex-unit-radio" name="ex_unit_{{$exID}}" id="ex_lb_{{$exID}}" value="lb" autocomplete="off" {{if eq .Exercise.WeightUnit "lb"}}checked{{end}}>
+                        <label class="btn btn-outline-secondary py-0 px-2" for="ex_lb_{{$exID}}" style="font-size:0.7rem;">lb</label>
+                        <input type="radio" class="btn-check ex-unit-radio" name="ex_unit_{{$exID}}" id="ex_kg_{{$exID}}" value="kg" autocomplete="off" {{if eq .Exercise.WeightUnit "kg"}}checked{{end}}>
+                        <label class="btn btn-outline-secondary py-0 px-2" for="ex_kg_{{$exID}}" style="font-size:0.7rem;">kg</label>
+                    </div>
+                    {{end}}
                     <form method="POST" action="/sessions/{{$.Session.ID}}/exercises/{{$exID}}/delete" class="d-inline">
                         <button type="submit" class="btn btn-link btn-sm text-danger p-0" title="Remove exercise"><i class="bi bi-trash"></i></button>
                     </form>
@@ -196,7 +204,7 @@
     <div class="sortable-block" data-session-id="{{$.Session.ID}}" data-block="{{.Block}}">
     {{range .Exercises}}
     {{$exID := .Exercise.ID}}
-    <div class="card mb-3" data-ex-id="{{$exID}}">
+    <div class="card mb-3" data-ex-id="{{$exID}}" data-server-unit="{{.Exercise.WeightUnit}}">
         <div class="card-body pb-2">
             <div class="d-flex align-items-center justify-content-between mb-1">
                 <div class="d-flex align-items-center gap-2 flex-grow-1 min-w-0">
@@ -208,7 +216,15 @@
                       &nbsp;{{else if .BelowGoal}}<button type="button" class="btn btn-link p-0 border-0 hit-max-btn" data-bs-toggle="modal" data-bs-target="#goalWeightModal" data-ex-name="{{.Exercise.Name}}" data-goal-weight="{{.Exercise.GoalWeight}}" data-weight-unit="{{.Exercise.WeightUnit}}" data-direction="down" title="Logged below goal weight last workout — tap to update goal weight" style="line-height:1;vertical-align:middle;"><i class="bi bi-arrow-down-circle-fill text-black" style="font-size:1.0em;"></i></button>&nbsp;{{else}}{{if (not .Exercise.IsTimeBased)}}{{if .Exercise.IsBodyweight}}
                       <button type="button" class="btn btn-link p-0 border-0" data-bs-toggle="modal" data-bs-target="#goalRepsModal" data-ex-name="{{.Exercise.Name}}" data-goal-rep-min="{{.GoalRepMin}}" data-goal-rep-max="{{.GoalRepMax}}" title="Set goal reps" style="line-height:1;vertical-align:middle;"><i class="bi bi-pencil text-black" style="font-size:1.0em;"></i></button>{{else}}<button type="button" class="btn btn-link p-0 border-0 hit-max-btn" data-bs-toggle="modal" data-bs-target="#goalWeightModal" data-ex-name="{{.Exercise.Name}}" data-goal-weight="{{.Exercise.GoalWeight}}" data-weight-unit="{{.Exercise.WeightUnit}}" data-direction="up" title="Set goal weight" style="line-height:1;vertical-align:middle;"><i class="bi bi-pencil text-black" style="font-size:1.0em;"></i></button>{{end}}&nbsp;{{end}}{{end}}{{.Exercise.Name}}</h2>
                 </div>
-                <div class="flex-shrink-0">
+                <div class="d-flex align-items-center gap-2 flex-shrink-0">
+                    {{if and (not .Exercise.IsTimeBased) (not .Exercise.IsBodyweight)}}
+                    <div class="btn-group btn-group-sm" role="group">
+                        <input type="radio" class="btn-check ex-unit-radio" name="ex_unit_{{$exID}}" id="ex_lb_{{$exID}}" value="lb" autocomplete="off" {{if eq .Exercise.WeightUnit "lb"}}checked{{end}}>
+                        <label class="btn btn-outline-secondary py-0 px-2" for="ex_lb_{{$exID}}" style="font-size:0.7rem;">lb</label>
+                        <input type="radio" class="btn-check ex-unit-radio" name="ex_unit_{{$exID}}" id="ex_kg_{{$exID}}" value="kg" autocomplete="off" {{if eq .Exercise.WeightUnit "kg"}}checked{{end}}>
+                        <label class="btn btn-outline-secondary py-0 px-2" for="ex_kg_{{$exID}}" style="font-size:0.7rem;">kg</label>
+                    </div>
+                    {{end}}
                     <form method="POST" action="/sessions/{{$.Session.ID}}/exercises/{{$exID}}/delete" class="d-inline">
                         <button type="submit" class="btn btn-link btn-sm text-danger p-0" title="Remove exercise"><i class="bi bi-trash"></i></button>
                     </form>
@@ -361,8 +377,9 @@
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.3/Sortable.min.js"></script>
 <script>
 
-const serverUnit = "{{.WeightUnit}}";
-let displayUnit  = serverUnit;
+const serverUnit = "{{.WeightUnit}}"; // user's global preference — drives the global toggle default
+const sessionID = {{.Session.ID}};
+const exerciseUnits = {};             // exID → current display unit (client-side state)
 
 function convertWeight(w, from, to) {
     if (from === to) return w;
@@ -371,58 +388,76 @@ function convertWeight(w, from, to) {
     return w;
 }
 
-function applyUnitToggle(newUnit) {
-    if (newUnit === displayUnit) return;
+function getCardUnit(card) {
+    return exerciseUnits[card.dataset.exId] || card.dataset.serverUnit || serverUnit;
+}
 
-    document.querySelectorAll('.weight-cell').forEach(function (el) {
-        const w = parseFloat(el.dataset.w);
-        const u = el.dataset.u;
+function applyUnitToCard(card, newUnit) {
+    const exID = card.dataset.exId;
+    const currentUnit = getCardUnit(card);
+    if (newUnit === currentUnit) return;
+
+    card.querySelectorAll('.weight-cell').forEach(function (el) {
+        const w = parseFloat(el.dataset.w), u = el.dataset.u;
         if (!isNaN(w)) {
             const c = convertWeight(w, u, newUnit);
-            el.dataset.w = c;
-            el.dataset.u = newUnit;
+            el.dataset.w = c; el.dataset.u = newUnit;
             el.textContent = Math.round(c) + ' ' + newUnit;
         }
     });
-
-    document.querySelectorAll('.goal-weight-val').forEach(function (el) {
-        const w = parseFloat(el.dataset.w);
-        const u = el.dataset.u;
+    card.querySelectorAll('.goal-weight-val').forEach(function (el) {
+        const w = parseFloat(el.dataset.w), u = el.dataset.u;
         if (!isNaN(w) && w > 0) {
             const c = convertWeight(w, u, newUnit);
-            el.dataset.w = c;
-            el.dataset.u = newUnit;
+            el.dataset.w = c; el.dataset.u = newUnit;
             el.textContent = 'Goal: ' + Math.round(c) + ' ' + newUnit;
         }
     });
-
-    document.querySelectorAll('[data-goal-weight]').forEach(function (btn) {
-        const w = parseFloat(btn.dataset.goalWeight);
-        const u = btn.dataset.weightUnit || displayUnit;
+    card.querySelectorAll('[data-goal-weight]').forEach(function (btn) {
+        const w = parseFloat(btn.dataset.goalWeight), u = btn.dataset.weightUnit || currentUnit;
         if (!isNaN(w) && w > 0) {
             const c = convertWeight(w, u, newUnit);
-            btn.dataset.goalWeight = c;
-            btn.dataset.weightUnit = newUnit;
+            btn.dataset.goalWeight = c; btn.dataset.weightUnit = newUnit;
         }
     });
-
-    document.querySelectorAll('.log-set-form:not([data-time-based="1"])').forEach(function (form) {
+    card.querySelectorAll('.log-set-form:not([data-time-based="1"])').forEach(function (form) {
         const inp = form.querySelector('input[name="actual_weight"]');
         const sel = form.querySelector('select[name="weight_unit"]');
         if (inp) {
             const v = parseFloat(inp.value);
-            if (!isNaN(v) && v > 0) {
-                inp.value = Math.round(convertWeight(v, displayUnit, newUnit));
-            }
+            if (!isNaN(v) && v > 0) inp.value = Math.round(convertWeight(v, currentUnit, newUnit));
         }
         if (sel) sel.value = newUnit;
     });
+    card.querySelectorAll('.ex-unit-radio').forEach(function (r) { r.checked = r.value === newUnit; });
 
-    displayUnit = newUnit;
+    exerciseUnits[exID] = newUnit;
+    fetch('/sessions/' + sessionID + '/exercises/' + exID + '/unit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'XMLHttpRequest' },
+        body: 'weight_unit=' + newUnit,
+    });
 }
 
-document.getElementById('unit_lb').addEventListener('change', function () { if (this.checked) applyUnitToggle('lb'); });
-document.getElementById('unit_kg').addEventListener('change', function () { if (this.checked) applyUnitToggle('kg'); });
+function applyGlobalToggle(newUnit) {
+    document.querySelectorAll('.card[data-ex-id]').forEach(function (card) {
+        applyUnitToCard(card, newUnit);
+    });
+    fetch('/account/unit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'XMLHttpRequest' },
+        body: 'weight_unit=' + newUnit,
+    });
+}
+
+document.getElementById('unit_lb').addEventListener('change', function () { if (this.checked) applyGlobalToggle('lb'); });
+document.getElementById('unit_kg').addEventListener('change', function () { if (this.checked) applyGlobalToggle('kg'); });
+
+document.addEventListener('change', function (e) {
+    if (!e.target.classList.contains('ex-unit-radio')) return;
+    const card = e.target.closest('.card[data-ex-id]');
+    if (card) applyUnitToCard(card, e.target.value);
+});
 
 function fmtDuration(secs) {
     const h = Math.floor(secs / 3600);
@@ -522,11 +557,13 @@ document.querySelectorAll('.log-set-form').forEach(form => {
         } else {
             const rawWeight  = parseFloat(formData.get('actual_weight') || '0');
             const loggedUnit = formData.get('weight_unit') || 'lb';
-            const converted  = convertWeight(rawWeight, loggedUnit, displayUnit);
+            const exCard     = form.closest('.card[data-ex-id]');
+            const exUnit     = exCard ? getCardUnit(exCard) : serverUnit;
+            const converted  = convertWeight(rawWeight, loggedUnit, exUnit);
             const reps       = formData.get('actual_reps') || '0';
             row.innerHTML =
                 `<td class="ps-0">${setNum}</td>` +
-                `<td class="weight-cell" data-w="${converted}" data-u="${displayUnit}">${Math.round(converted)} ${displayUnit}</td>` +
+                `<td class="weight-cell" data-w="${converted}" data-u="${exUnit}">${Math.round(converted)} ${exUnit}</td>` +
                 `<td>${reps}</td>` +
                 `<td class="text-end"><form method="POST" action="${deleteAction}" class="d-inline delete-set-form">` +
                 `<button type="submit" class="btn btn-link btn-sm text-danger p-0" title="Delete set"><i class="bi bi-trash"></i></button>` +

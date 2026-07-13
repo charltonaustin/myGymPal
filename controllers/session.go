@@ -277,16 +277,14 @@ func (c *SessionController) Show() {
 		weightUnit = user.WeightUnit
 	}
 
-	// Convert exercise goal weights and logged set weights to the user's preferred unit.
-	// This must happen before the HitMax check so goal/actual weight comparisons use the same unit.
+	// Convert logged set weights to each exercise's preferred unit.
+	// Goal weight is already stored in the exercise's own WeightUnit — no conversion needed there.
 	for _, ev := range exercises {
 		if !ev.Exercise.IsBodyweight && !ev.Exercise.IsTimeBased {
-			ev.Exercise.GoalWeight = models.ConvertWeight(ev.Exercise.GoalWeight, ev.Exercise.WeightUnit, weightUnit)
-			ev.Exercise.WeightUnit = weightUnit
-		}
-		for _, s := range ev.Sets {
-			s.ActualWeight = models.ConvertWeight(s.ActualWeight, s.WeightUnit, weightUnit)
-			s.WeightUnit = weightUnit
+			for _, s := range ev.Sets {
+				s.ActualWeight = models.ConvertWeight(s.ActualWeight, s.WeightUnit, ev.Exercise.WeightUnit)
+				s.WeightUnit = ev.Exercise.WeightUnit
+			}
 		}
 	}
 
@@ -349,15 +347,19 @@ func (c *SessionController) Show() {
 								hitMax = false
 								break
 							}
-							if !ev.Exercise.IsBodyweight && ev.Exercise.GoalWeight > 0 && s.ActualWeight < ev.Exercise.GoalWeight {
-								hitMax = false
-								break
+							if !ev.Exercise.IsBodyweight && ev.Exercise.GoalWeight > 0 {
+								convertedActual := models.ConvertWeight(s.ActualWeight, s.WeightUnit, ev.Exercise.WeightUnit)
+								if convertedActual < ev.Exercise.GoalWeight {
+									hitMax = false
+									break
+								}
 							}
 						}
 						ev.HitMax = hitMax
 						if !hitMax && !ev.Exercise.IsBodyweight && ev.Exercise.GoalWeight > 0 {
 							for _, s := range prevSets {
-								if s.ActualWeight < ev.Exercise.GoalWeight {
+								convertedActual := models.ConvertWeight(s.ActualWeight, s.WeightUnit, ev.Exercise.WeightUnit)
+								if convertedActual < ev.Exercise.GoalWeight {
 									ev.BelowGoal = true
 									break
 								}
@@ -786,5 +788,52 @@ func (c *SessionController) ReorderExercises() {
 	}
 
 	c.Data["json"] = map[string]string{"ok": "1"}
+	c.ServeJSON()
+}
+
+// UpdateExerciseUnit handles AJAX requests to change the display unit for one exercise.
+// Updates the exercise library entry by name so the preference persists across all sessions.
+func (c *SessionController) UpdateExerciseUnit() {
+	userID := c.GetSession("user_id")
+	if userID == nil {
+		c.Ctx.Output.SetStatus(401)
+		return
+	}
+	sessionID, err := strconv.ParseInt(c.Ctx.Input.Param(":id"), 10, 64)
+	if err != nil {
+		c.Ctx.Output.SetStatus(400)
+		return
+	}
+	if _, err := Sessions.GetByID(sessionID, userID.(int64)); err != nil {
+		c.Ctx.Output.SetStatus(404)
+		return
+	}
+	eid, err := strconv.ParseInt(c.Ctx.Input.Param(":eid"), 10, 64)
+	if err != nil {
+		c.Ctx.Output.SetStatus(400)
+		return
+	}
+	newUnit := c.GetString("weight_unit")
+	if newUnit != "lb" && newUnit != "kg" {
+		c.Ctx.Output.SetStatus(400)
+		return
+	}
+	se, err := SessionExercises.GetByID(eid)
+	if err != nil || se.SessionID != sessionID {
+		c.Ctx.Output.SetStatus(404)
+		return
+	}
+	libEx, err := Exercises.GetByName(userID.(int64), se.Name)
+	if err != nil {
+		c.Ctx.Output.SetStatus(404)
+		return
+	}
+	converted := models.ConvertWeight(libEx.GoalWeight, libEx.WeightUnit, newUnit)
+	if err := Exercises.UpdateGoalWeight(libEx.ID, converted, newUnit); err != nil {
+		logs.Error("UpdateExerciseUnit: %v", err)
+		c.Ctx.Output.SetStatus(500)
+		return
+	}
+	c.Data["json"] = map[string]interface{}{"ok": true}
 	c.ServeJSON()
 }

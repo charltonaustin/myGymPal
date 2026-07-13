@@ -8,11 +8,12 @@ source: controllers/account.go
 
 ## Routes
 
-| Method | Path            | Handler       |
-|--------|-----------------|---------------|
-| GET    | /settings       | Settings      |
-| POST   | /settings       | SettingsPost  |
-| POST   | /account/delete | DeleteAccount |
+| Method | Path            | Handler          |
+|--------|-----------------|------------------|
+| GET    | /settings       | Settings         |
+| POST   | /settings       | SettingsPost     |
+| POST   | /account/unit   | UpdateUnitJSON   |
+| POST   | /account/delete | DeleteAccount    |
 
 ## Auth requirement
 
@@ -53,7 +54,7 @@ All three handlers check `c.GetSession("user_id")`; nil redirects to /login.
 ## Repository calls
 
 - `Users.GetByID(userID)` — Settings GET, DeleteAccount failure fallback
-- `Users.UpdateWeightUnit(userID, unit)` — SettingsPost
+- `Users.UpdateWeightUnit(userID, unit)` — SettingsPost, UpdateUnitJSON
 - `Users.DeleteByID(userID)` — DeleteAccount
 
 ## Flash messages

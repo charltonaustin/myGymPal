@@ -54,6 +54,7 @@ func Register() {
 	// App
 	beego.Router("/dashboard", &controllers.DashboardController{})
 	beego.Router("/settings", &controllers.AccountController{}, "get:Settings;post:SettingsPost")
+	beego.Router("/account/unit", &controllers.AccountController{}, "post:UpdateUnitJSON")
 	beego.Router("/account/delete", &controllers.AccountController{}, "post:DeleteAccount")
 	beego.Router("/error", &controllers.ErrorController{})
 
@@ -70,6 +71,7 @@ func Register() {
 	beego.Router("/sessions/:id/delete", &controllers.SessionController{}, "post:Delete")
 	beego.Router("/sessions/:id/exercises", &controllers.SessionController{}, "post:AddExercise")
 	beego.Router("/sessions/:id/exercises/reorder", &controllers.SessionController{}, "post:ReorderExercises")
+	beego.Router("/sessions/:id/exercises/:eid/unit", &controllers.SessionController{}, "post:UpdateExerciseUnit")
 	beego.Router("/sessions/:id/exercises/:eid/delete", &controllers.SessionController{}, "post:DeleteExercise")
 	beego.Router("/sessions/:id/exercises/:eid/sets", &controllers.SessionController{}, "post:LogSet")
 	beego.Router("/sessions/:id/exercises/:eid/sets/:sid/delete", &controllers.SessionController{}, "post:DeleteSet")
