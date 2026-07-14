@@ -40,6 +40,7 @@ adjust goal weights/reps/seconds via modals, and tracks rest time between sets.
 | POST   | `/sessions/:id/exercises/:exId/sets/:setId/delete` | Delete-set form submit  | (none)                                                                                               |
 | POST   | `/sessions/:id/exercises/reorder`                  | SortableJS `onEnd`      | `ids=comma-separated-exIds`                                                                          |
 | POST   | `/sessions/:id/exercises/:eid/unit`                | Per-exercise unit toggle | `weight_unit=lb\|kg`                                                                                |
+| POST   | `/sessions/:id/exercises/:eid/change`              | Change exercise modal    | `name`                                                                                               |
 | POST   | `/account/unit`                                    | Global unit toggle       | `weight_unit=lb\|kg`                                                                                |
 | POST   | `/exercises/goal-weight`                           | Goal weight modal save  | `name`, `goal_weight`, `weight_unit`                                                                 |
 | POST   | `/exercises/goal-reps`                             | Goal reps modal save    | `name`, `goal_rep_min`, `goal_rep_max`                                                               |
@@ -74,7 +75,10 @@ All set-log requests send `X-Requested-With: XMLHttpRequest`. Response is JSON `
 
 - `{{if ne .Block "main"}}` — renders block heading for non-main blocks.
 - `{{if eq .Block "cardio"}}` — cardio exercises render cardio-log entries instead of sets tables.
-- `.HitMax` / `.BelowGoal` — controls which goal icon (up arrow, down arrow, or pencil) appears beside the exercise
-  name.
+- `.HitMax` / `.BelowGoal` — controls which icon appears on the three-dots dropdown trigger button: ↑ for HitMax,
+  ↓ for BelowGoal, ⋮ otherwise (time-based exercises always show ⋮). Dropdown contains two items: "Edit goal" (opens
+  goalWeightModal/goalRepsModal/goalSecondsModal based on exercise type) and "Change exercise" (opens
+  `#changeExerciseModal` with autocomplete input that POSTs to `/sessions/:id/exercises/:eid/change` on submit,
+  causing a page reload with the renamed exercise).
 - `{{if .Exercise.IsTimeBased}}` — switches between time-based (h:m:s) and weight/reps log forms and set tables.
 - `{{if .Session.IsDeload}}` — shows "Deload" badge on session heading.

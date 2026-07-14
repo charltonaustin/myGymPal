@@ -125,6 +125,12 @@ func GetSessionExerciseByID(exerciseID int64) (*SessionExercise, error) {
 	return e, nil
 }
 
+func UpdateSessionExerciseName(id int64, name string) error {
+	o := orm.NewOrm()
+	_, err := o.Raw("UPDATE session_exercises SET name = ? WHERE id = ?", name, id).Exec()
+	return err
+}
+
 func LogSessionSet(exerciseID int64, setNumber int, actualWeight float64, weightUnit string, actualReps int, actualSeconds int, activityType string) (*SessionSet, error) {
 	o := orm.NewOrm()
 	s := &SessionSet{

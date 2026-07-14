@@ -837,3 +837,39 @@ func (c *SessionController) UpdateExerciseUnit() {
 	c.Data["json"] = map[string]interface{}{"ok": true}
 	c.ServeJSON()
 }
+
+func (c *SessionController) ChangeExercise() {
+	userID := c.GetSession("user_id")
+	if userID == nil {
+		c.Redirect("/login", 302)
+		return
+	}
+	sessionID, err := strconv.ParseInt(c.Ctx.Input.Param(":id"), 10, 64)
+	if err != nil {
+		c.Redirect("/programs", 302)
+		return
+	}
+	if _, err := Sessions.GetByID(sessionID, userID.(int64)); err != nil {
+		c.Redirect("/programs", 302)
+		return
+	}
+	eid, err := strconv.ParseInt(c.Ctx.Input.Param(":eid"), 10, 64)
+	if err != nil {
+		c.Redirect(fmt.Sprintf("/sessions/%d", sessionID), 302)
+		return
+	}
+	se, err := SessionExercises.GetByID(eid)
+	if err != nil || se.SessionID != sessionID {
+		c.Redirect(fmt.Sprintf("/sessions/%d", sessionID), 302)
+		return
+	}
+	newName := strings.TrimSpace(c.GetString("name"))
+	if newName == "" {
+		c.Redirect(fmt.Sprintf("/sessions/%d", sessionID), 302)
+		return
+	}
+	if err := SessionExercises.UpdateName(eid, newName); err != nil {
+		logs.Error("ChangeExercise: %v", err)
+	}
+	c.Redirect(fmt.Sprintf("/sessions/%d", sessionID), 302)
+}

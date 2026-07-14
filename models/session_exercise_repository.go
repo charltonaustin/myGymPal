@@ -45,3 +45,7 @@ func (r *ormSessionExerciseRepository) DeleteExercise(exerciseID int64) error {
 func (r *ormSessionExerciseRepository) UpdateSortOrders(sessionID int64, ids []int64) error {
 	return UpdateSessionExerciseSortOrders(sessionID, ids)
 }
+
+func (r *ormSessionExerciseRepository) UpdateName(id int64, name string) error {
+	return UpdateSessionExerciseName(id, name)
+}

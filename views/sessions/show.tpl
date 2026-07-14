@@ -74,10 +74,21 @@
     <div class="card mb-3" data-ex-id="{{$exID}}" data-server-unit="{{.Exercise.WeightUnit}}">
         <div class="card-body pb-2">
             <div class="d-flex align-items-center justify-content-between mb-1">
-                <h2 class="h6 fw-semibold mb-0 text-capitalize">{{if .HitMax}}<button type="button" class="btn btn-link p-0 border-0 hit-max-btn" data-bs-toggle="modal" data-bs-target="#goalWeightModal" data-ex-name="{{.Exercise.Name}}" data-goal-weight="{{.Exercise.GoalWeight}}" data-weight-unit="{{.Exercise.WeightUnit}}" data-direction="up" title="Hit max reps last workout — tap to update goal weight" style="line-height:1;vertical-align:middle;"><i class="bi bi-arrow-up-circle-fill text-black" style="font-size:1.0em;"></i></button>&nbsp;{{else if .BelowGoal}}<button type="button" class="btn btn-link p-0 border-0 hit-max-btn" data-bs-toggle="modal" data-bs-target="#goalWeightModal" data-ex-name="{{.Exercise.Name}}" data-goal-weight="{{.Exercise.GoalWeight}}" data-weight-unit="{{.Exercise.WeightUnit}}" data-direction="down" title="Logged below goal weight last workout — tap to update goal weight" style="line-height:1;vertical-align:middle;"><i class="bi bi-arrow-down-circle-fill text-black" style="font-size:1.0em;"></i></button>&nbsp;{{else}}{{if .Exercise.IsTimeBased}}<button type="button" class="btn btn-link p-0 border-0" data-bs-toggle="modal" data-bs-target="#goalSecondsModal" data-ex-name="{{.Exercise.Name}}" data-goal-seconds="{{.Exercise.GoalSeconds}}" title="Set goal duration" style="line-height:1;vertical-align:middle;"><i class="bi bi-pencil text-black" style="font-size:1.0em;"></i></button>&nbsp;{{else}}{{if .Exercise.IsBodyweight}}<button type="button" class="btn btn-link p-0 border-0" data-bs-toggle="modal" data-bs-target="#goalRepsModal" data-ex-name="{{.Exercise.Name}}" data-goal-rep-min="{{.GoalRepMin}}" data-goal-rep-max="{{.GoalRepMax}}" title="Set goal reps" style="line-height:1;vertical-align:middle;"><i class="bi bi-pencil text-black" style="font-size:1.0em;"></i></button>{{else}}<button type="button" class="btn btn-link p-0 border-0 hit-max-btn" data-bs-toggle="modal" data-bs-target="#goalWeightModal" data-ex-name="{{.Exercise.Name}}" data-goal-weight="{{.Exercise.GoalWeight}}" data-weight-unit="{{.Exercise.WeightUnit}}" data-direction="up" title="Set goal weight" style="line-height:1;vertical-align:middle;"><i class="bi bi-pencil text-black" style="font-size:1.0em;"></i></button>{{end}}&nbsp;{{end}}{{end}}{{.Exercise.Name}}</h2>
-                <form method="POST" action="/sessions/{{$.Session.ID}}/exercises/{{$exID}}/delete" class="d-inline flex-shrink-0">
-                    <button type="submit" class="btn btn-link btn-sm text-danger p-0" title="Remove exercise"><i class="bi bi-trash"></i></button>
-                </form>
+                <h2 class="h6 fw-semibold mb-0 text-capitalize">{{.Exercise.Name}}</h2>
+                <div class="d-flex align-items-center gap-1 flex-shrink-0">
+                    <div class="dropdown">
+                        <button type="button" class="btn btn-link btn-sm p-0 border-0" data-bs-toggle="dropdown" aria-expanded="false" title="Exercise options" style="line-height:1;">
+                            {{if and (not .Exercise.IsTimeBased) .HitMax}}<i class="bi bi-arrow-up-circle-fill text-black" style="font-size:1.0em;"></i>{{else if and (not .Exercise.IsTimeBased) .BelowGoal}}<i class="bi bi-arrow-down-circle-fill text-black" style="font-size:1.0em;"></i>{{else}}<i class="bi bi-three-dots-vertical text-black" style="font-size:1.0em;"></i>{{end}}
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li>{{if .Exercise.IsTimeBased}}<button type="button" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#goalSecondsModal" data-ex-name="{{.Exercise.Name}}" data-goal-seconds="{{.Exercise.GoalSeconds}}"><i class="bi bi-pencil me-1"></i>Edit goal</button>{{else if .Exercise.IsBodyweight}}<button type="button" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#goalRepsModal" data-ex-name="{{.Exercise.Name}}" data-goal-rep-min="{{.GoalRepMin}}" data-goal-rep-max="{{.GoalRepMax}}"><i class="bi bi-pencil me-1"></i>Edit goal</button>{{else}}<button type="button" class="dropdown-item hit-max-btn" data-bs-toggle="modal" data-bs-target="#goalWeightModal" data-ex-name="{{.Exercise.Name}}" data-goal-weight="{{.Exercise.GoalWeight}}" data-weight-unit="{{.Exercise.WeightUnit}}" data-direction="{{if .HitMax}}up{{else if .BelowGoal}}down{{else}}up{{end}}"><i class="bi bi-pencil me-1"></i>Edit goal</button>{{end}}</li>
+                            <li><button type="button" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#changeExerciseModal" data-eid="{{$exID}}" data-session-id="{{$.Session.ID}}" data-ex-name="{{.Exercise.Name}}"><i class="bi bi-arrow-left-right me-1"></i>Change exercise</button></li>
+                        </ul>
+                    </div>
+                    <form method="POST" action="/sessions/{{$.Session.ID}}/exercises/{{$exID}}/delete" class="d-inline">
+                        <button type="submit" class="btn btn-link btn-sm text-danger p-0" title="Remove exercise"><i class="bi bi-trash"></i></button>
+                    </form>
+                </div>
             </div>
             <div class="d-flex align-items-center justify-content-between mb-2 ps-1">
                 <span class="text-muted small">
@@ -87,7 +98,7 @@
                 {{if gt .Exercise.GoalWeight 0.0}}<span class="goal-weight-val" data-w="{{.Exercise.GoalWeight}}" data-u="{{.Exercise.WeightUnit}}">Goal: {{printf "%.0f" .Exercise.GoalWeight}} {{.Exercise.WeightUnit}}</span>{{end}}
                 {{end}}
                 </span>
-                {{if and (not .Exercise.IsTimeBased) (not .Exercise.IsBodyweight)}}
+                {{if not .Exercise.IsTimeBased}}
                 <div class="btn-group btn-group-sm" role="group">
                     <input type="radio" class="btn-check ex-unit-radio" name="ex_unit_{{$exID}}" id="ex_lb_{{$exID}}" value="lb" autocomplete="off" {{if eq .Exercise.WeightUnit "lb"}}checked{{end}}>
                     <label class="btn btn-outline-secondary py-0 px-2" for="ex_lb_{{$exID}}" style="font-size:0.7rem;">lb</label>
@@ -209,14 +220,18 @@
             <div class="d-flex align-items-center justify-content-between mb-1">
                 <div class="d-flex align-items-center gap-2 flex-grow-1 min-w-0">
                     <i class="bi bi-grip-vertical text-muted drag-handle flex-shrink-0" style="font-size:1.1rem;"></i>
-                    <h2 class="h6 fw-semibold mb-0 text-capitalize text-truncate">{{if .HitMax}}
-                      <button type="button" class="btn btn-link p-0 border-0 hit-max-btn" data-bs-toggle="modal" data-bs-target="#goalWeightModal" data-ex-name="{{.Exercise.Name}}" data-goal-weight="{{.Exercise.GoalWeight}}" data-weight-unit="{{.Exercise.WeightUnit}}" data-direction="up" title="Hit max reps last workout — tap to update goal weight" style="line-height:1;vertical-align:middle;">
-                        <i class="bi bi-arrow-up-circle-fill text-black" style="font-size:1.0em;"></i>
-                      </button>
-                      &nbsp;{{else if .BelowGoal}}<button type="button" class="btn btn-link p-0 border-0 hit-max-btn" data-bs-toggle="modal" data-bs-target="#goalWeightModal" data-ex-name="{{.Exercise.Name}}" data-goal-weight="{{.Exercise.GoalWeight}}" data-weight-unit="{{.Exercise.WeightUnit}}" data-direction="down" title="Logged below goal weight last workout — tap to update goal weight" style="line-height:1;vertical-align:middle;"><i class="bi bi-arrow-down-circle-fill text-black" style="font-size:1.0em;"></i></button>&nbsp;{{else}}{{if (not .Exercise.IsTimeBased)}}{{if .Exercise.IsBodyweight}}
-                      <button type="button" class="btn btn-link p-0 border-0" data-bs-toggle="modal" data-bs-target="#goalRepsModal" data-ex-name="{{.Exercise.Name}}" data-goal-rep-min="{{.GoalRepMin}}" data-goal-rep-max="{{.GoalRepMax}}" title="Set goal reps" style="line-height:1;vertical-align:middle;"><i class="bi bi-pencil text-black" style="font-size:1.0em;"></i></button>{{else}}<button type="button" class="btn btn-link p-0 border-0 hit-max-btn" data-bs-toggle="modal" data-bs-target="#goalWeightModal" data-ex-name="{{.Exercise.Name}}" data-goal-weight="{{.Exercise.GoalWeight}}" data-weight-unit="{{.Exercise.WeightUnit}}" data-direction="up" title="Set goal weight" style="line-height:1;vertical-align:middle;"><i class="bi bi-pencil text-black" style="font-size:1.0em;"></i></button>{{end}}&nbsp;{{end}}{{end}}{{.Exercise.Name}}</h2>
+                    <h2 class="h6 fw-semibold mb-0 text-capitalize text-truncate">{{.Exercise.Name}}</h2>
                 </div>
-                <div class="flex-shrink-0">
+                <div class="d-flex align-items-center gap-1 flex-shrink-0">
+                    <div class="dropdown">
+                        <button type="button" class="btn btn-link btn-sm p-0 border-0" data-bs-toggle="dropdown" aria-expanded="false" title="Exercise options" style="line-height:1;">
+                            {{if and (not .Exercise.IsTimeBased) .HitMax}}<i class="bi bi-arrow-up-circle-fill text-black" style="font-size:1.0em;"></i>{{else if and (not .Exercise.IsTimeBased) .BelowGoal}}<i class="bi bi-arrow-down-circle-fill text-black" style="font-size:1.0em;"></i>{{else}}<i class="bi bi-three-dots-vertical text-black" style="font-size:1.0em;"></i>{{end}}
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li>{{if .Exercise.IsTimeBased}}<button type="button" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#goalSecondsModal" data-ex-name="{{.Exercise.Name}}" data-goal-seconds="{{.Exercise.GoalSeconds}}"><i class="bi bi-pencil me-1"></i>Edit goal</button>{{else if .Exercise.IsBodyweight}}<button type="button" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#goalRepsModal" data-ex-name="{{.Exercise.Name}}" data-goal-rep-min="{{.GoalRepMin}}" data-goal-rep-max="{{.GoalRepMax}}"><i class="bi bi-pencil me-1"></i>Edit goal</button>{{else}}<button type="button" class="dropdown-item hit-max-btn" data-bs-toggle="modal" data-bs-target="#goalWeightModal" data-ex-name="{{.Exercise.Name}}" data-goal-weight="{{.Exercise.GoalWeight}}" data-weight-unit="{{.Exercise.WeightUnit}}" data-direction="{{if .HitMax}}up{{else if .BelowGoal}}down{{else}}up{{end}}"><i class="bi bi-pencil me-1"></i>Edit goal</button>{{end}}</li>
+                            <li><button type="button" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#changeExerciseModal" data-eid="{{$exID}}" data-session-id="{{$.Session.ID}}" data-ex-name="{{.Exercise.Name}}"><i class="bi bi-arrow-left-right me-1"></i>Change exercise</button></li>
+                        </ul>
+                    </div>
                     <form method="POST" action="/sessions/{{$.Session.ID}}/exercises/{{$exID}}/delete" class="d-inline">
                         <button type="submit" class="btn btn-link btn-sm text-danger p-0" title="Remove exercise"><i class="bi bi-trash"></i></button>
                     </form>
@@ -235,7 +250,7 @@
                 {{end}}
                 {{end}}
                 </div>
-                {{if and (not .Exercise.IsTimeBased) (not .Exercise.IsBodyweight)}}
+                {{if not .Exercise.IsTimeBased}}
                 <div class="btn-group btn-group-sm" role="group">
                     <input type="radio" class="btn-check ex-unit-radio" name="ex_unit_{{$exID}}" id="ex_lb_{{$exID}}" value="lb" autocomplete="off" {{if eq .Exercise.WeightUnit "lb"}}checked{{end}}>
                     <label class="btn btn-outline-secondary py-0 px-2" for="ex_lb_{{$exID}}" style="font-size:0.7rem;">lb</label>
@@ -370,6 +385,92 @@
         <button type="submit" class="btn btn-dark btn-sm mb-4">Add Exercise</button>
     </form>
 </main>
+
+<!-- Change exercise modal -->
+<div class="modal fade" id="changeExerciseModal" tabindex="-1" aria-labelledby="changeExerciseModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="changeExerciseModalLabel">Change Exercise</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" id="changeExerciseForm">
+                <div class="modal-body">
+                    <p class="text-muted small mb-3">Currently: <strong id="changeExCurrentName"></strong></p>
+                    <div style="position:relative;">
+                        <label for="changeExInput" class="form-label">New exercise name</label>
+                        <input type="text" class="form-control" id="changeExInput" name="name" placeholder="e.g. Bench Press" autocomplete="off" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-dark btn-sm">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+(function () {
+    const modal = document.getElementById('changeExerciseModal');
+    const form  = document.getElementById('changeExerciseForm');
+    const input = document.getElementById('changeExInput');
+    const curNameEl = document.getElementById('changeExCurrentName');
+    const libArr = {{.ExerciseLibraryJSON}};
+    let dropdown = null;
+
+    modal.addEventListener('show.bs.modal', function (e) {
+        const btn = e.relatedTarget;
+        form.action = '/sessions/' + btn.dataset.sessionId + '/exercises/' + btn.dataset.eid + '/change';
+        input.value = '';
+        curNameEl.textContent = btn.dataset.exName;
+        hideDropdown();
+    });
+
+    modal.addEventListener('shown.bs.modal', function () { input.focus(); });
+    modal.addEventListener('hidden.bs.modal', function () { hideDropdown(); });
+
+    function showDropdown(matches) {
+        if (!dropdown) {
+            dropdown = document.createElement('div');
+            dropdown.className = 'list-group shadow';
+            dropdown.style.cssText = 'position:absolute;top:100%;left:0;right:0;z-index:1060;max-height:220px;overflow-y:auto;border-radius:0 0 .375rem .375rem;';
+            input.parentElement.appendChild(dropdown);
+        }
+        dropdown.innerHTML = '';
+        matches.forEach(function (ex) {
+            var btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'list-group-item list-group-item-action py-2 px-3';
+            btn.style.fontSize = '0.95rem';
+            btn.textContent = ex.name;
+            btn.addEventListener('mousedown', function (e) {
+                e.preventDefault();
+                input.value = ex.name;
+                hideDropdown();
+            });
+            dropdown.appendChild(btn);
+        });
+    }
+
+    function hideDropdown() {
+        if (dropdown) { dropdown.remove(); dropdown = null; }
+    }
+
+    input.addEventListener('input', function () {
+        var q = this.value.trim().toLowerCase();
+        if (!q) { hideDropdown(); return; }
+        var matches = libArr.filter(function (ex) {
+            return ex.name.toLowerCase().includes(q);
+        }).slice(0, 10);
+        if (matches.length) showDropdown(matches); else hideDropdown();
+    });
+
+    input.addEventListener('blur', function () { setTimeout(hideDropdown, 150); });
+    input.addEventListener('keydown', function (e) { if (e.key === 'Escape') hideDropdown(); });
+})();
+</script>
 
 {{template "partials/modal_goal_weight.tpl" .}}
 {{template "partials/modal_goal_reps.tpl" .}}

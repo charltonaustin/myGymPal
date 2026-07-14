@@ -19,6 +19,7 @@ source: controllers/session.go
 | POST   | /sessions/:id/exercises                         | AddExercise       |
 | POST   | /sessions/:id/exercises/reorder                 | ReorderExercises  |
 | POST   | /sessions/:id/exercises/:eid/unit               | UpdateExerciseUnit |
+| POST   | /sessions/:id/exercises/:eid/change             | ChangeExercise     |
 | POST   | /sessions/:id/exercises/:eid/delete             | DeleteExercise    |
 | POST   | /sessions/:id/exercises/:eid/sets               | LogSet            |
 | POST   | /sessions/:id/exercises/:eid/sets/:sid/delete   | DeleteSet         |
@@ -67,6 +68,7 @@ All handlers check `c.GetSession("user_id")`; nil → /login (or JSON error for 
 - `SessionExercises.DeleteSet` — DeleteSet
 - `SessionExercises.UpdateSortOrders` — ReorderExercises
 - `Sessions.GetByID`, `SessionExercises.GetByID`, `Exercises.GetByName`, `Exercises.UpdateGoalWeight` — UpdateExerciseUnit
+- `Sessions.GetByID`, `SessionExercises.GetByID`, `SessionExercises.UpdateName` — ChangeExercise
 - `Sessions.Delete` — Delete
 
 ## AJAX endpoints
@@ -77,6 +79,8 @@ All handlers check `c.GetSession("user_id")`; nil → /login (or JSON error for 
 - **ReorderExercises** — always returns JSON `{"ok": "1"}` or `{"error": "..."}`
 - **UpdateExerciseUnit** — AJAX `POST /sessions/:id/exercises/:eid/unit` with `weight_unit=lb|kg`; looks up exercise
   library entry by session-exercise name, converts goal weight, saves new unit; returns `{"ok": true}`
+- **ChangeExercise** — `POST /sessions/:id/exercises/:eid/change` with `name`; validates ownership, updates
+  `session_exercises.name`, redirects back to session page; existing sets remain linked to the exercise row
 
 ## Key invariants
 

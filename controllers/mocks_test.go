@@ -254,6 +254,7 @@ type mockSessionExerciseRepo struct {
 	DeleteCardioLogFn     func(id int64) error
 	DeleteExerciseFn      func(exerciseID int64) error
 	UpdateSortOrdersFn    func(sessionID int64, ids []int64) error
+	UpdateNameFn          func(id int64, name string) error
 }
 
 func (m *mockSessionExerciseRepo) Create(sessionID int64, name string, isBodyweight bool, goalWeight float64, weightUnit string, goalReps int, block string, isTimeBased bool, goalSeconds int) (*models.SessionExercise, error) {
@@ -322,6 +323,13 @@ func (m *mockSessionExerciseRepo) DeleteExercise(exerciseID int64) error {
 func (m *mockSessionExerciseRepo) UpdateSortOrders(sessionID int64, ids []int64) error {
 	if m.UpdateSortOrdersFn != nil {
 		return m.UpdateSortOrdersFn(sessionID, ids)
+	}
+	return nil
+}
+
+func (m *mockSessionExerciseRepo) UpdateName(id int64, name string) error {
+	if m.UpdateNameFn != nil {
+		return m.UpdateNameFn(id, name)
 	}
 	return nil
 }
