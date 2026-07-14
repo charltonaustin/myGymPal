@@ -73,28 +73,28 @@
     {{$exID := .Exercise.ID}}
     <div class="card mb-3" data-ex-id="{{$exID}}" data-server-unit="{{.Exercise.WeightUnit}}">
         <div class="card-body pb-2">
-            <div class="d-flex align-items-baseline justify-content-between mb-2">
+            <div class="d-flex align-items-center justify-content-between mb-1">
                 <h2 class="h6 fw-semibold mb-0 text-capitalize">{{if .HitMax}}<button type="button" class="btn btn-link p-0 border-0 hit-max-btn" data-bs-toggle="modal" data-bs-target="#goalWeightModal" data-ex-name="{{.Exercise.Name}}" data-goal-weight="{{.Exercise.GoalWeight}}" data-weight-unit="{{.Exercise.WeightUnit}}" data-direction="up" title="Hit max reps last workout — tap to update goal weight" style="line-height:1;vertical-align:middle;"><i class="bi bi-arrow-up-circle-fill text-black" style="font-size:1.0em;"></i></button>&nbsp;{{else if .BelowGoal}}<button type="button" class="btn btn-link p-0 border-0 hit-max-btn" data-bs-toggle="modal" data-bs-target="#goalWeightModal" data-ex-name="{{.Exercise.Name}}" data-goal-weight="{{.Exercise.GoalWeight}}" data-weight-unit="{{.Exercise.WeightUnit}}" data-direction="down" title="Logged below goal weight last workout — tap to update goal weight" style="line-height:1;vertical-align:middle;"><i class="bi bi-arrow-down-circle-fill text-black" style="font-size:1.0em;"></i></button>&nbsp;{{else}}{{if .Exercise.IsTimeBased}}<button type="button" class="btn btn-link p-0 border-0" data-bs-toggle="modal" data-bs-target="#goalSecondsModal" data-ex-name="{{.Exercise.Name}}" data-goal-seconds="{{.Exercise.GoalSeconds}}" title="Set goal duration" style="line-height:1;vertical-align:middle;"><i class="bi bi-pencil text-black" style="font-size:1.0em;"></i></button>&nbsp;{{else}}{{if .Exercise.IsBodyweight}}<button type="button" class="btn btn-link p-0 border-0" data-bs-toggle="modal" data-bs-target="#goalRepsModal" data-ex-name="{{.Exercise.Name}}" data-goal-rep-min="{{.GoalRepMin}}" data-goal-rep-max="{{.GoalRepMax}}" title="Set goal reps" style="line-height:1;vertical-align:middle;"><i class="bi bi-pencil text-black" style="font-size:1.0em;"></i></button>{{else}}<button type="button" class="btn btn-link p-0 border-0 hit-max-btn" data-bs-toggle="modal" data-bs-target="#goalWeightModal" data-ex-name="{{.Exercise.Name}}" data-goal-weight="{{.Exercise.GoalWeight}}" data-weight-unit="{{.Exercise.WeightUnit}}" data-direction="up" title="Set goal weight" style="line-height:1;vertical-align:middle;"><i class="bi bi-pencil text-black" style="font-size:1.0em;"></i></button>{{end}}&nbsp;{{end}}{{end}}{{.Exercise.Name}}</h2>
-                <div class="d-flex align-items-center gap-2">
-                    <span class="text-muted small">
-                    {{if .Exercise.IsTimeBased}}
-                    {{if gt .Exercise.GoalSeconds 0}}Goal: {{fmtDuration .Exercise.GoalSeconds}}{{end}}
-                    {{else}}
-                    {{if gt .Exercise.GoalWeight 0.0}}<span class="goal-weight-val" data-w="{{.Exercise.GoalWeight}}" data-u="{{.Exercise.WeightUnit}}">Goal: {{printf "%.0f" .Exercise.GoalWeight}} {{.Exercise.WeightUnit}}</span>{{end}}
-                    {{end}}
-                    </span>
-                    {{if and (not .Exercise.IsTimeBased) (not .Exercise.IsBodyweight)}}
-                    <div class="btn-group btn-group-sm" role="group">
-                        <input type="radio" class="btn-check ex-unit-radio" name="ex_unit_{{$exID}}" id="ex_lb_{{$exID}}" value="lb" autocomplete="off" {{if eq .Exercise.WeightUnit "lb"}}checked{{end}}>
-                        <label class="btn btn-outline-secondary py-0 px-2" for="ex_lb_{{$exID}}" style="font-size:0.7rem;">lb</label>
-                        <input type="radio" class="btn-check ex-unit-radio" name="ex_unit_{{$exID}}" id="ex_kg_{{$exID}}" value="kg" autocomplete="off" {{if eq .Exercise.WeightUnit "kg"}}checked{{end}}>
-                        <label class="btn btn-outline-secondary py-0 px-2" for="ex_kg_{{$exID}}" style="font-size:0.7rem;">kg</label>
-                    </div>
-                    {{end}}
-                    <form method="POST" action="/sessions/{{$.Session.ID}}/exercises/{{$exID}}/delete" class="d-inline">
-                        <button type="submit" class="btn btn-link btn-sm text-danger p-0" title="Remove exercise"><i class="bi bi-trash"></i></button>
-                    </form>
+                <form method="POST" action="/sessions/{{$.Session.ID}}/exercises/{{$exID}}/delete" class="d-inline flex-shrink-0">
+                    <button type="submit" class="btn btn-link btn-sm text-danger p-0" title="Remove exercise"><i class="bi bi-trash"></i></button>
+                </form>
+            </div>
+            <div class="d-flex align-items-center justify-content-between mb-2 ps-1">
+                <span class="text-muted small">
+                {{if .Exercise.IsTimeBased}}
+                {{if gt .Exercise.GoalSeconds 0}}Goal: {{fmtDuration .Exercise.GoalSeconds}}{{end}}
+                {{else}}
+                {{if gt .Exercise.GoalWeight 0.0}}<span class="goal-weight-val" data-w="{{.Exercise.GoalWeight}}" data-u="{{.Exercise.WeightUnit}}">Goal: {{printf "%.0f" .Exercise.GoalWeight}} {{.Exercise.WeightUnit}}</span>{{end}}
+                {{end}}
+                </span>
+                {{if and (not .Exercise.IsTimeBased) (not .Exercise.IsBodyweight)}}
+                <div class="btn-group btn-group-sm" role="group">
+                    <input type="radio" class="btn-check ex-unit-radio" name="ex_unit_{{$exID}}" id="ex_lb_{{$exID}}" value="lb" autocomplete="off" {{if eq .Exercise.WeightUnit "lb"}}checked{{end}}>
+                    <label class="btn btn-outline-secondary py-0 px-2" for="ex_lb_{{$exID}}" style="font-size:0.7rem;">lb</label>
+                    <input type="radio" class="btn-check ex-unit-radio" name="ex_unit_{{$exID}}" id="ex_kg_{{$exID}}" value="kg" autocomplete="off" {{if eq .Exercise.WeightUnit "kg"}}checked{{end}}>
+                    <label class="btn btn-outline-secondary py-0 px-2" for="ex_kg_{{$exID}}" style="font-size:0.7rem;">kg</label>
                 </div>
+                {{end}}
             </div>
 
             {{if .Sets}}
@@ -216,31 +216,33 @@
                       &nbsp;{{else if .BelowGoal}}<button type="button" class="btn btn-link p-0 border-0 hit-max-btn" data-bs-toggle="modal" data-bs-target="#goalWeightModal" data-ex-name="{{.Exercise.Name}}" data-goal-weight="{{.Exercise.GoalWeight}}" data-weight-unit="{{.Exercise.WeightUnit}}" data-direction="down" title="Logged below goal weight last workout — tap to update goal weight" style="line-height:1;vertical-align:middle;"><i class="bi bi-arrow-down-circle-fill text-black" style="font-size:1.0em;"></i></button>&nbsp;{{else}}{{if (not .Exercise.IsTimeBased)}}{{if .Exercise.IsBodyweight}}
                       <button type="button" class="btn btn-link p-0 border-0" data-bs-toggle="modal" data-bs-target="#goalRepsModal" data-ex-name="{{.Exercise.Name}}" data-goal-rep-min="{{.GoalRepMin}}" data-goal-rep-max="{{.GoalRepMax}}" title="Set goal reps" style="line-height:1;vertical-align:middle;"><i class="bi bi-pencil text-black" style="font-size:1.0em;"></i></button>{{else}}<button type="button" class="btn btn-link p-0 border-0 hit-max-btn" data-bs-toggle="modal" data-bs-target="#goalWeightModal" data-ex-name="{{.Exercise.Name}}" data-goal-weight="{{.Exercise.GoalWeight}}" data-weight-unit="{{.Exercise.WeightUnit}}" data-direction="up" title="Set goal weight" style="line-height:1;vertical-align:middle;"><i class="bi bi-pencil text-black" style="font-size:1.0em;"></i></button>{{end}}&nbsp;{{end}}{{end}}{{.Exercise.Name}}</h2>
                 </div>
-                <div class="d-flex align-items-center gap-2 flex-shrink-0">
-                    {{if and (not .Exercise.IsTimeBased) (not .Exercise.IsBodyweight)}}
-                    <div class="btn-group btn-group-sm" role="group">
-                        <input type="radio" class="btn-check ex-unit-radio" name="ex_unit_{{$exID}}" id="ex_lb_{{$exID}}" value="lb" autocomplete="off" {{if eq .Exercise.WeightUnit "lb"}}checked{{end}}>
-                        <label class="btn btn-outline-secondary py-0 px-2" for="ex_lb_{{$exID}}" style="font-size:0.7rem;">lb</label>
-                        <input type="radio" class="btn-check ex-unit-radio" name="ex_unit_{{$exID}}" id="ex_kg_{{$exID}}" value="kg" autocomplete="off" {{if eq .Exercise.WeightUnit "kg"}}checked{{end}}>
-                        <label class="btn btn-outline-secondary py-0 px-2" for="ex_kg_{{$exID}}" style="font-size:0.7rem;">kg</label>
-                    </div>
-                    {{end}}
+                <div class="flex-shrink-0">
                     <form method="POST" action="/sessions/{{$.Session.ID}}/exercises/{{$exID}}/delete" class="d-inline">
                         <button type="submit" class="btn btn-link btn-sm text-danger p-0" title="Remove exercise"><i class="bi bi-trash"></i></button>
                     </form>
                 </div>
             </div>
-            <div class="text-muted small mb-2 ps-1">
-            {{if .Exercise.IsTimeBased}}
-            {{if gt .Exercise.GoalSeconds 0}}Goal: {{fmtDuration .Exercise.GoalSeconds}}{{end}}
-            {{else}}
-            {{if gt .Exercise.GoalWeight 0.0}}<span class="goal-weight-val" data-w="{{.Exercise.GoalWeight}}" data-u="{{.Exercise.WeightUnit}}">Goal: {{printf "%.0f" .Exercise.GoalWeight}} {{.Exercise.WeightUnit}}</span>{{end}}
-            {{if and .Exercise.IsBodyweight (gt .GoalRepMax 0)}}
-            &nbsp;{{.GoalRepMin}}–{{.GoalRepMax}} reps
-            {{else if and (gt $.PhaseRepMin 0) (gt $.PhaseRepMax 0)}}
-            &nbsp;{{$.PhaseRepMin}}–{{$.PhaseRepMax}} reps
-            {{end}}
-            {{end}}
+            <div class="d-flex align-items-center justify-content-between mb-2 ps-1">
+                <div class="text-muted small">
+                {{if .Exercise.IsTimeBased}}
+                {{if gt .Exercise.GoalSeconds 0}}Goal: {{fmtDuration .Exercise.GoalSeconds}}{{end}}
+                {{else}}
+                {{if gt .Exercise.GoalWeight 0.0}}<span class="goal-weight-val" data-w="{{.Exercise.GoalWeight}}" data-u="{{.Exercise.WeightUnit}}">Goal: {{printf "%.0f" .Exercise.GoalWeight}} {{.Exercise.WeightUnit}}</span>{{end}}
+                {{if and .Exercise.IsBodyweight (gt .GoalRepMax 0)}}
+                &nbsp;{{.GoalRepMin}}–{{.GoalRepMax}} reps
+                {{else if and (gt $.PhaseRepMin 0) (gt $.PhaseRepMax 0)}}
+                &nbsp;{{$.PhaseRepMin}}–{{$.PhaseRepMax}} reps
+                {{end}}
+                {{end}}
+                </div>
+                {{if and (not .Exercise.IsTimeBased) (not .Exercise.IsBodyweight)}}
+                <div class="btn-group btn-group-sm" role="group">
+                    <input type="radio" class="btn-check ex-unit-radio" name="ex_unit_{{$exID}}" id="ex_lb_{{$exID}}" value="lb" autocomplete="off" {{if eq .Exercise.WeightUnit "lb"}}checked{{end}}>
+                    <label class="btn btn-outline-secondary py-0 px-2" for="ex_lb_{{$exID}}" style="font-size:0.7rem;">lb</label>
+                    <input type="radio" class="btn-check ex-unit-radio" name="ex_unit_{{$exID}}" id="ex_kg_{{$exID}}" value="kg" autocomplete="off" {{if eq .Exercise.WeightUnit "kg"}}checked{{end}}>
+                    <label class="btn btn-outline-secondary py-0 px-2" for="ex_kg_{{$exID}}" style="font-size:0.7rem;">kg</label>
+                </div>
+                {{end}}
             </div>
 
             {{if .Sets}}
