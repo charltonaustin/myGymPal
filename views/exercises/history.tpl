@@ -149,8 +149,13 @@
 
         var datasets = plottable.map(function (s, i) {
             var pointMap = {};
-            s.points.forEach(function (p) { pointMap[p.date] = p.value; });
+            var repsMap = {};
+            s.points.forEach(function (p) {
+                pointMap[p.date] = p.value;
+                repsMap[p.date] = p.reps;
+            });
             var suffix = s.type === 'bodyweight' ? ' (reps)' : ' (' + data.weightUnit + ')';
+            var repsData = labels.map(function (d) { return repsMap.hasOwnProperty(d) ? repsMap[d] : 0; });
             return {
                 label: s.name + suffix,
                 data: labels.map(function (d) { return pointMap.hasOwnProperty(d) ? pointMap[d] : null; }),
@@ -158,7 +163,11 @@
                 backgroundColor: COLORS[i % COLORS.length] + '33',
                 tension: 0.3,
                 spanGaps: true,
-                yAxisID: s.type === 'bodyweight' ? 'y1' : 'y'
+                yAxisID: s.type === 'bodyweight' ? 'y1' : 'y',
+                exerciseType: s.type,
+                repsData: repsData,
+                pointRadius: repsData.map(function (r) { return r > 0 ? Math.min(4 + r, 20) : 4; }),
+                pointHoverRadius: repsData.map(function (r) { return r > 0 ? Math.min(6 + r, 22) : 6; })
             };
         });
 
@@ -199,7 +208,12 @@
                                 var val = ctx.parsed.y;
                                 if (val === null || val === undefined) return null;
                                 var display = (val % 1 === 0) ? val.toString() : val.toFixed(1);
-                                return ctx.dataset.label + ': ' + display;
+                                var label = ctx.dataset.label + ': ' + display;
+                                if (ctx.dataset.exerciseType !== 'bodyweight') {
+                                    var reps = ctx.dataset.repsData && ctx.dataset.repsData[ctx.dataIndex];
+                                    if (reps) { label += ' × ' + reps + ' reps'; }
+                                }
+                                return label;
                             }
                         }
                     }

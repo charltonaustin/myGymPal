@@ -6,6 +6,7 @@ import "github.com/beego/beego/v2/client/orm"
 type ExerciseHistoryPoint struct {
 	Date  string  `orm:"column(session_date)" json:"date"`
 	Value float64 `orm:"column(max_value)"    json:"value"`
+	Reps  int     `orm:"column(reps)"         json:"reps"`
 }
 
 // ExerciseHistorySeries holds the full time series for one exercise.
@@ -17,34 +18,48 @@ type ExerciseHistorySeries struct {
 }
 
 const weightHistorySQL = `
-SELECT
-    TO_CHAR(s.date, 'YYYY-MM-DD') AS session_date,
-    MAX(CASE ss.weight_unit WHEN 'kg' THEN ss.actual_weight * 2.20462 ELSE ss.actual_weight END) AS max_value
-FROM sessions s
-JOIN session_exercises se ON se.session_id = s.id
-JOIN session_sets ss ON ss.session_exercise_id = se.id
-WHERE s.user_id = ?
-  AND LOWER(TRIM(se.name)) = LOWER(TRIM(?))
-  AND se.is_bodyweight = false
-  AND se.is_time_based = false
-  AND ss.actual_weight > 0
-GROUP BY s.date
-ORDER BY s.date ASC
+WITH ranked AS (
+    SELECT
+        TO_CHAR(s.date, 'YYYY-MM-DD') AS session_date,
+        CASE ss.weight_unit WHEN 'kg' THEN ss.actual_weight * 2.20462 ELSE ss.actual_weight END AS normalized_weight,
+        ss.actual_reps,
+        ROW_NUMBER() OVER (
+            PARTITION BY s.date
+            ORDER BY CASE ss.weight_unit WHEN 'kg' THEN ss.actual_weight * 2.20462 ELSE ss.actual_weight END DESC
+        ) AS rn
+    FROM sessions s
+    JOIN session_exercises se ON se.session_id = s.id
+    JOIN session_sets ss ON ss.session_exercise_id = se.id
+    WHERE s.user_id = ?
+      AND LOWER(TRIM(se.name)) = LOWER(TRIM(?))
+      AND se.is_bodyweight = false
+      AND se.is_time_based = false
+      AND ss.actual_weight > 0
+)
+SELECT session_date, normalized_weight AS max_value, actual_reps AS reps
+FROM ranked
+WHERE rn = 1
+ORDER BY session_date ASC
 `
 
 const bodyweightHistorySQL = `
-SELECT
-    TO_CHAR(s.date, 'YYYY-MM-DD') AS session_date,
-    MAX(ss.actual_reps) AS max_value
-FROM sessions s
-JOIN session_exercises se ON se.session_id = s.id
-JOIN session_sets ss ON ss.session_exercise_id = se.id
-WHERE s.user_id = ?
-  AND LOWER(TRIM(se.name)) = LOWER(TRIM(?))
-  AND se.is_bodyweight = true
-  AND ss.actual_reps > 0
-GROUP BY s.date
-ORDER BY s.date ASC
+WITH ranked AS (
+    SELECT
+        TO_CHAR(s.date, 'YYYY-MM-DD') AS session_date,
+        ss.actual_reps,
+        ROW_NUMBER() OVER (PARTITION BY s.date ORDER BY ss.actual_reps DESC) AS rn
+    FROM sessions s
+    JOIN session_exercises se ON se.session_id = s.id
+    JOIN session_sets ss ON ss.session_exercise_id = se.id
+    WHERE s.user_id = ?
+      AND LOWER(TRIM(se.name)) = LOWER(TRIM(?))
+      AND se.is_bodyweight = true
+      AND ss.actual_reps > 0
+)
+SELECT session_date, actual_reps AS max_value, actual_reps AS reps
+FROM ranked
+WHERE rn = 1
+ORDER BY session_date ASC
 `
 
 // GetExerciseHistory returns per-session max weight (or max reps for bodyweight) for each named exercise.
