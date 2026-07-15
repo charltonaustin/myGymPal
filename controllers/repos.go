@@ -11,6 +11,7 @@ var (
 	Phases           models.PhaseRepository
 	Templates        models.TemplateRepository
 	Sessions         models.SessionRepository
+	WorkoutTemplates models.ProgramWorkoutTemplateRepository
 	SessionExercises models.SessionExerciseRepository
 	Exercises        models.ExerciseRepository
 	BodyWeights      models.BodyWeightRepository

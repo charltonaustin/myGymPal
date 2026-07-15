@@ -43,11 +43,13 @@ type SessionRepository interface {
 
 type ExerciseRepository interface {
 	Create(userID int64, name string, isBodyweight bool, goalWeight float64, weightUnit string, isTimeBased bool, goalSeconds int, goalRepMin int, goalRepMax int, defaultBlock string) (*Exercise, error)
+	GetAll(userID int64) ([]*Exercise, error)
 	GetAllByUser(userID int64) ([]*Exercise, error)
+	GetAvailableGlobalNames(userID int64) ([]string, error)
 	GetByID(id, userID int64) (*Exercise, error)
 	GetByName(userID int64, name string) (*Exercise, error)
 	Update(id, userID int64, name string, isBodyweight bool, goalWeight float64, weightUnit string, isTimeBased bool, goalSeconds int, goalRepMin int, goalRepMax int, defaultBlock string) (*Exercise, error)
-	UpdateGoalWeight(id int64, goalWeight float64, weightUnit string) error
+	UpdateGoalWeight(id, userID int64, goalWeight float64, weightUnit string) error
 	Delete(id, userID int64) error
 }
 
@@ -62,6 +64,12 @@ type BodyWeightRepository interface {
 type MacroGoalRepository interface {
 	Get(userID int64) (*MacroGoal, error)
 	Upsert(userID int64, protein, carbs, fat float64) (*MacroGoal, error)
+}
+
+type ProgramWorkoutTemplateRepository interface {
+	GetByProgram(programID int64) ([]*ProgramWorkoutTemplate, error)
+	Upsert(programID int64, workoutNumber int, templateID int64) error
+	Delete(programID int64, workoutNumber int) error
 }
 
 type SessionExerciseRepository interface {

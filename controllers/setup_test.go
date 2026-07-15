@@ -25,6 +25,7 @@ func TestMain(m *testing.M) {
 	controllers.Phases = mockPhases
 	controllers.Sessions = mockSessions
 	controllers.Templates = mockTemplates
+	controllers.WorkoutTemplates = mockWorkoutTemplates
 	controllers.SessionExercises = mockSessionExercises
 	controllers.Exercises = mockExercises
 	controllers.BodyWeights = mockBodyWeights

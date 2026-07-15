@@ -1,9 +1,12 @@
 package controllers
 
 import (
+	"encoding/json"
 	"fmt"
+	"html/template"
 	"myGymPal/models"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/beego/beego/v2/core/logs"
@@ -12,6 +15,11 @@ import (
 
 type ProgramController struct {
 	beego.Controller
+}
+
+type workoutDefault struct {
+	WorkoutNumber int
+	TemplateName  string
 }
 
 func (c *ProgramController) Index() {
@@ -180,12 +188,31 @@ func (c *ProgramController) Show() {
 	templates, _ := Templates.GetAll()
 	sessions, _ := Sessions.GetByProgram(id)
 
+	savedDefaults, _ := WorkoutTemplates.GetByProgram(id)
+	wtMap := map[int]int64{}
+	for _, wt := range savedDefaults {
+		wtMap[wt.WorkoutNumber] = wt.TemplateID
+	}
+	tplNameMap := map[int64]string{}
+	tplNames := make([]string, len(templates))
+	for i, t := range templates {
+		tplNameMap[t.ID] = t.Name
+		tplNames[i] = t.Name
+	}
+	defaults := make([]workoutDefault, program.WorkoutsPerWeek)
+	for i := range defaults {
+		defaults[i] = workoutDefault{WorkoutNumber: i + 1, TemplateName: tplNameMap[wtMap[i+1]]}
+	}
+	b, _ := json.Marshal(tplNames)
+
 	c.Data["LoggedIn"] = true
 	c.Data["ActivePage"] = "programs"
 	c.Data["Program"] = program
 	c.Data["Phases"] = phases
 	c.Data["Templates"] = templates
 	c.Data["Sessions"] = sessions
+	c.Data["WorkoutDefaults"] = defaults
+	c.Data["TemplateNamesJSON"] = template.JS(b)
 	c.TplName = "programs/show.tpl"
 }
 
@@ -283,6 +310,49 @@ func (c *ProgramController) UpdatePhases() {
 
 	flash := beego.NewFlash()
 	flash.Success("Phase settings saved.")
+	flash.Store(&c.Controller)
+	c.Redirect(fmt.Sprintf("/programs/%d", id), 302)
+}
+
+func (c *ProgramController) UpdateWorkoutTemplates() {
+	userID := c.GetSession("user_id")
+	if userID == nil {
+		c.Redirect("/login", 302)
+		return
+	}
+
+	id, err := strconv.ParseInt(c.Ctx.Input.Param(":id"), 10, 64)
+	if err != nil {
+		c.Redirect("/programs", 302)
+		return
+	}
+
+	program, err := Programs.GetByID(id, userID.(int64))
+	if err != nil {
+		c.Redirect("/programs", 302)
+		return
+	}
+
+	allTemplates, _ := Templates.GetAll()
+	nameToID := map[string]int64{}
+	for _, t := range allTemplates {
+		nameToID[strings.ToLower(t.Name)] = t.ID
+	}
+
+	for i := 1; i <= program.WorkoutsPerWeek; i++ {
+		name := strings.TrimSpace(c.GetString(fmt.Sprintf("template_name_%d", i)))
+		templateID := nameToID[strings.ToLower(name)]
+		if templateID > 0 {
+			if err := WorkoutTemplates.Upsert(id, i, templateID); err != nil {
+				logs.Error("ProgramController.UpdateWorkoutTemplates: Upsert: %v", err)
+			}
+		} else {
+			WorkoutTemplates.Delete(id, i)
+		}
+	}
+
+	flash := beego.NewFlash()
+	flash.Success("Workout defaults saved.")
 	flash.Store(&c.Controller)
 	c.Redirect(fmt.Sprintf("/programs/%d", id), 302)
 }

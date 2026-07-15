@@ -10,8 +10,16 @@ func (r *ormExerciseRepository) Create(userID int64, name string, isBodyweight b
 	return CreateExercise(userID, name, isBodyweight, goalWeight, weightUnit, isTimeBased, goalSeconds, goalRepMin, goalRepMax, defaultBlock)
 }
 
+func (r *ormExerciseRepository) GetAll(userID int64) ([]*Exercise, error) {
+	return GetExercisesAll(userID)
+}
+
 func (r *ormExerciseRepository) GetAllByUser(userID int64) ([]*Exercise, error) {
 	return GetExercisesByUser(userID)
+}
+
+func (r *ormExerciseRepository) GetAvailableGlobalNames(userID int64) ([]string, error) {
+	return GetGlobalExercisesNotConfigured(userID)
 }
 
 func (r *ormExerciseRepository) GetByID(id, userID int64) (*Exercise, error) {
@@ -26,8 +34,8 @@ func (r *ormExerciseRepository) Update(id, userID int64, name string, isBodyweig
 	return UpdateExercise(id, userID, name, isBodyweight, goalWeight, weightUnit, isTimeBased, goalSeconds, goalRepMin, goalRepMax, defaultBlock)
 }
 
-func (r *ormExerciseRepository) UpdateGoalWeight(id int64, goalWeight float64, weightUnit string) error {
-	return UpdateExerciseGoalWeight(id, goalWeight, weightUnit)
+func (r *ormExerciseRepository) UpdateGoalWeight(id, userID int64, goalWeight float64, weightUnit string) error {
+	return UpdateExerciseGoalWeight(id, userID, goalWeight, weightUnit)
 }
 
 func (r *ormExerciseRepository) Delete(id, userID int64) error {

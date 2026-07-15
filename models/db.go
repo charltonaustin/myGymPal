@@ -66,7 +66,18 @@ func runMigrations(host, port, dbname, user, password, sslmode string) error {
 	defer m.Close()
 
 	if err := m.Up(); err != nil && err != migrate.ErrNoChange {
-		return fmt.Errorf("migrate up: %w", err)
+		if de, ok := err.(migrate.ErrDirty); ok {
+			// A previous migration attempt failed partway through. Force back to the
+			// last clean version so the idempotent migration can be re-applied.
+			if forceErr := m.Force(de.Version - 1); forceErr != nil {
+				return fmt.Errorf("migrate force: %w", forceErr)
+			}
+			if err2 := m.Up(); err2 != nil && err2 != migrate.ErrNoChange {
+				return fmt.Errorf("migrate up: %w", err2)
+			}
+		} else {
+			return fmt.Errorf("migrate up: %w", err)
+		}
 	}
 
 	return nil

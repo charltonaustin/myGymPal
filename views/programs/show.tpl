@@ -66,48 +66,73 @@
     <p class="text-muted small">No workouts yet. Start one above.</p>
     {{end}}
 
-        <h2 class="h6 fw-semibold text-uppercase text-muted mt-5 mb-3">Phase Settings</h2>
+    {{if .Templates}}
+    <h2 class="h6 fw-semibold text-uppercase text-muted mt-5 mb-3">Workout Defaults</h2>
 
-        <form method="POST" action="/programs/{{.Program.ID}}" data-offline-sync>
-            <div class="card">
-                <ul class="list-group list-group-flush">
-                    {{range .Phases}}
-                    <li class="list-group-item py-2">
-                        <div class="d-flex align-items-center justify-content-between mb-2">
-                            <span class="fw-semibold small">Phase {{.PhaseNumber}}</span>
-                            <button type="button" class="btn btn-outline-secondary btn-sm copy-to-all" title="Copy to all phases"><i class="bi bi-copy"></i></button>
+    <form method="POST" action="/programs/{{.Program.ID}}/workout-templates">
+        <div class="card">
+            <ul class="list-group list-group-flush">
+                {{range .WorkoutDefaults}}
+                <li class="list-group-item py-2">
+                    <div class="d-flex align-items-center gap-3">
+                        <span class="fw-semibold small" style="min-width:80px;">Workout #{{.WorkoutNumber}}</span>
+                        <div class="flex-grow-1">
+                            <input type="text" name="template_name_{{.WorkoutNumber}}" value="{{.TemplateName}}" autocomplete="off" class="form-control form-control-sm workout-template-input" placeholder="No template">
                         </div>
-                        <div class="d-flex align-items-center gap-3 flex-wrap">
-                            <div class="d-flex align-items-center gap-1">
-                                <span class="text-muted small">Reps</span>
-                                <input type="number" class="form-control form-control-sm phase-min text-center" name="rep_min_{{.PhaseNumber}}" value="{{if gt .RepMin 0}}{{.RepMin}}{{end}}" placeholder="–" min="1" required style="width:56px;">
-                                <span class="text-muted small">–</span>
-                                <input type="number" class="form-control form-control-sm phase-max text-center" name="rep_max_{{.PhaseNumber}}" value="{{if gt .RepMax 0}}{{.RepMax}}{{end}}" placeholder="–" min="1" required style="width:56px;">
-                            </div>
-                            <div class="d-flex align-items-center gap-1">
-                                <span class="text-muted small">Sets</span>
-                                <input type="number" class="form-control form-control-sm phase-sets text-center" name="sets_{{.PhaseNumber}}" value="{{if gt .DefaultSets 0}}{{.DefaultSets}}{{else}}3{{end}}" min="1" required style="width:56px;">
-                            </div>
-                            <div class="d-flex align-items-center gap-1">
-                                <span class="text-muted small">Rest</span>
-                                <input type="number" class="form-control form-control-sm phase-rest-m text-center" name="rest_m_{{.PhaseNumber}}" value="{{.RestSeconds | restMinutes}}" placeholder="0" min="0" style="width:52px;">
-                                <span class="text-muted small">m</span>
-                                <input type="number" class="form-control form-control-sm phase-rest-s text-center" name="rest_s_{{.PhaseNumber}}" value="{{.RestSeconds | restSecs}}" placeholder="0" min="0" max="59" style="width:52px;">
-                                <span class="text-muted small">s</span>
-                            </div>
-                        </div>
-                    </li>
-                    {{end}}
-                </ul>
-            </div>
+                    </div>
+                </li>
+                {{end}}
+            </ul>
+        </div>
+        <div class="mt-3 mb-3">
+            <button type="submit" class="btn btn-dark btn-sm">Save Workout Defaults</button>
+        </div>
+    </form>
+    {{end}}
 
-            <div class="mt-3 mb-3">
-                <button type="submit" class="btn btn-dark btn-sm">Save Phase Settings</button>
-            </div>
-        </form>
+    <h2 class="h6 fw-semibold text-uppercase text-muted mt-5 mb-3">Phase Settings</h2>
+
+    <form method="POST" action="/programs/{{.Program.ID}}" data-offline-sync>
+        <div class="card">
+            <ul class="list-group list-group-flush">
+                {{range .Phases}}
+                <li class="list-group-item py-2">
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <span class="fw-semibold small">Phase {{.PhaseNumber}}</span>
+                        <button type="button" class="btn btn-outline-secondary btn-sm copy-to-all" title="Copy to all phases"><i class="bi bi-copy"></i></button>
+                    </div>
+                    <div class="d-flex align-items-center gap-3 flex-wrap">
+                        <div class="d-flex align-items-center gap-1">
+                            <span class="text-muted small">Reps</span>
+                            <input type="number" class="form-control form-control-sm phase-min text-center" name="rep_min_{{.PhaseNumber}}" value="{{if gt .RepMin 0}}{{.RepMin}}{{end}}" placeholder="–" min="1" required style="width:56px;">
+                            <span class="text-muted small">–</span>
+                            <input type="number" class="form-control form-control-sm phase-max text-center" name="rep_max_{{.PhaseNumber}}" value="{{if gt .RepMax 0}}{{.RepMax}}{{end}}" placeholder="–" min="1" required style="width:56px;">
+                        </div>
+                        <div class="d-flex align-items-center gap-1">
+                            <span class="text-muted small">Sets</span>
+                            <input type="number" class="form-control form-control-sm phase-sets text-center" name="sets_{{.PhaseNumber}}" value="{{if gt .DefaultSets 0}}{{.DefaultSets}}{{else}}3{{end}}" min="1" required style="width:56px;">
+                        </div>
+                        <div class="d-flex align-items-center gap-1">
+                            <span class="text-muted small">Rest</span>
+                            <input type="number" class="form-control form-control-sm phase-rest-m text-center" name="rest_m_{{.PhaseNumber}}" value="{{.RestSeconds | restMinutes}}" placeholder="0" min="0" style="width:52px;">
+                            <span class="text-muted small">m</span>
+                            <input type="number" class="form-control form-control-sm phase-rest-s text-center" name="rest_s_{{.PhaseNumber}}" value="{{.RestSeconds | restSecs}}" placeholder="0" min="0" max="59" style="width:52px;">
+                            <span class="text-muted small">s</span>
+                        </div>
+                    </div>
+                </li>
+                {{end}}
+            </ul>
+        </div>
+
+        <div class="mt-3 mb-3">
+            <button type="submit" class="btn btn-dark btn-sm">Save Phase Settings</button>
+        </div>
+    </form>
 </main>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="/static/autocomplete.js"></script>
 <script>
     const alertEl = document.getElementById('success-alert');
     if (alertEl) {
@@ -129,6 +154,13 @@
             document.querySelectorAll('.phase-rest-s').forEach(el => el.value = restS);
         });
     });
+
+    (function () {
+        const names = {{.TemplateNamesJSON}};
+        document.querySelectorAll('.workout-template-input').forEach(function (input) {
+            makeAutocomplete(input, names);
+        });
+    })();
 </script>
 <script src="/static/offline-sync.js"></script>
 <script>if ('serviceWorker' in navigator) { navigator.serviceWorker.register('/sw.js').catch(console.error); }</script>

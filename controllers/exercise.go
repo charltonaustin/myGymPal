@@ -67,6 +67,7 @@ func (c *ExerciseController) New() {
 	c.Data["ExWeightUnit"] = weightUnit
 	c.Data["DefaultBlock"] = ""
 	c.Data["ShowDefaultBlock"] = true
+	c.Data["AvailableNamesJSON"] = availableGlobalNamesJSON(userID.(int64))
 	c.TplName = "exercises/new.tpl"
 }
 
@@ -116,6 +117,7 @@ func (c *ExerciseController) Create() {
 		c.Data["ExWeightUnit"] = exWeightUnit
 		c.Data["DefaultBlock"] = defaultBlock
 		c.Data["ShowDefaultBlock"] = true
+		c.Data["AvailableNamesJSON"] = availableGlobalNamesJSON(userID.(int64))
 		c.TplName = "exercises/new.tpl"
 	}
 
@@ -403,11 +405,25 @@ func (c *ExerciseController) UpdateGoalSecondsJSON() {
 	c.ServeJSON()
 }
 
+// availableGlobalNamesJSON returns a JSON array of global exercise names the user hasn't configured yet.
+// Safe for direct embedding in a <script> tag.
+func availableGlobalNamesJSON(userID int64) template.JS {
+	names, err := Exercises.GetAvailableGlobalNames(userID)
+	if err != nil || len(names) == 0 {
+		return "[]"
+	}
+	b, err := json.Marshal(names)
+	if err != nil {
+		return "[]"
+	}
+	return template.JS(b)
+}
+
 // exerciseLibraryJSON fetches the user's exercise library and returns a template.JS
 // value safe for direct embedding in a <script> tag without HTML escaping.
 // Goal weights are converted to the user's preferred unit.
 func exerciseLibraryJSON(userID int64) template.JS {
-	exercises, err := Exercises.GetAllByUser(userID)
+	exercises, err := Exercises.GetAll(userID)
 	if err != nil || len(exercises) == 0 {
 		return "[]"
 	}

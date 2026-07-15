@@ -411,6 +411,7 @@
     </div>
 </div>
 
+<script src="/static/autocomplete.js"></script>
 <script>
 (function () {
     const modal = document.getElementById('changeExerciseModal');
@@ -418,57 +419,17 @@
     const input = document.getElementById('changeExInput');
     const curNameEl = document.getElementById('changeExCurrentName');
     const libArr = {{.ExerciseLibraryJSON}};
-    let dropdown = null;
 
     modal.addEventListener('show.bs.modal', function (e) {
         const btn = e.relatedTarget;
         form.action = '/sessions/' + btn.dataset.sessionId + '/exercises/' + btn.dataset.eid + '/change';
         input.value = '';
         curNameEl.textContent = btn.dataset.exName;
-        hideDropdown();
     });
 
     modal.addEventListener('shown.bs.modal', function () { input.focus(); });
-    modal.addEventListener('hidden.bs.modal', function () { hideDropdown(); });
 
-    function showDropdown(matches) {
-        if (!dropdown) {
-            dropdown = document.createElement('div');
-            dropdown.className = 'list-group shadow';
-            dropdown.style.cssText = 'position:absolute;top:100%;left:0;right:0;z-index:1060;max-height:220px;overflow-y:auto;border-radius:0 0 .375rem .375rem;';
-            input.parentElement.appendChild(dropdown);
-        }
-        dropdown.innerHTML = '';
-        matches.forEach(function (ex) {
-            var btn = document.createElement('button');
-            btn.type = 'button';
-            btn.className = 'list-group-item list-group-item-action py-2 px-3';
-            btn.style.fontSize = '0.95rem';
-            btn.textContent = ex.name;
-            btn.addEventListener('mousedown', function (e) {
-                e.preventDefault();
-                input.value = ex.name;
-                hideDropdown();
-            });
-            dropdown.appendChild(btn);
-        });
-    }
-
-    function hideDropdown() {
-        if (dropdown) { dropdown.remove(); dropdown = null; }
-    }
-
-    input.addEventListener('input', function () {
-        var q = this.value.trim().toLowerCase();
-        if (!q) { hideDropdown(); return; }
-        var matches = libArr.filter(function (ex) {
-            return ex.name.toLowerCase().includes(q);
-        }).slice(0, 10);
-        if (matches.length) showDropdown(matches); else hideDropdown();
-    });
-
-    input.addEventListener('blur', function () { setTimeout(hideDropdown, 150); });
-    input.addEventListener('keydown', function (e) { if (e.key === 'Escape') hideDropdown(); });
+    makeAutocomplete(input, libArr.map(function (ex) { return ex.name; }));
 })();
 </script>
 
@@ -893,38 +854,6 @@ document.querySelectorAll('.sortable-block').forEach(function (container) {
     const input = document.getElementById('ex_name');
     if (!input) return;
 
-    const wrapper = input.parentElement;
-    wrapper.style.position = 'relative';
-    let dropdown = null;
-
-    function showDropdown(matches) {
-        if (!dropdown) {
-            dropdown = document.createElement('div');
-            dropdown.className = 'list-group shadow';
-            dropdown.style.cssText = 'position:absolute;top:100%;left:0;right:0;z-index:1050;max-height:220px;overflow-y:auto;border-radius:0 0 .375rem .375rem;';
-            wrapper.appendChild(dropdown);
-        }
-        dropdown.innerHTML = '';
-        matches.forEach(function (ex) {
-            var btn = document.createElement('button');
-            btn.type = 'button';
-            btn.className = 'list-group-item list-group-item-action py-2 px-3';
-            btn.style.fontSize = '0.95rem';
-            btn.textContent = ex.name;
-            btn.addEventListener('mousedown', function (e) {
-                e.preventDefault();
-                input.value = ex.name;
-                autofillFromLibrary(ex.name);
-                hideDropdown();
-            });
-            dropdown.appendChild(btn);
-        });
-    }
-
-    function hideDropdown() {
-        if (dropdown) { dropdown.remove(); dropdown = null; }
-    }
-
     function autofillFromLibrary(name) {
         var entry = exerciseLibrary[name];
         if (!entry) return;
@@ -959,15 +888,7 @@ document.querySelectorAll('.sortable-block').forEach(function (container) {
         }
     }
 
-    input.addEventListener('input', function () {
-        var val = input.value.toLowerCase().trim();
-        if (!val) { hideDropdown(); return; }
-        var matches = exerciseLibraryArr.filter(function (ex) { return ex.name.includes(val); }).slice(0, 10);
-        if (matches.length) showDropdown(matches);
-        else hideDropdown();
-    });
-
-    input.addEventListener('blur', function () { setTimeout(hideDropdown, 150); });
+    makeAutocomplete(input, exerciseLibraryArr.map(function (ex) { return ex.name; }), autofillFromLibrary);
 })();
 </script>
 </body>

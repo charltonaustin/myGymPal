@@ -86,6 +86,16 @@ func (c *SessionController) New() {
 
 	templates, _ := Templates.GetAll()
 
+	var defaultTemplateID int64
+	if wts, err := WorkoutTemplates.GetByProgram(programID); err == nil {
+		for _, wt := range wts {
+			if wt.WorkoutNumber == workoutNum {
+				defaultTemplateID = wt.TemplateID
+				break
+			}
+		}
+	}
+
 	c.Data["LoggedIn"] = true
 	c.Data["ActivePage"] = "programs"
 	c.Data["Program"] = program
@@ -93,6 +103,7 @@ func (c *SessionController) New() {
 	c.Data["WeekNumber"] = week
 	c.Data["WorkoutNumber"] = workoutNum
 	c.Data["Templates"] = templates
+	c.Data["DefaultTemplateID"] = defaultTemplateID
 	c.Data["DefaultDate"] = time.Now().Format("2006-01-02")
 	c.Data["LogMode"] = logMode
 	c.TplName = "sessions/new.tpl"
@@ -527,7 +538,7 @@ func (c *SessionController) LogSet() {
 		if ex, err := Exercises.GetByName(userID.(int64), exercise.Name); err == nil {
 			convertedGoal := models.ConvertWeight(ex.GoalWeight, ex.WeightUnit, weightUnit)
 			if ex.GoalWeight == 0 || actualWeight >= convertedGoal {
-				Exercises.UpdateGoalWeight(ex.ID, actualWeight, weightUnit)
+				Exercises.UpdateGoalWeight(ex.ID, userID.(int64), actualWeight, weightUnit)
 			}
 		}
 	}
@@ -833,7 +844,7 @@ func (c *SessionController) UpdateExerciseUnit() {
 		return
 	}
 	converted := models.ConvertWeight(libEx.GoalWeight, libEx.WeightUnit, newUnit)
-	if err := Exercises.UpdateGoalWeight(libEx.ID, converted, newUnit); err != nil {
+	if err := Exercises.UpdateGoalWeight(libEx.ID, userID.(int64), converted, newUnit); err != nil {
 		logs.Error("UpdateExerciseUnit: %v", err)
 		c.Ctx.Output.SetStatus(500)
 		return

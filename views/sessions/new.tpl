@@ -80,7 +80,7 @@
             <select name="template_id" class="form-select">
                 <option value="">No template</option>
                 {{range .Templates}}
-                <option value="{{.ID}}">{{.Name}}</option>
+                <option value="{{.ID}}"{{if eq .ID $.DefaultTemplateID}} selected{{end}}>{{.Name}}</option>
                 {{end}}
             </select>
         </div>

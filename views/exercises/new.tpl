@@ -46,6 +46,53 @@
         this.classList.add('was-validated');
     });
 </script>
+<script>
+(function () {
+    const availableNames = {{.AvailableNamesJSON}};
+    const input = document.getElementById('ex_name');
+    let dropdown = null;
+
+    function showDropdown(matches) {
+        if (!dropdown) {
+            dropdown = document.createElement('div');
+            dropdown.className = 'list-group shadow';
+            dropdown.style.cssText = 'position:absolute;top:100%;left:0;right:0;z-index:1060;max-height:220px;overflow-y:auto;border-radius:0 0 .375rem .375rem;';
+            input.parentElement.style.position = 'relative';
+            input.parentElement.appendChild(dropdown);
+        }
+        dropdown.innerHTML = '';
+        matches.forEach(function (name) {
+            var btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'list-group-item list-group-item-action py-2 px-3';
+            btn.style.fontSize = '0.95rem';
+            btn.textContent = name;
+            btn.addEventListener('mousedown', function (e) {
+                e.preventDefault();
+                input.value = name;
+                hideDropdown();
+            });
+            dropdown.appendChild(btn);
+        });
+    }
+
+    function hideDropdown() {
+        if (dropdown) { dropdown.remove(); dropdown = null; }
+    }
+
+    input.addEventListener('input', function () {
+        var q = this.value.trim().toLowerCase();
+        if (!q) { hideDropdown(); return; }
+        var matches = availableNames.filter(function (n) {
+            return n.toLowerCase().includes(q);
+        }).slice(0, 10);
+        if (matches.length) showDropdown(matches); else hideDropdown();
+    });
+
+    input.addEventListener('blur', function () { setTimeout(hideDropdown, 150); });
+    input.addEventListener('keydown', function (e) { if (e.key === 'Escape') hideDropdown(); });
+})();
+</script>
 <script>if ('serviceWorker' in navigator) { navigator.serviceWorker.register('/sw.js').catch(console.error); }</script>
 </body>
 </html>

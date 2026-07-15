@@ -32,6 +32,7 @@ func Register() {
 	controllers.Phases = models.NewPhaseRepository()
 	controllers.Templates = models.NewTemplateRepository()
 	controllers.Sessions = models.NewSessionRepository()
+	controllers.WorkoutTemplates = models.NewProgramWorkoutTemplateRepository()
 	controllers.SessionExercises = models.NewSessionExerciseRepository()
 	controllers.Exercises = models.NewExerciseRepository()
 	controllers.BodyWeights = models.NewBodyWeightRepository()
@@ -62,6 +63,7 @@ func Register() {
 	beego.Router("/programs", &controllers.ProgramController{}, "get:Index;post:Create")
 	beego.Router("/programs/new", &controllers.ProgramController{}, "get:New")
 	beego.Router("/programs/:id", &controllers.ProgramController{}, "get:Show;post:UpdatePhases")
+	beego.Router("/programs/:id/workout-templates", &controllers.ProgramController{}, "post:UpdateWorkoutTemplates")
 	beego.Router("/programs/:id/delete", &controllers.ProgramController{}, "post:Delete")
 
 	// Sessions

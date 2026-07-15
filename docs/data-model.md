@@ -122,6 +122,23 @@ exercise library — there is no FK to `exercises`.
 
 ---
 
+### `program_workout_templates`
+
+Default template selection per workout number within a program. Used to pre-select a template on the Start Workout
+screen. One row per (program_id, workout_number); upserted on save.
+
+```sql
+CREATE TABLE program_workout_templates (
+    id             BIGSERIAL PRIMARY KEY,
+    program_id     BIGINT NOT NULL REFERENCES programs(id) ON DELETE CASCADE,
+    workout_number INT NOT NULL CHECK (workout_number > 0),
+    template_id    BIGINT NOT NULL REFERENCES templates(id) ON DELETE CASCADE,
+    UNIQUE (program_id, workout_number)
+);
+```
+
+---
+
 ### `sessions`
 
 A single workout instance linked to a program and phase.
@@ -205,13 +222,29 @@ CREATE TABLE cardio_logs (
 
 ### `exercises`
 
-Per-user exercise library. Each user maintains their own named list of exercises with personal goal targets.
+Global exercise name registry. Exercise names are shared across all users; there is one row per unique exercise name.
 
 ```sql
 CREATE TABLE exercises (
+    id         BIGSERIAL   PRIMARY KEY,
+    name       TEXT        NOT NULL UNIQUE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+```
+
+`name` is always stored lowercase and trimmed.
+
+---
+
+### `user_exercise_goals`
+
+Per-user exercise configuration and personal goal targets. One row per (user, exercise) pair.
+
+```sql
+CREATE TABLE user_exercise_goals (
     id            BIGSERIAL    PRIMARY KEY,
     user_id       BIGINT       NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    name          TEXT         NOT NULL,
+    exercise_id   BIGINT       NOT NULL REFERENCES exercises(id) ON DELETE CASCADE,
     is_bodyweight BOOLEAN      NOT NULL DEFAULT FALSE,
     is_time_based BOOLEAN      NOT NULL DEFAULT FALSE,
     goal_weight   NUMERIC(6,2) NOT NULL DEFAULT 0,
@@ -222,12 +255,13 @@ CREATE TABLE exercises (
     default_block VARCHAR(20)  NOT NULL DEFAULT 'main',
     created_at    TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
     updated_at    TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
-    UNIQUE (user_id, name)
+    UNIQUE (user_id, exercise_id)
 );
 ```
 
-`name` is always stored lowercase and trimmed. The `UNIQUE (user_id, name)` constraint enforces one entry per exercise
-name per user. There is no sharing between users — each user's library is fully independent.
+A user who has never configured an exercise has no row here. `ExerciseRepository.GetAll(userID)` LEFT JOINs both tables
+so all global exercises appear in autocomplete with user goals overlaid where they exist. `GetAllByUser(userID)` INNER
+JOINs to return only user-configured exercises (for the exercise management page).
 
 ---
 
@@ -291,7 +325,8 @@ CREATE TABLE macro_goals (
 | Table               | Index                                | Rationale                             |
 |---------------------|--------------------------------------|---------------------------------------|
 | `users`             | UNIQUE on `username`                 | Login lookup                          |
-| `exercises`         | UNIQUE on `(user_id, name)`          | Per-user exercise lookup by name      |
+| `exercises`         | UNIQUE on `name`                     | Global exercise lookup by name        |
+| `user_exercise_goals` | UNIQUE on `(user_id, exercise_id)` | Per-user goal lookup                  |
 | `phases`            | UNIQUE on `(program_id, phase_number)` | Phase lookup within a program       |
 | `session_sets`      | UNIQUE on `(session_exercise_id, set_number)` | Sets within an exercise      |
 | `body_weights`      | UNIQUE on `(user_id, date)`          | One entry per user per day            |
@@ -309,10 +344,12 @@ users
   │           ├── session_exercises
   │           │     ├── session_sets
   │           │     └── cardio_logs
-  ├── exercises       (per-user library)
+  ├── user_exercise_goals  (per-user goals for global exercises)
   ├── body_weights
   ├── macro_entries
   └── macro_goals
+
+exercises             (global, no user ownership — names only)
 
 templates             (global, no user ownership)
   └── template_exercises

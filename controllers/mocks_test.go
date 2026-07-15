@@ -335,20 +335,29 @@ func (m *mockSessionExerciseRepo) UpdateName(id int64, name string) error {
 }
 
 type mockExerciseRepo struct {
-	CreateFn           func(userID int64, name string, isBodyweight bool, goalWeight float64, weightUnit string, isTimeBased bool, goalSeconds int, goalRepMin int, goalRepMax int, defaultBlock string) (*models.Exercise, error)
-	GetAllByUserFn     func(userID int64) ([]*models.Exercise, error)
-	GetByIDFn          func(id, userID int64) (*models.Exercise, error)
-	GetByNameFn        func(userID int64, name string) (*models.Exercise, error)
-	UpdateFn           func(id, userID int64, name string, isBodyweight bool, goalWeight float64, weightUnit string, isTimeBased bool, goalSeconds int, goalRepMin int, goalRepMax int, defaultBlock string) (*models.Exercise, error)
-	UpdateGoalWeightFn func(id int64, goalWeight float64, weightUnit string) error
-	DeleteFn           func(id, userID int64) error
+	CreateFn                  func(userID int64, name string, isBodyweight bool, goalWeight float64, weightUnit string, isTimeBased bool, goalSeconds int, goalRepMin int, goalRepMax int, defaultBlock string) (*models.Exercise, error)
+	GetAllFn                  func(userID int64) ([]*models.Exercise, error)
+	GetAllByUserFn            func(userID int64) ([]*models.Exercise, error)
+	GetAvailableGlobalNamesFn func(userID int64) ([]string, error)
+	GetByIDFn                 func(id, userID int64) (*models.Exercise, error)
+	GetByNameFn               func(userID int64, name string) (*models.Exercise, error)
+	UpdateFn                  func(id, userID int64, name string, isBodyweight bool, goalWeight float64, weightUnit string, isTimeBased bool, goalSeconds int, goalRepMin int, goalRepMax int, defaultBlock string) (*models.Exercise, error)
+	UpdateGoalWeightFn        func(id, userID int64, goalWeight float64, weightUnit string) error
+	DeleteFn                  func(id, userID int64) error
 }
 
 func (m *mockExerciseRepo) Create(userID int64, name string, isBodyweight bool, goalWeight float64, weightUnit string, isTimeBased bool, goalSeconds int, goalRepMin int, goalRepMax int, defaultBlock string) (*models.Exercise, error) {
 	if m.CreateFn != nil {
 		return m.CreateFn(userID, name, isBodyweight, goalWeight, weightUnit, isTimeBased, goalSeconds, goalRepMin, goalRepMax, defaultBlock)
 	}
-	return &models.Exercise{ID: 1, UserID: userID, Name: name, IsBodyweight: isBodyweight, GoalWeight: goalWeight, WeightUnit: weightUnit}, nil
+	return &models.Exercise{ID: 1, Name: name, IsBodyweight: isBodyweight, GoalWeight: goalWeight, WeightUnit: weightUnit}, nil
+}
+
+func (m *mockExerciseRepo) GetAll(userID int64) ([]*models.Exercise, error) {
+	if m.GetAllFn != nil {
+		return m.GetAllFn(userID)
+	}
+	return []*models.Exercise{}, nil
 }
 
 func (m *mockExerciseRepo) GetAllByUser(userID int64) ([]*models.Exercise, error) {
@@ -356,6 +365,13 @@ func (m *mockExerciseRepo) GetAllByUser(userID int64) ([]*models.Exercise, error
 		return m.GetAllByUserFn(userID)
 	}
 	return []*models.Exercise{}, nil
+}
+
+func (m *mockExerciseRepo) GetAvailableGlobalNames(userID int64) ([]string, error) {
+	if m.GetAvailableGlobalNamesFn != nil {
+		return m.GetAvailableGlobalNamesFn(userID)
+	}
+	return []string{}, nil
 }
 
 func (m *mockExerciseRepo) GetByID(id, userID int64) (*models.Exercise, error) {
@@ -376,12 +392,12 @@ func (m *mockExerciseRepo) Update(id, userID int64, name string, isBodyweight bo
 	if m.UpdateFn != nil {
 		return m.UpdateFn(id, userID, name, isBodyweight, goalWeight, weightUnit, isTimeBased, goalSeconds, goalRepMin, goalRepMax, defaultBlock)
 	}
-	return &models.Exercise{ID: id, UserID: userID, Name: name, IsBodyweight: isBodyweight, GoalWeight: goalWeight, WeightUnit: weightUnit}, nil
+	return &models.Exercise{ID: id, Name: name, IsBodyweight: isBodyweight, GoalWeight: goalWeight, WeightUnit: weightUnit}, nil
 }
 
-func (m *mockExerciseRepo) UpdateGoalWeight(id int64, goalWeight float64, weightUnit string) error {
+func (m *mockExerciseRepo) UpdateGoalWeight(id, userID int64, goalWeight float64, weightUnit string) error {
 	if m.UpdateGoalWeightFn != nil {
-		return m.UpdateGoalWeightFn(id, goalWeight, weightUnit)
+		return m.UpdateGoalWeightFn(id, userID, goalWeight, weightUnit)
 	}
 	return nil
 }
@@ -389,6 +405,33 @@ func (m *mockExerciseRepo) UpdateGoalWeight(id int64, goalWeight float64, weight
 func (m *mockExerciseRepo) Delete(id, userID int64) error {
 	if m.DeleteFn != nil {
 		return m.DeleteFn(id, userID)
+	}
+	return nil
+}
+
+type mockWorkoutTemplateRepo struct {
+	GetByProgramFn func(programID int64) ([]*models.ProgramWorkoutTemplate, error)
+	UpsertFn       func(programID int64, workoutNumber int, templateID int64) error
+	DeleteFn       func(programID int64, workoutNumber int) error
+}
+
+func (m *mockWorkoutTemplateRepo) GetByProgram(programID int64) ([]*models.ProgramWorkoutTemplate, error) {
+	if m.GetByProgramFn != nil {
+		return m.GetByProgramFn(programID)
+	}
+	return nil, nil
+}
+
+func (m *mockWorkoutTemplateRepo) Upsert(programID int64, workoutNumber int, templateID int64) error {
+	if m.UpsertFn != nil {
+		return m.UpsertFn(programID, workoutNumber, templateID)
+	}
+	return nil
+}
+
+func (m *mockWorkoutTemplateRepo) Delete(programID int64, workoutNumber int) error {
+	if m.DeleteFn != nil {
+		return m.DeleteFn(programID, workoutNumber)
 	}
 	return nil
 }
@@ -445,6 +488,7 @@ var (
 	mockPhases           = &mockPhaseRepo{}
 	mockSessions         = &mockSessionRepo{}
 	mockTemplates        = &mockTemplateRepo{}
+	mockWorkoutTemplates = &mockWorkoutTemplateRepo{}
 	mockSessionExercises = &mockSessionExerciseRepo{}
 	mockExercises        = &mockExerciseRepo{}
 	mockBodyWeights      = &mockBodyWeightRepo{}
@@ -458,6 +502,7 @@ func resetMocks() {
 	*mockPhases = mockPhaseRepo{}
 	*mockSessions = mockSessionRepo{}
 	*mockTemplates = mockTemplateRepo{}
+	*mockWorkoutTemplates = mockWorkoutTemplateRepo{}
 	*mockSessionExercises = mockSessionExerciseRepo{}
 	*mockExercises = mockExerciseRepo{}
 	lastProgramCreate = struct {
