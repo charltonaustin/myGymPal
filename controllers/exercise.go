@@ -6,6 +6,7 @@ import (
 	"html/template"
 	"myGymPal/models"
 	"strconv"
+	"strings"
 
 	"github.com/beego/beego/v2/core/logs"
 	beego "github.com/beego/beego/v2/server/web"
@@ -405,12 +406,95 @@ func (c *ExerciseController) UpdateGoalSecondsJSON() {
 	c.ServeJSON()
 }
 
+func (c *ExerciseController) History() {
+	userID := c.GetSession("user_id")
+	if userID == nil {
+		c.Redirect("/login", 302)
+		return
+	}
+
+	preferredUnit := "lb"
+	if user, err := Users.GetByID(userID.(int64)); err == nil {
+		preferredUnit = user.WeightUnit
+	}
+
+	c.Data["LoggedIn"] = true
+	c.Data["ActivePage"] = "exercises"
+	c.Data["WeightUnit"] = preferredUnit
+	c.Data["UserExerciseNamesJSON"] = userExerciseNamesJSON(userID.(int64))
+	c.TplName = "exercises/history.tpl"
+}
+
+func (c *ExerciseController) HistoryData() {
+	userID := c.GetSession("user_id")
+	if userID == nil {
+		c.Data["json"] = map[string]string{"error": "unauthenticated"}
+		c.ServeJSON()
+		return
+	}
+
+	rawNames := c.GetString("names")
+	unit := c.GetString("unit")
+	if unit != "kg" {
+		unit = "lb"
+	}
+
+	var names []string
+	for _, n := range strings.Split(rawNames, ",") {
+		n = strings.TrimSpace(n)
+		if n != "" {
+			names = append(names, n)
+		}
+	}
+
+	if len(names) == 0 {
+		c.Data["json"] = map[string]interface{}{
+			"series":     []models.ExerciseHistorySeries{},
+			"weightUnit": unit,
+		}
+		c.ServeJSON()
+		return
+	}
+
+	series, err := Exercises.GetHistory(userID.(int64), names, unit)
+	if err != nil {
+		logs.Error("ExerciseController.HistoryData: %v", err)
+		c.Data["json"] = map[string]string{"error": "internal error"}
+		c.ServeJSON()
+		return
+	}
+
+	c.Data["json"] = map[string]interface{}{
+		"series":     series,
+		"weightUnit": unit,
+	}
+	c.ServeJSON()
+}
+
 // availableGlobalNamesJSON returns a JSON array of global exercise names the user hasn't configured yet.
 // Safe for direct embedding in a <script> tag.
 func availableGlobalNamesJSON(userID int64) template.JS {
 	names, err := Exercises.GetAvailableGlobalNames(userID)
 	if err != nil || len(names) == 0 {
 		return "[]"
+	}
+	b, err := json.Marshal(names)
+	if err != nil {
+		return "[]"
+	}
+	return template.JS(b)
+}
+
+// userExerciseNamesJSON returns a JSON array of names for exercises the user has configured.
+// Used for the history page autocomplete.
+func userExerciseNamesJSON(userID int64) template.JS {
+	exercises, err := Exercises.GetAllByUser(userID)
+	if err != nil || len(exercises) == 0 {
+		return "[]"
+	}
+	names := make([]string, len(exercises))
+	for i, ex := range exercises {
+		names[i] = ex.Name
 	}
 	b, err := json.Marshal(names)
 	if err != nil {

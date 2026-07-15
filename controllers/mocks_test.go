@@ -344,6 +344,7 @@ type mockExerciseRepo struct {
 	UpdateFn                  func(id, userID int64, name string, isBodyweight bool, goalWeight float64, weightUnit string, isTimeBased bool, goalSeconds int, goalRepMin int, goalRepMax int, defaultBlock string) (*models.Exercise, error)
 	UpdateGoalWeightFn        func(id, userID int64, goalWeight float64, weightUnit string) error
 	DeleteFn                  func(id, userID int64) error
+	GetHistoryFn              func(userID int64, names []string, unit string) ([]models.ExerciseHistorySeries, error)
 }
 
 func (m *mockExerciseRepo) Create(userID int64, name string, isBodyweight bool, goalWeight float64, weightUnit string, isTimeBased bool, goalSeconds int, goalRepMin int, goalRepMax int, defaultBlock string) (*models.Exercise, error) {
@@ -407,6 +408,13 @@ func (m *mockExerciseRepo) Delete(id, userID int64) error {
 		return m.DeleteFn(id, userID)
 	}
 	return nil
+}
+
+func (m *mockExerciseRepo) GetHistory(userID int64, names []string, unit string) ([]models.ExerciseHistorySeries, error) {
+	if m.GetHistoryFn != nil {
+		return m.GetHistoryFn(userID, names, unit)
+	}
+	return []models.ExerciseHistorySeries{}, nil
 }
 
 type mockWorkoutTemplateRepo struct {

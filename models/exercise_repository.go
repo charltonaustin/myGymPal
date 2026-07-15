@@ -41,3 +41,7 @@ func (r *ormExerciseRepository) UpdateGoalWeight(id, userID int64, goalWeight fl
 func (r *ormExerciseRepository) Delete(id, userID int64) error {
 	return DeleteExercise(id, userID)
 }
+
+func (r *ormExerciseRepository) GetHistory(userID int64, names []string, unit string) ([]ExerciseHistorySeries, error) {
+	return GetExerciseHistory(userID, names, unit)
+}

@@ -99,6 +99,8 @@ func Register() {
 	beego.Router("/exercises/goal-weight", &controllers.ExerciseController{}, "post:UpdateGoalWeightJSON")
 	beego.Router("/exercises/goal-reps", &controllers.ExerciseController{}, "post:UpdateGoalRepsJSON")
 	beego.Router("/exercises/goal-seconds", &controllers.ExerciseController{}, "post:UpdateGoalSecondsJSON")
+	beego.Router("/exercises/history", &controllers.ExerciseController{}, "get:History")
+	beego.Router("/exercises/history/data", &controllers.ExerciseController{}, "get:HistoryData")
 	beego.Router("/exercises/:id/edit", &controllers.ExerciseController{}, "get:Edit;post:Update")
 	beego.Router("/exercises/:id/delete", &controllers.ExerciseController{}, "post:Delete")
 

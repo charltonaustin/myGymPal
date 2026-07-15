@@ -15,7 +15,12 @@
 <main class="container mt-4 mb-4" style="max-width: 600px;">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1 class="h4 fw-bold mb-0">Exercise Library</h1>
-        <a href="/exercises/new" class="btn btn-dark btn-sm">+ New Exercise</a>
+        <div class="d-flex gap-2">
+            <a href="/exercises/history" class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-graph-up"></i> History
+            </a>
+            <a href="/exercises/new" class="btn btn-dark btn-sm">+ New Exercise</a>
+        </div>
     </div>
 
     {{if .Success}}
