@@ -1,6 +1,10 @@
 package models
 
-import "github.com/beego/beego/v2/client/orm"
+import (
+	"time"
+
+	"github.com/beego/beego/v2/client/orm"
+)
 
 // ExerciseHistoryPoint is one session's aggregated best value for one exercise.
 type ExerciseHistoryPoint struct {
@@ -35,6 +39,7 @@ WITH ranked AS (
       AND se.is_bodyweight = false
       AND se.is_time_based = false
       AND ss.actual_weight > 0
+      AND s.date >= ?::date
 )
 SELECT session_date, normalized_weight AS max_value, actual_reps AS reps
 FROM ranked
@@ -55,6 +60,7 @@ WITH ranked AS (
       AND LOWER(TRIM(se.name)) = LOWER(TRIM(?))
       AND se.is_bodyweight = true
       AND ss.actual_reps > 0
+      AND s.date >= ?::date
 )
 SELECT session_date, actual_reps AS max_value, actual_reps AS reps
 FROM ranked
@@ -62,12 +68,54 @@ WHERE rn = 1
 ORDER BY session_date ASC
 `
 
+// recentExerciseNamesSQL returns the distinct names of exercises the user has
+// actually logged sets for within the given date window, most-recently-performed first.
+const recentExerciseNamesSQL = `
+SELECT se.name, MAX(s.date) AS last_done
+FROM sessions s
+JOIN session_exercises se ON se.session_id = s.id
+WHERE s.user_id = ?
+  AND s.date >= ?
+  AND EXISTS (SELECT 1 FROM session_sets ss WHERE ss.session_exercise_id = se.id)
+GROUP BY se.name
+ORDER BY last_done DESC, se.name ASC
+`
+
+// GetRecentExerciseNames returns the names of exercises the user has performed
+// (logged at least one set for) within the last `days` days, ordered by how
+// recently they were last done. Used to pre-populate the history graph.
+func GetRecentExerciseNames(userID int64, days int) ([]string, error) {
+	o := orm.NewOrm()
+	cutoff := time.Now().AddDate(0, 0, -days).Format("2006-01-02")
+
+	var rows []struct {
+		Name     string    `orm:"column(name)"`
+		LastDone time.Time `orm:"column(last_done)"`
+	}
+	if _, err := o.Raw(recentExerciseNamesSQL, userID, cutoff).QueryRows(&rows); err != nil {
+		return nil, err
+	}
+
+	names := make([]string, len(rows))
+	for i, r := range rows {
+		names[i] = r.Name
+	}
+	return names, nil
+}
+
 // GetExerciseHistory returns per-session max weight (or max reps for bodyweight) for each named exercise.
 // Weights are normalized to targetUnit; bodyweight exercises always report reps.
 // Time-based exercises are returned with Type "time_based" and no data points.
-func GetExerciseHistory(userID int64, names []string, targetUnit string) ([]ExerciseHistorySeries, error) {
+// Only sessions within the last `days` days are included; days <= 0 means no date limit.
+func GetExerciseHistory(userID int64, names []string, targetUnit string, days int) ([]ExerciseHistorySeries, error) {
 	o := orm.NewOrm()
 	result := make([]ExerciseHistorySeries, 0, len(names))
+
+	// Sentinel cutoff older than any data acts as a no-op when no window is requested.
+	cutoff := "0001-01-01"
+	if days > 0 {
+		cutoff = time.Now().AddDate(0, 0, -days).Format("2006-01-02")
+	}
 
 	for _, name := range names {
 		ex, err := GetExerciseByName(userID, name)
@@ -82,11 +130,11 @@ func GetExerciseHistory(userID int64, names []string, targetUnit string) ([]Exer
 		if ex.IsBodyweight {
 			series.Type = "bodyweight"
 			series.Unit = "reps"
-			_, err = o.Raw(bodyweightHistorySQL, userID, name).QueryRows(&points)
+			_, err = o.Raw(bodyweightHistorySQL, userID, name, cutoff).QueryRows(&points)
 		} else {
 			series.Type = "weight"
 			series.Unit = targetUnit
-			_, err = o.Raw(weightHistorySQL, userID, name).QueryRows(&points)
+			_, err = o.Raw(weightHistorySQL, userID, name, cutoff).QueryRows(&points)
 			if err == nil && targetUnit != "lb" {
 				for _, p := range points {
 					p.Value = ConvertWeight(p.Value, "lb", targetUnit)

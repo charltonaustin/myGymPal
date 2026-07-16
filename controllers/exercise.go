@@ -406,6 +406,13 @@ func (c *ExerciseController) UpdateGoalSecondsJSON() {
 	c.ServeJSON()
 }
 
+// historyDefaultDays is the look-back window used to pre-populate the exercise
+// history graph with exercises the user has recently performed.
+const historyDefaultDays = 14
+
+// historyHeatmapDays is the span of the activity heatmap (a rolling year).
+const historyHeatmapDays = 371
+
 func (c *ExerciseController) History() {
 	userID := c.GetSession("user_id")
 	if userID == nil {
@@ -422,6 +429,9 @@ func (c *ExerciseController) History() {
 	c.Data["ActivePage"] = "exercises"
 	c.Data["WeightUnit"] = preferredUnit
 	c.Data["UserExerciseNamesJSON"] = userExerciseNamesJSON(userID.(int64))
+	c.Data["DefaultExerciseNamesJSON"] = recentExerciseNamesJSON(userID.(int64), historyDefaultDays)
+	c.Data["DefaultDays"] = historyDefaultDays
+	c.Data["HeatmapDataJSON"] = dailyActivityJSON(userID.(int64), historyHeatmapDays)
 	c.TplName = "exercises/history.tpl"
 }
 
@@ -437,6 +447,12 @@ func (c *ExerciseController) HistoryData() {
 	unit := c.GetString("unit")
 	if unit != "kg" {
 		unit = "lb"
+	}
+
+	// days limits the plotted window; 0 (or absent/invalid) means all history.
+	days, _ := strconv.Atoi(c.GetString("days"))
+	if days < 0 {
+		days = 0
 	}
 
 	var names []string
@@ -456,7 +472,7 @@ func (c *ExerciseController) HistoryData() {
 		return
 	}
 
-	series, err := Exercises.GetHistory(userID.(int64), names, unit)
+	series, err := Exercises.GetHistory(userID.(int64), names, unit, days)
 	if err != nil {
 		logs.Error("ExerciseController.HistoryData: %v", err)
 		c.Data["json"] = map[string]string{"error": "internal error"}
@@ -497,6 +513,36 @@ func userExerciseNamesJSON(userID int64) template.JS {
 		names[i] = ex.Name
 	}
 	b, err := json.Marshal(names)
+	if err != nil {
+		return "[]"
+	}
+	return template.JS(b)
+}
+
+// recentExerciseNamesJSON returns a JSON array of names for exercises the user has
+// performed within the last `days` days. Used to pre-select chips on the history page.
+// Safe for direct embedding in a <script> tag.
+func recentExerciseNamesJSON(userID int64, days int) template.JS {
+	names, err := Exercises.GetRecentNames(userID, days)
+	if err != nil || len(names) == 0 {
+		return "[]"
+	}
+	b, err := json.Marshal(names)
+	if err != nil {
+		return "[]"
+	}
+	return template.JS(b)
+}
+
+// dailyActivityJSON returns a JSON array of {date, count} for the user's exercised
+// days within the last `days` days, for the activity heatmap. Safe for direct
+// embedding in a <script> tag.
+func dailyActivityJSON(userID int64, days int) template.JS {
+	activity, err := Sessions.GetDailyActivity(userID, days)
+	if err != nil || len(activity) == 0 {
+		return "[]"
+	}
+	b, err := json.Marshal(activity)
 	if err != nil {
 		return "[]"
 	}

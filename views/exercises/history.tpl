@@ -7,6 +7,27 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="manifest" href="/manifest.json">
+    <style>
+        .hm-scroll { overflow-x: auto; padding-bottom: 4px; }
+        .hm-inner { display: inline-block; }
+        .hm-months { display: grid; grid-auto-flow: column; grid-auto-columns: 13px;
+                     margin-left: 30px; height: 14px; font-size: 10px; color: #898781; }
+        .hm-months span { overflow: visible; white-space: nowrap; }
+        .hm-body { display: flex; }
+        .hm-weekdays { display: grid; grid-template-rows: repeat(7, 11px); gap: 2px;
+                       width: 30px; font-size: 9px; color: #898781; }
+        .hm-weekdays span { line-height: 11px; }
+        .hm-grid { display: grid; grid-template-rows: repeat(7, 11px); grid-auto-flow: column;
+                   grid-auto-columns: 11px; gap: 2px; }
+        .hm-cell { width: 11px; height: 11px; border-radius: 2px; background: #ebedf0; }
+        .hm-l1 { background: #b7d3f6; }
+        .hm-l2 { background: #6da7ec; }
+        .hm-l3 { background: #2a78d6; }
+        .hm-l4 { background: #184f95; }
+        .hm-legend { display: flex; align-items: center; gap: 3px; justify-content: flex-end;
+                     margin-top: 6px; font-size: 10px; color: #898781; }
+        .hm-legend .hm-cell { display: inline-block; }
+    </style>
 </head>
 <body>
 
@@ -18,11 +39,51 @@
             <a href="/exercises" class="text-muted small">&larr; Exercise Library</a>
             <h1 class="h4 fw-bold mt-1 mb-0">Exercise History</h1>
         </div>
-        <div class="btn-group btn-group-sm" role="group" aria-label="Weight unit">
-            <input type="radio" class="btn-check" name="unit_toggle" id="unit_lb" value="lb" autocomplete="off" {{if eq .WeightUnit "lb"}}checked{{end}}>
-            <label class="btn btn-outline-secondary" for="unit_lb">lb</label>
-            <input type="radio" class="btn-check" name="unit_toggle" id="unit_kg" value="kg" autocomplete="off" {{if eq .WeightUnit "kg"}}checked{{end}}>
-            <label class="btn btn-outline-secondary" for="unit_kg">kg</label>
+        <div class="d-flex align-items-center gap-2">
+            <select id="range-select" class="form-select form-select-sm" aria-label="Time range" style="width:auto;">
+                <option value="14" {{if eq .DefaultDays 14}}selected{{end}}>2 weeks</option>
+                <option value="30">1 month</option>
+                <option value="90">3 months</option>
+                <option value="180">6 months</option>
+                <option value="365">1 year</option>
+                <option value="0">All time</option>
+            </select>
+            <div class="btn-group btn-group-sm" role="group" aria-label="Weight unit">
+                <input type="radio" class="btn-check" name="unit_toggle" id="unit_lb" value="lb" autocomplete="off" {{if eq .WeightUnit "lb"}}checked{{end}}>
+                <label class="btn btn-outline-secondary" for="unit_lb">lb</label>
+                <input type="radio" class="btn-check" name="unit_toggle" id="unit_kg" value="kg" autocomplete="off" {{if eq .WeightUnit "kg"}}checked{{end}}>
+                <label class="btn btn-outline-secondary" for="unit_kg">kg</label>
+            </div>
+        </div>
+    </div>
+
+    <div class="card mb-3">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <h2 class="h6 fw-bold mb-0">Workout Activity</h2>
+                <span class="text-muted small" id="heatmap-summary"></span>
+            </div>
+            <div class="hm-scroll">
+                <div class="hm-inner">
+                    <div class="hm-months" id="hm-months"></div>
+                    <div class="hm-body">
+                        <div class="hm-weekdays">
+                            <span></span><span>Mon</span><span></span><span>Wed</span>
+                            <span></span><span>Fri</span><span></span>
+                        </div>
+                        <div class="hm-grid" id="hm-grid"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="hm-legend">
+                <span>Less</span>
+                <span class="hm-cell"></span>
+                <span class="hm-cell hm-l1"></span>
+                <span class="hm-cell hm-l2"></span>
+                <span class="hm-cell hm-l3"></span>
+                <span class="hm-cell hm-l4"></span>
+                <span>More</span>
+            </div>
         </div>
     </div>
 
@@ -53,9 +114,17 @@
 <script>
 (function () {
     const exerciseNames = {{.UserExerciseNamesJSON}};
+    const defaultNames = {{.DefaultExerciseNamesJSON}};
     let selected = [];
     let currentUnit = document.querySelector('input[name="unit_toggle"]:checked').value;
+    const rangeSelect = document.getElementById('range-select');
+    let currentDays = rangeSelect.value;
     let chart = null;
+
+    rangeSelect.addEventListener('change', function () {
+        currentDays = this.value;
+        if (selected.length > 0) fetchAndRender();
+    });
 
     const searchInput = document.getElementById('exercise-search');
     makeAutocomplete(searchInput, exerciseNames, function (name) {
@@ -110,7 +179,7 @@
     }
 
     function fetchAndRender() {
-        const params = new URLSearchParams({ names: selected.join(','), unit: currentUnit });
+        const params = new URLSearchParams({ names: selected.join(','), unit: currentUnit, days: currentDays });
         fetch('/exercises/history/data?' + params)
             .then(function (r) { return r.json(); })
             .then(function (data) { renderChart(data); })
@@ -230,6 +299,75 @@
         empty.style.display = 'block';
         if (chart) { chart.destroy(); chart = null; }
     }
+
+    // Pre-populate with exercises performed in the last two weeks.
+    if (Array.isArray(defaultNames) && defaultNames.length > 0) {
+        selected = defaultNames.slice();
+        renderChips();
+        fetchAndRender();
+    }
+})();
+</script>
+<script>
+(function () {
+    var activity = {{.HeatmapDataJSON}};
+    var counts = {};
+    (activity || []).forEach(function (d) { counts[d.date] = d.count; });
+
+    var MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+                  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+    function key(d) {
+        var m = String(d.getMonth() + 1).padStart(2, '0');
+        var day = String(d.getDate()).padStart(2, '0');
+        return d.getFullYear() + '-' + m + '-' + day;
+    }
+    function human(d) {
+        return MONTHS[d.getMonth()] + ' ' + d.getDate() + ', ' + d.getFullYear();
+    }
+    function level(c) { return c <= 9 ? 1 : c <= 19 ? 2 : c <= 29 ? 3 : 4; }
+
+    var today = new Date();
+    today.setHours(0, 0, 0, 0);
+    var start = new Date(today);
+    start.setDate(start.getDate() - 364);
+    start.setDate(start.getDate() - start.getDay()); // back up to Sunday
+    var weeks = Math.ceil(((today - start) / 86400000 + 1) / 7);
+
+    var grid = document.getElementById('hm-grid');
+    for (var i = 0; i < weeks * 7; i++) {
+        var d = new Date(start);
+        d.setDate(start.getDate() + i);
+        var cell = document.createElement('div');
+        cell.className = 'hm-cell';
+        if (d > today) {
+            cell.style.visibility = 'hidden';
+        } else if (counts.hasOwnProperty(key(d))) {
+            var c = counts[key(d)];
+            cell.classList.add('hm-l' + level(c));
+            cell.title = (c === 1 ? '1 set' : c + ' sets') + ' — ' + human(d);
+        } else {
+            cell.title = 'No workout — ' + human(d);
+        }
+        grid.appendChild(cell);
+    }
+
+    var months = document.getElementById('hm-months');
+    var prevMonth = -1;
+    for (var w = 0; w < weeks; w++) {
+        var wd = new Date(start);
+        wd.setDate(start.getDate() + w * 7);
+        var span = document.createElement('span');
+        if (wd.getMonth() !== prevMonth) {
+            span.textContent = MONTHS[wd.getMonth()];
+            prevMonth = wd.getMonth();
+        }
+        months.appendChild(span);
+    }
+
+    var n = (activity || []).length;
+    document.getElementById('heatmap-summary').textContent =
+        n + (n === 1 ? ' day' : ' days') + ' in the last year';
 })();
 </script>
 <script>if ('serviceWorker' in navigator) { navigator.serviceWorker.register('/sw.js').catch(console.error); }</script>

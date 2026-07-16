@@ -32,6 +32,10 @@ func (r *ormSessionRepository) GetRecentByUser(userID int64, limit int) ([]*Rece
 	return GetRecentSessionsByUser(userID, limit)
 }
 
+func (r *ormSessionRepository) GetDailyActivity(userID int64, days int) ([]DayActivity, error) {
+	return GetDailyActivity(userID, days)
+}
+
 func (r *ormSessionRepository) Delete(id, userID int64) error {
 	return DeleteSession(id, userID)
 }

@@ -38,6 +38,7 @@ type SessionRepository interface {
 	GetByID(id, userID int64) (*Session, error)
 	GetByProgram(programID int64) ([]*Session, error)
 	GetRecentByUser(userID int64, limit int) ([]*RecentSession, error)
+	GetDailyActivity(userID int64, days int) ([]DayActivity, error)
 	Delete(id, userID int64) error
 }
 
@@ -51,7 +52,8 @@ type ExerciseRepository interface {
 	Update(id, userID int64, name string, isBodyweight bool, goalWeight float64, weightUnit string, isTimeBased bool, goalSeconds int, goalRepMin int, goalRepMax int, defaultBlock string) (*Exercise, error)
 	UpdateGoalWeight(id, userID int64, goalWeight float64, weightUnit string) error
 	Delete(id, userID int64) error
-	GetHistory(userID int64, names []string, unit string) ([]ExerciseHistorySeries, error)
+	GetHistory(userID int64, names []string, unit string, days int) ([]ExerciseHistorySeries, error)
+	GetRecentNames(userID int64, days int) ([]string, error)
 }
 
 type BodyWeightRepository interface {

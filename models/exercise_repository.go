@@ -42,6 +42,10 @@ func (r *ormExerciseRepository) Delete(id, userID int64) error {
 	return DeleteExercise(id, userID)
 }
 
-func (r *ormExerciseRepository) GetHistory(userID int64, names []string, unit string) ([]ExerciseHistorySeries, error) {
-	return GetExerciseHistory(userID, names, unit)
+func (r *ormExerciseRepository) GetHistory(userID int64, names []string, unit string, days int) ([]ExerciseHistorySeries, error) {
+	return GetExerciseHistory(userID, names, unit, days)
+}
+
+func (r *ormExerciseRepository) GetRecentNames(userID int64, days int) ([]string, error) {
+	return GetRecentExerciseNames(userID, days)
 }

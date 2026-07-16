@@ -128,13 +128,14 @@ type mockPhaseRepo struct {
 }
 
 type mockSessionRepo struct {
-	CreateFn          func(programID, userID int64, phaseNumber, weekNumber, workoutNumber int, isDeload bool, date time.Time) (*models.Session, error)
-	CountByProgramFn  func(programID int64) (int, error)
-	LatestByProgramFn func(programID int64) (*models.Session, error)
-	GetByIDFn         func(id, userID int64) (*models.Session, error)
-	GetByProgramFn    func(programID int64) ([]*models.Session, error)
-	GetRecentByUserFn func(userID int64, limit int) ([]*models.RecentSession, error)
-	DeleteFn          func(id, userID int64) error
+	CreateFn           func(programID, userID int64, phaseNumber, weekNumber, workoutNumber int, isDeload bool, date time.Time) (*models.Session, error)
+	CountByProgramFn   func(programID int64) (int, error)
+	LatestByProgramFn  func(programID int64) (*models.Session, error)
+	GetByIDFn          func(id, userID int64) (*models.Session, error)
+	GetByProgramFn     func(programID int64) ([]*models.Session, error)
+	GetRecentByUserFn  func(userID int64, limit int) ([]*models.RecentSession, error)
+	GetDailyActivityFn func(userID int64, days int) ([]models.DayActivity, error)
+	DeleteFn           func(id, userID int64) error
 }
 
 func (m *mockSessionRepo) Create(programID, userID int64, phaseNumber, weekNumber, workoutNumber int, isDeload bool, date time.Time) (*models.Session, error) {
@@ -177,6 +178,13 @@ func (m *mockSessionRepo) GetRecentByUser(userID int64, limit int) ([]*models.Re
 		return m.GetRecentByUserFn(userID, limit)
 	}
 	return []*models.RecentSession{}, nil
+}
+
+func (m *mockSessionRepo) GetDailyActivity(userID int64, days int) ([]models.DayActivity, error) {
+	if m.GetDailyActivityFn != nil {
+		return m.GetDailyActivityFn(userID, days)
+	}
+	return []models.DayActivity{}, nil
 }
 
 func (m *mockSessionRepo) Delete(id, userID int64) error {
@@ -344,7 +352,8 @@ type mockExerciseRepo struct {
 	UpdateFn                  func(id, userID int64, name string, isBodyweight bool, goalWeight float64, weightUnit string, isTimeBased bool, goalSeconds int, goalRepMin int, goalRepMax int, defaultBlock string) (*models.Exercise, error)
 	UpdateGoalWeightFn        func(id, userID int64, goalWeight float64, weightUnit string) error
 	DeleteFn                  func(id, userID int64) error
-	GetHistoryFn              func(userID int64, names []string, unit string) ([]models.ExerciseHistorySeries, error)
+	GetHistoryFn              func(userID int64, names []string, unit string, days int) ([]models.ExerciseHistorySeries, error)
+	GetRecentNamesFn          func(userID int64, days int) ([]string, error)
 }
 
 func (m *mockExerciseRepo) Create(userID int64, name string, isBodyweight bool, goalWeight float64, weightUnit string, isTimeBased bool, goalSeconds int, goalRepMin int, goalRepMax int, defaultBlock string) (*models.Exercise, error) {
@@ -410,11 +419,18 @@ func (m *mockExerciseRepo) Delete(id, userID int64) error {
 	return nil
 }
 
-func (m *mockExerciseRepo) GetHistory(userID int64, names []string, unit string) ([]models.ExerciseHistorySeries, error) {
+func (m *mockExerciseRepo) GetHistory(userID int64, names []string, unit string, days int) ([]models.ExerciseHistorySeries, error) {
 	if m.GetHistoryFn != nil {
-		return m.GetHistoryFn(userID, names, unit)
+		return m.GetHistoryFn(userID, names, unit, days)
 	}
 	return []models.ExerciseHistorySeries{}, nil
+}
+
+func (m *mockExerciseRepo) GetRecentNames(userID int64, days int) ([]string, error) {
+	if m.GetRecentNamesFn != nil {
+		return m.GetRecentNamesFn(userID, days)
+	}
+	return []string{}, nil
 }
 
 type mockWorkoutTemplateRepo struct {
