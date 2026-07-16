@@ -89,6 +89,13 @@
 
     <div class="card mb-3">
         <div class="card-body">
+            <div class="d-flex flex-wrap gap-2 align-items-center mb-2">
+                <div style="position:relative;">
+                    <input type="text" id="template-search" class="form-control form-control-sm"
+                           placeholder="Load a template…" autocomplete="off" style="width:200px;">
+                </div>
+                <button type="button" id="clear-all" class="btn btn-sm btn-outline-secondary">Clear all</button>
+            </div>
             <div class="d-flex flex-wrap gap-2 align-items-center" id="chips-area">
                 <div style="position:relative;">
                     <input type="text" id="exercise-search" class="form-control form-control-sm"
@@ -115,6 +122,7 @@
 (function () {
     const exerciseNames = {{.UserExerciseNamesJSON}};
     const defaultNames = {{.DefaultExerciseNamesJSON}};
+    const templates = {{.TemplatesJSON}};
     let selected = [];
     let currentUnit = document.querySelector('input[name="unit_toggle"]:checked').value;
     const rangeSelect = document.getElementById('range-select');
@@ -131,6 +139,33 @@
         addExercise(name);
         searchInput.value = '';
     });
+
+    const templateInput = document.getElementById('template-search');
+    makeAutocomplete(templateInput, templates.map(function (t) { return t.name; }), function (name) {
+        loadTemplate(name);
+        templateInput.value = '';
+    });
+
+    document.getElementById('clear-all').addEventListener('click', clearAll);
+
+    function loadTemplate(name) {
+        const tpl = templates.find(function (t) { return t.name === name; });
+        if (!tpl) return;
+        // Replace the current selection with this template's exercises (de-duplicated).
+        selected = tpl.exercises.filter(function (n, i) { return tpl.exercises.indexOf(n) === i; });
+        renderChips();
+        if (selected.length > 0) {
+            fetchAndRender();
+        } else {
+            showEmpty();
+        }
+    }
+
+    function clearAll() {
+        selected = [];
+        renderChips();
+        showEmpty();
+    }
 
     document.querySelectorAll('input[name="unit_toggle"]').forEach(function (radio) {
         radio.addEventListener('change', function () {

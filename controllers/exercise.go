@@ -432,6 +432,7 @@ func (c *ExerciseController) History() {
 	c.Data["DefaultExerciseNamesJSON"] = recentExerciseNamesJSON(userID.(int64), historyDefaultDays)
 	c.Data["DefaultDays"] = historyDefaultDays
 	c.Data["HeatmapDataJSON"] = dailyActivityJSON(userID.(int64), historyHeatmapDays)
+	c.Data["TemplatesJSON"] = templateExercisesJSON()
 	c.TplName = "exercises/history.tpl"
 }
 
@@ -528,6 +529,37 @@ func recentExerciseNamesJSON(userID int64, days int) template.JS {
 		return "[]"
 	}
 	b, err := json.Marshal(names)
+	if err != nil {
+		return "[]"
+	}
+	return template.JS(b)
+}
+
+// templateExercisesJSON returns a JSON array of {name, exercises} for every workout
+// template, letting the history page load a template's exercises into the graph.
+// Safe for direct embedding in a <script> tag.
+func templateExercisesJSON() template.JS {
+	templates, err := Templates.GetAll()
+	if err != nil || len(templates) == 0 {
+		return "[]"
+	}
+	type tEntry struct {
+		Name      string   `json:"name"`
+		Exercises []string `json:"exercises"`
+	}
+	entries := make([]tEntry, 0, len(templates))
+	for _, t := range templates {
+		_, exs, err := Templates.GetByID(t.ID)
+		if err != nil {
+			continue
+		}
+		names := make([]string, 0, len(exs))
+		for _, e := range exs {
+			names = append(names, e.Name)
+		}
+		entries = append(entries, tEntry{Name: t.Name, Exercises: names})
+	}
+	b, err := json.Marshal(entries)
 	if err != nil {
 		return "[]"
 	}
