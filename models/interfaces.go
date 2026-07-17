@@ -21,6 +21,7 @@ type ProgramRepository interface {
 type PhaseRepository interface {
 	GetByProgram(programID int64) ([]*Phase, error)
 	UpdateRepRanges(programID int64, updates []PhaseUpdate) error
+	UpdateRestSeconds(programID int64, phaseNumber, restSeconds int) error
 }
 
 type TemplateRepository interface {

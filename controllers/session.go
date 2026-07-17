@@ -396,6 +396,62 @@ func (c *SessionController) Show() {
 	c.TplName = "sessions/show.tpl"
 }
 
+// UpdateRest persists a new default rest period for the session's phase so the
+// change made from the in-session rest-timer control sticks for future sessions.
+// Responds with JSON for the AJAX caller on the session page.
+func (c *SessionController) UpdateRest() {
+	userID := c.GetSession("user_id")
+	if userID == nil {
+		c.Ctx.Output.SetStatus(401)
+		c.Data["json"] = map[string]interface{}{"ok": false, "error": "not logged in"}
+		c.ServeJSON()
+		return
+	}
+
+	id, err := strconv.ParseInt(c.Ctx.Input.Param(":id"), 10, 64)
+	if err != nil {
+		c.Ctx.Output.SetStatus(400)
+		c.Data["json"] = map[string]interface{}{"ok": false, "error": "invalid session"}
+		c.ServeJSON()
+		return
+	}
+
+	restSeconds, err := strconv.Atoi(c.GetString("rest_seconds"))
+	if err != nil || restSeconds < 0 {
+		c.Ctx.Output.SetStatus(400)
+		c.Data["json"] = map[string]interface{}{"ok": false, "error": "invalid rest_seconds"}
+		c.ServeJSON()
+		return
+	}
+
+	session, err := Sessions.GetByID(id, userID.(int64))
+	if err != nil {
+		c.Ctx.Output.SetStatus(404)
+		c.Data["json"] = map[string]interface{}{"ok": false, "error": "session not found"}
+		c.ServeJSON()
+		return
+	}
+
+	// Confirm the session's program belongs to the user before touching its phase.
+	if _, err := Programs.GetByID(session.ProgramID, userID.(int64)); err != nil {
+		c.Ctx.Output.SetStatus(404)
+		c.Data["json"] = map[string]interface{}{"ok": false, "error": "program not found"}
+		c.ServeJSON()
+		return
+	}
+
+	if err := Phases.UpdateRestSeconds(session.ProgramID, session.PhaseNumber, restSeconds); err != nil {
+		logs.Error("SessionController.UpdateRest: UpdateRestSeconds: %v", err)
+		c.Ctx.Output.SetStatus(500)
+		c.Data["json"] = map[string]interface{}{"ok": false, "error": "could not save"}
+		c.ServeJSON()
+		return
+	}
+
+	c.Data["json"] = map[string]interface{}{"ok": true, "rest_seconds": restSeconds}
+	c.ServeJSON()
+}
+
 func (c *SessionController) AddExercise() {
 	userID := c.GetSession("user_id")
 	if userID == nil {

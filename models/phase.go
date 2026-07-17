@@ -69,3 +69,19 @@ func UpdatePhaseRepRanges(programID int64, updates []PhaseUpdate) error {
 	}
 	return nil
 }
+
+// UpdatePhaseRestSeconds updates only the rest period for a single phase,
+// leaving its rep ranges and set count untouched. It backs the in-session rest
+// timer control so the default wait time can be changed without editing the
+// whole phase form.
+func UpdatePhaseRestSeconds(programID int64, phaseNumber, restSeconds int) error {
+	if restSeconds < 0 {
+		return errors.New("rest_seconds cannot be negative")
+	}
+	o := orm.NewOrm()
+	_, err := o.QueryTable(&Phase{}).
+		Filter("ProgramID", programID).
+		Filter("PhaseNumber", phaseNumber).
+		Update(orm.Params{"rest_seconds": restSeconds})
+	return err
+}

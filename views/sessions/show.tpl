@@ -702,9 +702,29 @@ document.querySelectorAll('.sortable-block').forEach(function (container) {
     </div>
 </div>
 
+<!-- Floating rest-timer control -->
+<div id="rest-fab-wrap" style="position:fixed;right:16px;bottom:16px;z-index:1055;">
+    <div id="rest-panel" class="d-none card shadow" style="position:absolute;right:0;bottom:66px;width:230px;">
+        <div class="card-body p-3">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+                <span class="text-secondary small">Rest length</span>
+                <span id="rest-save-status" class="text-success small"></span>
+            </div>
+            <div class="d-flex align-items-center justify-content-between mb-3">
+                <button type="button" id="rest-minus" class="btn btn-outline-secondary btn-sm px-2" aria-label="Decrease rest">&minus;15s</button>
+                <span id="rest-default-display" class="fw-bold font-monospace" style="font-size:1.4rem;">0:00</span>
+                <button type="button" id="rest-plus" class="btn btn-outline-secondary btn-sm px-2" aria-label="Increase rest">+15s</button>
+            </div>
+            <button type="button" id="rest-start" class="btn btn-primary btn-sm w-100">Start rest</button>
+        </div>
+    </div>
+    <button type="button" id="rest-fab" class="btn btn-primary rounded-circle shadow d-flex align-items-center justify-content-center"
+            style="width:56px;height:56px;font-size:1.5rem;line-height:1;" aria-label="Rest timer" aria-expanded="false">&#9201;</button>
+</div>
+
 <script>
 (function () {
-    const PHASE_REST = {{.PhaseRestSeconds}};
+    let   restDefault = {{.PhaseRestSeconds}};
     const SID        = '{{.Session.ID}}';
     const KEY_START  = 'restTimer_' + SID + '_start';
     const KEY_DUR    = 'restTimer_' + SID + '_dur';
@@ -791,11 +811,14 @@ document.querySelectorAll('.sortable-block').forEach(function (container) {
     }
 
     const mainEl = document.querySelector('main');
+    const fabWrap = document.getElementById('rest-fab-wrap');
 
     function show(startMs, durationSecs) {
         if (interval) clearInterval(interval);
         notified = false;
         timerEl.classList.remove('d-none');
+        // Hide the floating control while the timer bar is up so they don't overlap.
+        if (fabWrap) fabWrap.classList.add('d-none');
         if (mainEl) mainEl.style.paddingBottom = timerEl.offsetHeight + 'px';
         tick(startMs, durationSecs);
         interval = setInterval(function () { tick(startMs, durationSecs); }, 500);
@@ -806,6 +829,7 @@ document.querySelectorAll('.sortable-block').forEach(function (container) {
         localStorage.removeItem(KEY_START);
         localStorage.removeItem(KEY_DUR);
         timerEl.classList.add('d-none');
+        if (fabWrap) fabWrap.classList.remove('d-none');
         if (mainEl) mainEl.style.paddingBottom = '';
         // Dismiss any pending rest-timer notification.
         if (navigator.serviceWorker && navigator.serviceWorker.controller) {
@@ -831,7 +855,7 @@ document.querySelectorAll('.sortable-block').forEach(function (container) {
     }
 
     window.startRestTimer = function () {
-        if (PHASE_REST <= 0) return;
+        if (restDefault <= 0) return;
         // Unlock audio and request notification permission on the first user gesture.
         unlockAudio();
         if ('Notification' in window && Notification.permission === 'default') {
@@ -839,9 +863,73 @@ document.querySelectorAll('.sortable-block').forEach(function (container) {
         }
         const now = Date.now();
         localStorage.setItem(KEY_START, now.toString());
-        localStorage.setItem(KEY_DUR, PHASE_REST.toString());
-        show(now, PHASE_REST);
+        localStorage.setItem(KEY_DUR, restDefault.toString());
+        show(now, restDefault);
     };
+
+    // ---- Floating control: start the timer and edit the default rest length ----
+    const fab          = document.getElementById('rest-fab');
+    const panel        = document.getElementById('rest-panel');
+    const defaultDisp  = document.getElementById('rest-default-display');
+    const minusBtn     = document.getElementById('rest-minus');
+    const plusBtn      = document.getElementById('rest-plus');
+    const startBtn     = document.getElementById('rest-start');
+    const saveStatus   = document.getElementById('rest-save-status');
+    const STEP         = 15;
+    const MAX_REST     = 60 * 60; // one hour ceiling
+    let   saveTimer    = null;
+
+    function renderDefault() {
+        defaultDisp.textContent = fmt(restDefault);
+    }
+    renderDefault();
+
+    function togglePanel(open) {
+        const willOpen = open === undefined ? panel.classList.contains('d-none') : open;
+        panel.classList.toggle('d-none', !willOpen);
+        fab.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+    }
+
+    fab.addEventListener('click', function () {
+        // Unlock audio on this gesture so a later Start works on iOS.
+        unlockAudio();
+        togglePanel();
+    });
+
+    // Persist the new default to the phase, debounced so rapid taps send one request.
+    function saveDefault() {
+        if (saveTimer) clearTimeout(saveTimer);
+        saveStatus.textContent = '…';
+        saveTimer = setTimeout(function () {
+            const body = new URLSearchParams({ rest_seconds: String(restDefault) });
+            fetch('/sessions/' + SID + '/rest', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: body.toString(),
+            }).then(function (res) {
+                return res.ok ? res.json() : Promise.reject();
+            }).then(function () {
+                saveStatus.textContent = 'Saved';
+                setTimeout(function () { saveStatus.textContent = ''; }, 1500);
+            }).catch(function () {
+                saveStatus.textContent = 'Not saved';
+            });
+        }, 800);
+    }
+
+    function adjust(delta) {
+        restDefault = Math.max(0, Math.min(MAX_REST, restDefault + delta));
+        renderDefault();
+        saveDefault();
+    }
+
+    minusBtn.addEventListener('click', function () { adjust(-STEP); });
+    plusBtn.addEventListener('click', function () { adjust(STEP); });
+
+    startBtn.addEventListener('click', function () {
+        togglePanel(false);
+        window.startRestTimer();
+    });
 })();
 </script>
 <!-- goal modal scripts are in their respective partials -->

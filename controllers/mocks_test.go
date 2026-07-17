@@ -123,8 +123,9 @@ func (m *mockProgramRepo) Delete(id, userID int64) error {
 }
 
 type mockPhaseRepo struct {
-	GetByProgramFn    func(programID int64) ([]*models.Phase, error)
-	UpdateRepRangesFn func(programID int64, updates []models.PhaseUpdate) error
+	GetByProgramFn      func(programID int64) ([]*models.Phase, error)
+	UpdateRepRangesFn   func(programID int64, updates []models.PhaseUpdate) error
+	UpdateRestSecondsFn func(programID int64, phaseNumber, restSeconds int) error
 }
 
 type mockSessionRepo struct {
@@ -247,6 +248,13 @@ func (m *mockPhaseRepo) GetByProgram(programID int64) ([]*models.Phase, error) {
 func (m *mockPhaseRepo) UpdateRepRanges(programID int64, updates []models.PhaseUpdate) error {
 	if m.UpdateRepRangesFn != nil {
 		return m.UpdateRepRangesFn(programID, updates)
+	}
+	return nil
+}
+
+func (m *mockPhaseRepo) UpdateRestSeconds(programID int64, phaseNumber, restSeconds int) error {
+	if m.UpdateRestSecondsFn != nil {
+		return m.UpdateRestSecondsFn(programID, phaseNumber, restSeconds)
 	}
 	return nil
 }

@@ -13,3 +13,7 @@ func (r *ormPhaseRepository) GetByProgram(programID int64) ([]*Phase, error) {
 func (r *ormPhaseRepository) UpdateRepRanges(programID int64, updates []PhaseUpdate) error {
 	return UpdatePhaseRepRanges(programID, updates)
 }
+
+func (r *ormPhaseRepository) UpdateRestSeconds(programID int64, phaseNumber, restSeconds int) error {
+	return UpdatePhaseRestSeconds(programID, phaseNumber, restSeconds)
+}
