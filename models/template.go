@@ -148,6 +148,7 @@ func UpdateTemplate(id int64, name, focus string, exercises []TemplateExerciseIn
 			TemplateID:   id,
 			Name:         ex.Name,
 			IsBodyweight: ex.IsBodyweight,
+			IsTimeBased:  ex.IsTimeBased,
 			Block:        ex.Block,
 			SortOrder:    ex.SortOrder,
 		}
