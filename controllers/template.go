@@ -67,6 +67,28 @@ type TemplateController struct {
 	beego.Controller
 }
 
+// newFormChrome and editFormChrome supply the handful of values that differ
+// between the create and edit renderings of partials/template_form.tpl. Each is
+// called from both of its page's render paths — the initial GET and the
+// validation-error re-render — because a c.Data key missed on one of them
+// renders as an empty string rather than an error.
+func (c *TemplateController) newFormChrome() {
+	c.Data["BackURL"] = "/templates"
+	c.Data["BackLabel"] = "Templates"
+	c.Data["Heading"] = "New Workout Template"
+	c.Data["FormAction"] = "/templates/new"
+	c.Data["SubmitLabel"] = "Create Template"
+}
+
+func (c *TemplateController) editFormChrome(tmpl *models.Template) {
+	showURL := fmt.Sprintf("/templates/%d", tmpl.ID)
+	c.Data["BackURL"] = showURL
+	c.Data["BackLabel"] = tmpl.Name
+	c.Data["Heading"] = "Edit Template"
+	c.Data["FormAction"] = showURL
+	c.Data["SubmitLabel"] = "Save Changes"
+}
+
 // exerciseForm is a view-model for re-rendering exercise rows on validation error.
 type exerciseForm struct {
 	Name         string
@@ -110,6 +132,7 @@ func (c *TemplateController) New() {
 	c.Data["ActivePage"] = "templates"
 	c.Data["Exercises"] = []exerciseForm{{Block: "main"}}
 	c.Data["ExerciseLibraryJSON"] = exerciseLibraryJSON(userID.(int64))
+	c.newFormChrome()
 	c.TplName = "templates/new.tpl"
 }
 
@@ -153,6 +176,7 @@ func (c *TemplateController) Create() {
 		c.Data["Focus"] = focus
 		c.Data["Exercises"] = forms
 		c.Data["ExerciseLibraryJSON"] = exerciseLibraryJSON(userID.(int64))
+		c.newFormChrome()
 		c.TplName = "templates/new.tpl"
 	}
 
@@ -230,6 +254,7 @@ func (c *TemplateController) Edit() {
 	c.Data["Focus"] = tmpl.Focus
 	c.Data["Exercises"] = exercisesToForms(exercises)
 	c.Data["ExerciseLibraryJSON"] = exerciseLibraryJSON(userID.(int64))
+	c.editFormChrome(tmpl)
 	c.TplName = "templates/edit.tpl"
 }
 
@@ -286,6 +311,7 @@ func (c *TemplateController) Update() {
 		c.Data["Focus"] = focus
 		c.Data["Exercises"] = forms
 		c.Data["ExerciseLibraryJSON"] = exerciseLibraryJSON(userID.(int64))
+		c.editFormChrome(tmpl)
 		c.TplName = "templates/edit.tpl"
 	}
 

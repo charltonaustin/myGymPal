@@ -845,6 +845,32 @@ func setTemplateCreateError(err error) {
 	}
 }
 
+// lastTemplateUpdate holds args captured by captureTemplateUpdate.
+var lastTemplateUpdate struct {
+	id        int64
+	name      string
+	focus     string
+	exercises []models.TemplateExerciseInput
+}
+
+// captureTemplateUpdate makes UpdateFn capture the call args and return a valid template.
+func captureTemplateUpdate() {
+	mockTemplates.UpdateFn = func(id int64, name, focus string, exercises []models.TemplateExerciseInput) (*models.Template, error) {
+		lastTemplateUpdate.id = id
+		lastTemplateUpdate.name = name
+		lastTemplateUpdate.focus = focus
+		lastTemplateUpdate.exercises = exercises
+		return &models.Template{ID: id, Name: name, Focus: focus}, nil
+	}
+}
+
+// setTemplateUpdateError makes UpdateFn return an error.
+func setTemplateUpdateError(err error) {
+	mockTemplates.UpdateFn = func(id int64, name, focus string, exercises []models.TemplateExerciseInput) (*models.Template, error) {
+		return nil, err
+	}
+}
+
 // --- SessionExercise mock helpers ---
 
 // lastLogSet holds args captured by captureLogSet.

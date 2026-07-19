@@ -55,6 +55,8 @@ func TestTemplatesNew_ShowsForm(t *testing.T) {
 	assert.Equal(t, http.StatusOK, w.Code)
 	body := w.Body.String()
 	assert.Contains(t, body, "New Workout Template")
+	assert.Contains(t, body, "Create Template")
+	assert.Contains(t, body, `action="/templates/new"`)
 	assert.Contains(t, body, `name="name"`)
 	assert.Contains(t, body, `name="focus"`)
 	assert.Contains(t, body, `name="exercise_name_0"`)
@@ -152,6 +154,119 @@ func TestTemplatesCreate_ReentersFormValues(t *testing.T) {
 	body := w.Body.String()
 	assert.Contains(t, body, "Sticky Template")
 	assert.Contains(t, body, "Squat")
+	// The error path renders through the shared form partial too, so it needs
+	// the same chrome keys as the initial GET.
+	assert.Contains(t, body, "Create Template")
+	assert.Contains(t, body, `action="/templates/new"`)
+}
+
+// --- Edit template form ---
+
+func TestTemplatesEdit_Unauthenticated(t *testing.T) {
+	w := getPath("/templates/10/edit", nil)
+	assert.Equal(t, http.StatusFound, w.Code)
+	assert.Equal(t, "/login", w.Header().Get("Location"))
+}
+
+func TestTemplatesEdit_NotFound(t *testing.T) {
+	t.Cleanup(resetMocks)
+	setTemplateGetByIDError(errors.New("not found"))
+	cookies := loginAs(t, "tmpl_edit_404", "lb")
+
+	w := getPath("/templates/10/edit", cookies)
+	assert.Equal(t, http.StatusFound, w.Code)
+	assert.Equal(t, "/templates", w.Header().Get("Location"))
+}
+
+func TestTemplatesEdit_ShowsPrefilledForm(t *testing.T) {
+	t.Cleanup(resetMocks)
+	setTemplateGetByID(testTemplateID, "Upper Body A", "Chest", 2)
+	cookies := loginAs(t, "tmpl_edit_form", "lb")
+
+	w := getPath("/templates/10/edit", cookies)
+	assert.Equal(t, http.StatusOK, w.Code)
+	body := w.Body.String()
+	assert.Contains(t, body, "Edit Template")
+	assert.Contains(t, body, "Save Changes")
+	assert.Contains(t, body, fmt.Sprintf(`action="/templates/%d"`, testTemplateID))
+	assert.Contains(t, body, `value="Upper Body A"`)
+	assert.Contains(t, body, `value="Chest"`)
+	assert.Contains(t, body, `name="exercise_name_1"`)
+}
+
+// --- Update template ---
+
+func TestTemplatesUpdate_Unauthenticated(t *testing.T) {
+	w := postForm("/templates/10", url.Values{"name": {"Test"}}, nil)
+	assert.Equal(t, http.StatusFound, w.Code)
+	assert.Equal(t, "/login", w.Header().Get("Location"))
+}
+
+func TestTemplatesUpdate_Success(t *testing.T) {
+	t.Cleanup(resetMocks)
+	setTemplateGetByID(testTemplateID, "Upper Body A", "Chest", 1)
+	captureTemplateUpdate()
+	cookies := loginAs(t, "tmpl_update_ok", "lb")
+
+	w := postForm("/templates/10", url.Values{
+		"name":            {"Upper Body B"},
+		"focus":           {"Back"},
+		"exercise_count":  {"2"},
+		"exercise_name_0": {"Plank"},
+		"is_time_based_0": {"on"},
+		"exercise_name_1": {"Bench Press"},
+		"block_1":         {"main"},
+	}, cookies)
+
+	assert.Equal(t, http.StatusFound, w.Code)
+	assert.Equal(t, fmt.Sprintf("/templates/%d", testTemplateID), w.Header().Get("Location"))
+	assert.Equal(t, "Upper Body B", lastTemplateUpdate.name)
+	assert.Equal(t, "Back", lastTemplateUpdate.focus)
+
+	// The time-based flag must survive the trip through the controller as well
+	// as the model — the form posts it, so the repository must receive it.
+	assert.Len(t, lastTemplateUpdate.exercises, 2)
+	assert.True(t, lastTemplateUpdate.exercises[0].IsTimeBased)
+	assert.False(t, lastTemplateUpdate.exercises[1].IsTimeBased)
+}
+
+func TestTemplatesUpdate_EmptyName(t *testing.T) {
+	t.Cleanup(resetMocks)
+	setTemplateGetByID(testTemplateID, "Upper Body A", "Chest", 1)
+	cookies := loginAs(t, "tmpl_update_noname", "lb")
+
+	w := postForm("/templates/10", url.Values{
+		"name":            {""},
+		"exercise_count":  {"1"},
+		"exercise_name_0": {"Bench Press"},
+	}, cookies)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	body := w.Body.String()
+	assert.Contains(t, body, "required")
+	// Same chrome check as the create error path: a c.Data key missed here
+	// renders an empty submit button instead of failing.
+	assert.Contains(t, body, "Save Changes")
+	assert.Contains(t, body, fmt.Sprintf(`action="/templates/%d"`, testTemplateID))
+	assert.Contains(t, body, "Bench Press")
+}
+
+func TestTemplatesUpdate_RepositoryError(t *testing.T) {
+	t.Cleanup(resetMocks)
+	setTemplateGetByID(testTemplateID, "Upper Body A", "Chest", 1)
+	setTemplateUpdateError(errors.New("exercise name is required"))
+	cookies := loginAs(t, "tmpl_update_err", "lb")
+
+	w := postForm("/templates/10", url.Values{
+		"name":            {"Upper Body A"},
+		"exercise_count":  {"1"},
+		"exercise_name_0": {"Bench Press"},
+	}, cookies)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	body := w.Body.String()
+	assert.Contains(t, body, "exercise name is required")
+	assert.Contains(t, body, "Save Changes")
 }
 
 // --- Template show ---
