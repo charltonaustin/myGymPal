@@ -715,10 +715,10 @@ document.querySelectorAll('.sortable-block').forEach(function (container) {
                 <span id="rest-default-display" class="fw-bold font-monospace" style="font-size:1.4rem;">0:00</span>
                 <button type="button" id="rest-plus" class="btn btn-outline-secondary btn-sm px-2" aria-label="Increase rest">+15s</button>
             </div>
-            <button type="button" id="rest-start" class="btn btn-primary btn-sm w-100">Start rest</button>
+            <button type="button" id="rest-start" class="btn btn-outline-secondary btn-sm w-100">Start rest</button>
         </div>
     </div>
-    <button type="button" id="rest-fab" class="btn btn-primary rounded-circle shadow d-flex align-items-center justify-content-center"
+    <button type="button" id="rest-fab" class="btn btn-outline-secondary rounded-circle shadow d-flex align-items-center justify-content-center"
             style="width:56px;height:56px;font-size:1.5rem;line-height:1;" aria-label="Rest timer" aria-expanded="false">&#9201;</button>
 </div>
 
