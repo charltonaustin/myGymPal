@@ -156,6 +156,7 @@ func (c *TemplateController) Create() {
 			IsTimeBased:  isTimeBased,
 			Block:        block,
 			SortOrder:    len(inputs),
+			CircuitIndex: models.NoCircuit,
 		})
 	}
 
@@ -176,7 +177,7 @@ func (c *TemplateController) Create() {
 		return
 	}
 
-	tmpl, err := Templates.Create(name, focus, inputs)
+	tmpl, err := Templates.Create(name, focus, nil, inputs)
 	if err != nil {
 		renderForm(err.Error())
 		return
@@ -290,6 +291,7 @@ func (c *TemplateController) Update() {
 			IsTimeBased:  isTimeBased,
 			Block:        block,
 			SortOrder:    len(inputs),
+			CircuitIndex: models.NoCircuit,
 		})
 	}
 
@@ -311,7 +313,7 @@ func (c *TemplateController) Update() {
 		return
 	}
 
-	if _, err := Templates.Update(id, name, focus, inputs); err != nil {
+	if _, err := Templates.Update(id, name, focus, nil, inputs); err != nil {
 		renderForm(err.Error())
 		return
 	}

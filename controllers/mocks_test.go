@@ -196,18 +196,26 @@ func (m *mockSessionRepo) Delete(id, userID int64) error {
 }
 
 type mockTemplateRepo struct {
-	CreateFn  func(name, focus string, exercises []models.TemplateExerciseInput) (*models.Template, error)
-	UpdateFn  func(id int64, name, focus string, exercises []models.TemplateExerciseInput) (*models.Template, error)
-	GetAllFn  func() ([]*models.Template, error)
-	GetByIDFn func(id int64) (*models.Template, []*models.TemplateExercise, error)
-	DeleteFn  func(id int64) error
+	CreateFn      func(name, focus string, circuits []models.TemplateCircuitInput, exercises []models.TemplateExerciseInput) (*models.Template, error)
+	UpdateFn      func(id int64, name, focus string, circuits []models.TemplateCircuitInput, exercises []models.TemplateExerciseInput) (*models.Template, error)
+	GetAllFn      func() ([]*models.Template, error)
+	GetByIDFn     func(id int64) (*models.Template, []*models.TemplateExercise, error)
+	GetCircuitsFn func(templateID int64) ([]*models.TemplateCircuit, error)
+	DeleteFn      func(id int64) error
 }
 
-func (m *mockTemplateRepo) Create(name, focus string, exercises []models.TemplateExerciseInput) (*models.Template, error) {
+func (m *mockTemplateRepo) Create(name, focus string, circuits []models.TemplateCircuitInput, exercises []models.TemplateExerciseInput) (*models.Template, error) {
 	if m.CreateFn != nil {
-		return m.CreateFn(name, focus, exercises)
+		return m.CreateFn(name, focus, circuits, exercises)
 	}
 	return &models.Template{ID: testTemplateID, Name: name, Focus: focus}, nil
+}
+
+func (m *mockTemplateRepo) GetCircuits(templateID int64) ([]*models.TemplateCircuit, error) {
+	if m.GetCircuitsFn != nil {
+		return m.GetCircuitsFn(templateID)
+	}
+	return nil, nil
 }
 
 func (m *mockTemplateRepo) GetAll() ([]*models.Template, error) {
@@ -224,9 +232,9 @@ func (m *mockTemplateRepo) GetByID(id int64) (*models.Template, []*models.Templa
 	return nil, nil, errors.New("not found")
 }
 
-func (m *mockTemplateRepo) Update(id int64, name, focus string, exercises []models.TemplateExerciseInput) (*models.Template, error) {
+func (m *mockTemplateRepo) Update(id int64, name, focus string, circuits []models.TemplateCircuitInput, exercises []models.TemplateExerciseInput) (*models.Template, error) {
 	if m.UpdateFn != nil {
-		return m.UpdateFn(id, name, focus, exercises)
+		return m.UpdateFn(id, name, focus, circuits, exercises)
 	}
 	return &models.Template{ID: id, Name: name, Focus: focus}, nil
 }
@@ -556,6 +564,8 @@ func resetMocks() {
 		name         string
 		focus        string
 		numExercises int
+		circuits     []models.TemplateCircuitInput
+		exercises    []models.TemplateExerciseInput
 	}{}
 	lastSessionCreate = struct {
 		phaseNumber   int
@@ -821,26 +831,45 @@ func setTemplateGetByID(id int64, name, focus string, numExercises int) {
 	}
 }
 
+// setTemplateGetCircuits makes GetCircuits return the given circuits.
+func setTemplateGetCircuits(circuits ...*models.TemplateCircuit) {
+	mockTemplates.GetCircuitsFn = func(_ int64) ([]*models.TemplateCircuit, error) {
+		return circuits, nil
+	}
+}
+
+// setTemplateGetByIDExercises makes GetByID return a template with exactly the
+// given exercise rows, so a test can control circuit_id and work_seconds.
+func setTemplateGetByIDExercises(id int64, name, focus string, exercises ...*models.TemplateExercise) {
+	mockTemplates.GetByIDFn = func(_ int64) (*models.Template, []*models.TemplateExercise, error) {
+		return &models.Template{ID: id, Name: name, Focus: focus}, exercises, nil
+	}
+}
+
 // lastTemplateCreate holds args captured by captureTemplateCreate.
 var lastTemplateCreate struct {
 	name         string
 	focus        string
 	numExercises int
+	circuits     []models.TemplateCircuitInput
+	exercises    []models.TemplateExerciseInput
 }
 
 // captureTemplateCreate makes CreateFn capture the call args and return a valid template.
 func captureTemplateCreate() {
-	mockTemplates.CreateFn = func(name, focus string, exercises []models.TemplateExerciseInput) (*models.Template, error) {
+	mockTemplates.CreateFn = func(name, focus string, circuits []models.TemplateCircuitInput, exercises []models.TemplateExerciseInput) (*models.Template, error) {
 		lastTemplateCreate.name = name
 		lastTemplateCreate.focus = focus
 		lastTemplateCreate.numExercises = len(exercises)
+		lastTemplateCreate.circuits = circuits
+		lastTemplateCreate.exercises = exercises
 		return &models.Template{ID: testTemplateID, Name: name, Focus: focus}, nil
 	}
 }
 
 // setTemplateCreateError makes CreateFn return an error.
 func setTemplateCreateError(err error) {
-	mockTemplates.CreateFn = func(name, focus string, exercises []models.TemplateExerciseInput) (*models.Template, error) {
+	mockTemplates.CreateFn = func(name, focus string, circuits []models.TemplateCircuitInput, exercises []models.TemplateExerciseInput) (*models.Template, error) {
 		return nil, err
 	}
 }
@@ -850,15 +879,17 @@ var lastTemplateUpdate struct {
 	id        int64
 	name      string
 	focus     string
+	circuits  []models.TemplateCircuitInput
 	exercises []models.TemplateExerciseInput
 }
 
 // captureTemplateUpdate makes UpdateFn capture the call args and return a valid template.
 func captureTemplateUpdate() {
-	mockTemplates.UpdateFn = func(id int64, name, focus string, exercises []models.TemplateExerciseInput) (*models.Template, error) {
+	mockTemplates.UpdateFn = func(id int64, name, focus string, circuits []models.TemplateCircuitInput, exercises []models.TemplateExerciseInput) (*models.Template, error) {
 		lastTemplateUpdate.id = id
 		lastTemplateUpdate.name = name
 		lastTemplateUpdate.focus = focus
+		lastTemplateUpdate.circuits = circuits
 		lastTemplateUpdate.exercises = exercises
 		return &models.Template{ID: id, Name: name, Focus: focus}, nil
 	}
@@ -866,7 +897,7 @@ func captureTemplateUpdate() {
 
 // setTemplateUpdateError makes UpdateFn return an error.
 func setTemplateUpdateError(err error) {
-	mockTemplates.UpdateFn = func(id int64, name, focus string, exercises []models.TemplateExerciseInput) (*models.Template, error) {
+	mockTemplates.UpdateFn = func(id int64, name, focus string, circuits []models.TemplateCircuitInput, exercises []models.TemplateExerciseInput) (*models.Template, error) {
 		return nil, err
 	}
 }

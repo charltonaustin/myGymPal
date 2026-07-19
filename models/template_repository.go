@@ -6,8 +6,8 @@ func NewTemplateRepository() TemplateRepository {
 	return &ormTemplateRepository{}
 }
 
-func (r *ormTemplateRepository) Create(name, focus string, exercises []TemplateExerciseInput) (*Template, error) {
-	return CreateTemplate(name, focus, exercises)
+func (r *ormTemplateRepository) Create(name, focus string, circuits []TemplateCircuitInput, exercises []TemplateExerciseInput) (*Template, error) {
+	return CreateTemplate(name, focus, circuits, exercises)
 }
 
 func (r *ormTemplateRepository) GetAll() ([]*Template, error) {
@@ -18,8 +18,12 @@ func (r *ormTemplateRepository) GetByID(id int64) (*Template, []*TemplateExercis
 	return GetTemplateByID(id)
 }
 
-func (r *ormTemplateRepository) Update(id int64, name, focus string, exercises []TemplateExerciseInput) (*Template, error) {
-	return UpdateTemplate(id, name, focus, exercises)
+func (r *ormTemplateRepository) GetCircuits(templateID int64) ([]*TemplateCircuit, error) {
+	return GetTemplateCircuits(templateID)
+}
+
+func (r *ormTemplateRepository) Update(id int64, name, focus string, circuits []TemplateCircuitInput, exercises []TemplateExerciseInput) (*Template, error) {
+	return UpdateTemplate(id, name, focus, circuits, exercises)
 }
 
 func (r *ormTemplateRepository) Delete(id int64) error {
