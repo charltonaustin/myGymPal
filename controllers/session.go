@@ -670,7 +670,7 @@ func (c *SessionController) AddExercise() {
 	goalS, _ := strconv.Atoi(c.GetString("goal_s"))
 	goalSeconds := goalH*3600 + goalM*60 + goalS
 
-	block := validBlock(c.GetString("block"))
+	block := models.ValidBlock(c.GetString("block"))
 	goalReps := 0
 	if libEx, err := Exercises.GetByName(userID.(int64), name); err == nil {
 		if libEx.GoalRepMin > 0 {

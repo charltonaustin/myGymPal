@@ -41,15 +41,6 @@ func groupTemplateExercises(exercises []*models.TemplateExercise) []templateExer
 	return blocks
 }
 
-func validBlock(b string) string {
-	switch b {
-	case "abs", "cardio", "stretch":
-		return b
-	default:
-		return "main"
-	}
-}
-
 func exercisesToForms(exercises []*models.TemplateExercise) []exerciseForm {
 	forms := make([]exerciseForm, len(exercises))
 	for i, ex := range exercises {
@@ -157,7 +148,7 @@ func (c *TemplateController) Create() {
 		}
 		isBodyweight := c.GetString(fmt.Sprintf("is_bodyweight_%d", i)) != ""
 		isTimeBased := c.GetString(fmt.Sprintf("is_time_based_%d", i)) != ""
-		block := validBlock(c.GetString(fmt.Sprintf("block_%d", i)))
+		block := models.ValidBlock(c.GetString(fmt.Sprintf("block_%d", i)))
 		forms = append(forms, exerciseForm{Name: exName, IsBodyweight: isBodyweight, IsTimeBased: isTimeBased, Block: block})
 		inputs = append(inputs, models.TemplateExerciseInput{
 			Name:         exName,
@@ -291,7 +282,7 @@ func (c *TemplateController) Update() {
 		}
 		isBodyweight := c.GetString(fmt.Sprintf("is_bodyweight_%d", i)) != ""
 		isTimeBased := c.GetString(fmt.Sprintf("is_time_based_%d", i)) != ""
-		block := validBlock(c.GetString(fmt.Sprintf("block_%d", i)))
+		block := models.ValidBlock(c.GetString(fmt.Sprintf("block_%d", i)))
 		forms = append(forms, exerciseForm{Name: exName, IsBodyweight: isBodyweight, IsTimeBased: isTimeBased, Block: block})
 		inputs = append(inputs, models.TemplateExerciseInput{
 			Name:         exName,

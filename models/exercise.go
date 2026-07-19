@@ -57,7 +57,9 @@ func init() {
 	orm.RegisterModel(&exerciseGlobal{}, &userExerciseGoal{})
 }
 
-func validDefaultBlock(b string) string {
+// ValidBlock coerces an untrusted block name to one of the four known sections,
+// falling back to "main". Callers pass raw form input straight into it.
+func ValidBlock(b string) string {
 	switch b {
 	case "abs", "cardio", "stretch":
 		return b
@@ -142,7 +144,7 @@ func CreateExercise(userID int64, name string, isBodyweight bool, goalWeight flo
 		return nil, err
 	}
 
-	if err := upsertUserGoal(userID, exerciseID, isBodyweight, goalWeight, weightUnit, isTimeBased, goalSeconds, goalRepMin, goalRepMax, validDefaultBlock(defaultBlock)); err != nil {
+	if err := upsertUserGoal(userID, exerciseID, isBodyweight, goalWeight, weightUnit, isTimeBased, goalSeconds, goalRepMin, goalRepMax, ValidBlock(defaultBlock)); err != nil {
 		return nil, err
 	}
 
@@ -212,7 +214,7 @@ func UpdateExercise(id, userID int64, name string, isBodyweight bool, goalWeight
 		return nil, err
 	}
 
-	if err := upsertUserGoal(userID, id, isBodyweight, goalWeight, weightUnit, isTimeBased, goalSeconds, goalRepMin, goalRepMax, validDefaultBlock(defaultBlock)); err != nil {
+	if err := upsertUserGoal(userID, id, isBodyweight, goalWeight, weightUnit, isTimeBased, goalSeconds, goalRepMin, goalRepMax, ValidBlock(defaultBlock)); err != nil {
 		return nil, err
 	}
 
