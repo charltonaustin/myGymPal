@@ -18,5 +18,6 @@ Routes are organized into seven groups: PWA assets (`/sw.js`, `/manifest.json`, 
 `/register`, `/login`, `/logout`), app pages (`/dashboard`, `/settings`, `/account/delete`, `/error`), programs,
 sessions, macros, weight, exercises, and templates. URL parameters use Beego's `:id` / `:eid` / `:sid` / `:lid` syntax.
 
-The `init()` function registers four custom template functions: `isDev` (reads the `env` config key), `fmtDuration` (
-formats seconds as `m:ss` or `h:mm:ss`), `restMinutes`, and `restSecs`.
+The `init()` function registers five custom template functions: `isDev` (reads the `env` config key), `fmtDuration` (
+formats seconds as `m:ss` or `h:mm:ss`), `add` (integer addition, used to detect the last exercise of a block when
+deciding whether to render the superset chain button), `restMinutes`, and `restSecs`.

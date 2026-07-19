@@ -26,7 +26,7 @@ adjust goal weights/reps/seconds via modals, and tracks rest time between sets.
 | `.Session`                      | Session struct    | `.ID`, `.WorkoutNumber`, `.PhaseNumber`, `.WeekNumber`, `.Date`, `.IsDeload`                                                               |
 | `.Program`                      | Program struct    | `.ID`, `.Name`                                                                                                                             |
 | `.ExerciseBlocks`               | `[]ExerciseBlock` | Each block: `.Block` (string: main/abs/cardio/stretch), `.Label`, `.Exercises`                                                             |
-| `.ExerciseBlocks[].Exercises[]` | ExerciseEntry     | `.Exercise` (name, ID, goal fields, IsTimeBased, IsBodyweight), `.Sets`, `.LastSet`, `.HitMax`, `.BelowGoal`, `.GoalRepMin`, `.GoalRepMax` |
+| `.ExerciseBlocks[].Exercises[]` | ExerciseEntry     | `.Exercise` (name, ID, goal fields, IsTimeBased, IsBodyweight, LinkedToNext), `.Sets`, `.LastSet`, `.HitMax`, `.BelowGoal`, `.GoalRepMin`, `.GoalRepMax`, `.SupersetLinked`, `.SupersetLabel` |
 | `.PhaseRestSeconds`             | int               | Rest timer duration; 0 means timer disabled                                                                                                |
 | `.PhaseRepMin` / `.PhaseRepMax` | int               | Phase-level rep targets shown as goal hint                                                                                                 |
 | `.WeightUnit`                   | string            | `"lb"` or `"kg"`; user's global preference — drives the global toggle default; each exercise renders in its own `exercises.weight_unit`    |
@@ -41,6 +41,7 @@ adjust goal weights/reps/seconds via modals, and tracks rest time between sets.
 | POST   | `/sessions/:id/exercises/reorder`                  | SortableJS `onEnd`      | `ids=comma-separated-exIds`                                                                          |
 | POST   | `/sessions/:id/exercises/:eid/unit`                | Per-exercise unit toggle | `weight_unit=lb\|kg`                                                                                |
 | POST   | `/sessions/:id/exercises/:eid/change`              | Change exercise modal    | `name`                                                                                               |
+| POST   | `/sessions/:id/exercises/:eid/link`                | Chain (superset) button  | `linked=true\|false`                                                                                 |
 | POST   | `/account/unit`                                    | Global unit toggle       | `weight_unit=lb\|kg`                                                                                |
 | POST   | `/exercises/goal-weight`                           | Goal weight modal save  | `name`, `goal_weight`, `weight_unit`                                                                 |
 | POST   | `/exercises/goal-reps`                             | Goal reps modal save    | `name`, `goal_rep_min`, `goal_rep_max`                                                               |
@@ -62,9 +63,17 @@ All set-log requests send `X-Requested-With: XMLHttpRequest`. Response is JSON `
   fires `POST /sessions/:id/exercises/:eid/unit` to persist the preference to the exercise library. Each card carries
   `data-ex-id` (session_exercise ID) and `data-server-unit` (the unit the server rendered in).
 - **Set logging AJAX**: intercepts `.log-set-form` submit; on success, appends a new `<tr>` to the sets table and calls
-  `window.startRestTimer()`.
+  `window.startRestTimer()` — but only when the card's `data-linked` is not `"true"`, so a superset flows straight into
+  the next exercise with no rest.
+- **Supersets**: each card carries `data-link-raw` (stored `linked_to_next`) and `data-linked` (the effective link
+  computed by the controller). Every card except the last in its block renders a `.chain-btn`; clicking it POSTs to
+  `/sessions/:id/exercises/:eid/link` and, on success, calls `relabelBlock()` — which recomputes effective links and
+  `A1`/`A2` badges client-side (mirroring `groupSessionExercises`, including the four-member cap), adds or removes chain
+  buttons, and never reloads the page, so a running rest timer survives. A rejected toggle (400) leaves the chain off.
+  `relabelBlock()` also runs on SortableJS `onEnd`, so a card dragged to the bottom of its block drops its now-inert
+  link and rests again.
 - **Delete set AJAX**: event delegation on `.delete-set-form`; removes the row and renumbers remaining sets.
-- **SortableJS**: creates a Sortable instance per `.sortable-block`; fires reorder fetch on `onEnd`.
+- **SortableJS**: creates a Sortable instance per `.sortable-block`; fires reorder fetch on `onEnd`, then `relabelBlock()`.
 - **Rest timer**: IIFE managing a fixed-bottom countdown panel. Stores start time and duration in `localStorage` keyed
   by session ID, restoring on reload. Uses Web Audio API (`AudioContext`) for a three-beep alarm and
   `navigator.serviceWorker.ready` for a push notification when rest completes.

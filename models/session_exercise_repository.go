@@ -49,3 +49,7 @@ func (r *ormSessionExerciseRepository) UpdateSortOrders(sessionID int64, ids []i
 func (r *ormSessionExerciseRepository) UpdateName(id int64, name string) error {
 	return UpdateSessionExerciseName(id, name)
 }
+
+func (r *ormSessionExerciseRepository) UpdateLinkedToNext(id int64, linked bool) error {
+	return UpdateSessionExerciseLink(id, linked)
+}

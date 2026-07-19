@@ -26,6 +26,7 @@ source: models/session_exercise.go, models/session_exercise_repository.go
 | SortOrder    | int     | set to current count at insert time                              |
 | IsTimeBased  | bool    |                                                                  |
 | GoalSeconds  | int     |                                                                  |
+| LinkedToNext | bool    | raw superset flag: "no rest after me"; never render it directly  |
 
 ## Struct fields — SessionSet
 
@@ -46,17 +47,31 @@ source: models/session_exercise.go, models/session_exercise_repository.go
 
 ```go
 type SessionExerciseView struct {
-    Exercise   *SessionExercise
-    Sets       []*SessionSet
-    CardioLogs []*CardioLog
-    HitMax     bool
-    BelowGoal  bool
-    GoalRepMin int
-    GoalRepMax int
+    Exercise       *SessionExercise
+    Sets           []*SessionSet
+    CardioLogs     []*CardioLog
+    HitMax         bool
+    BelowGoal      bool
+    GoalRepMin     int
+    GoalRepMax     int
+    SupersetLinked bool   // effective link, computed per block by the controller
+    SupersetLabel  string // "A1", "A2", … or "" for a solo exercise
 }
 ```
 
 `LastSet()` returns the last element of `Sets` or `nil`.
+
+## Superset link
+
+`UpdateSessionExerciseLink(id int64, linked bool) error` writes `linked_to_next` by raw SQL (same idiom as
+`UpdateSessionExerciseName`); the repository exposes it as `UpdateLinkedToNext`. The column arrives back through
+`GetSessionExercisesWithSets` automatically, since the ORM selects the whole struct.
+
+`SupersetLinked` and `SupersetLabel` are *computed*, never stored. `controllers.groupSessionExercises` walks each
+block's sort-ordered slice and marks exercise `i` linked only when `LinkedToNext` is set, an exercise exists at `i+1`
+in the same block, and the run it extends holds fewer than four members. Maximal runs of two or more get a per-block
+letter and a 1-based index (`A1`, `A2`, `B1`, …); solo exercises get `""`. A stale `true` on the last exercise of a
+block is therefore inert, and the rest timer fires after it.
 
 ## Repository interface (SessionExerciseRepository)
 

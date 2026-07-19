@@ -19,6 +19,11 @@ type SessionExercise struct {
 	SortOrder    int     `orm:"column(sort_order)"`
 	IsTimeBased  bool    `orm:"column(is_time_based)"`
 	GoalSeconds  int     `orm:"column(goal_seconds)"`
+	// LinkedToNext means "do not rest after me — go straight to the next exercise".
+	// It is a property of this exercise alone, not of a pair, so reordering and
+	// deleting stay safe. A stale true on an exercise that ends up last in its
+	// block is ignored at render time; never read it directly for display.
+	LinkedToNext bool `orm:"column(linked_to_next)"`
 }
 
 func (s *SessionExercise) TableName() string {
@@ -53,6 +58,14 @@ type SessionExerciseView struct {
 	BelowGoal  bool // true if the user logged any set below goal weight in the previous session
 	GoalRepMin int  // from exercise library; overrides phase rep range for bodyweight exercises when > 0
 	GoalRepMax int  // from exercise library; overrides phase rep range for bodyweight exercises when > 0
+
+	// SupersetLinked is the effective link, computed by the controller: the raw
+	// LinkedToNext, but only when there is a next exercise in the same block and
+	// the run is still under the four-member cap.
+	SupersetLinked bool
+	// SupersetLabel is "A1", "A2", … for a member of a superset run, or "" for a
+	// solo exercise. Assigned per block, in sort order.
+	SupersetLabel string
 }
 
 // LastSet returns the most recently logged set, or nil if none exist.
@@ -128,6 +141,12 @@ func GetSessionExerciseByID(exerciseID int64) (*SessionExercise, error) {
 func UpdateSessionExerciseName(id int64, name string) error {
 	o := orm.NewOrm()
 	_, err := o.Raw("UPDATE session_exercises SET name = ? WHERE id = ?", name, id).Exec()
+	return err
+}
+
+func UpdateSessionExerciseLink(id int64, linked bool) error {
+	o := orm.NewOrm()
+	_, err := o.Raw("UPDATE session_exercises SET linked_to_next = ? WHERE id = ?", linked, id).Exec()
 	return err
 }
 

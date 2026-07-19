@@ -21,6 +21,7 @@ source: controllers/session.go
 | POST   | /sessions/:id/exercises/:eid/unit               | UpdateExerciseUnit |
 | POST   | /sessions/:id/exercises/:eid/change             | ChangeExercise     |
 | POST   | /sessions/:id/exercises/:eid/delete             | DeleteExercise    |
+| POST   | /sessions/:id/exercises/:eid/link               | UpdateLink        |
 | POST   | /sessions/:id/exercises/:eid/sets               | LogSet            |
 | POST   | /sessions/:id/exercises/:eid/sets/:sid/delete   | DeleteSet         |
 | POST   | /sessions/:id/cardio                            | AddCardioActivity |
@@ -43,7 +44,9 @@ All handlers check `c.GetSession("user_id")`; nil → /login (or JSON error for 
 ## Template variables — Show
 
 - `c.Data["Session"]`, `c.Data["Program"]`
-- `c.Data["ExerciseBlocks"]` = `[]sessionExerciseBlock` (grouped by main/abs/cardio/stretch)
+- `c.Data["ExerciseBlocks"]` = `[]sessionExerciseBlock` (grouped by main/abs/cardio/stretch). Each
+  `SessionExerciseView` inside carries the computed `SupersetLinked` and `SupersetLabel`; they are not separate
+  top-level `c.Data` keys.
 - `c.Data["WeightUnit"]`, `c.Data["ExWeightUnit"]`
 - `c.Data["PhaseRepMin"]`, `c.Data["PhaseRepMax"]`, `c.Data["PhaseRestSeconds"]`
 - `c.Data["ExerciseLibraryJSON"]` = `template.JS` — embedded JSON for autocomplete
@@ -69,6 +72,8 @@ All handlers check `c.GetSession("user_id")`; nil → /login (or JSON error for 
 - `SessionExercises.UpdateSortOrders` — ReorderExercises
 - `Sessions.GetByID`, `SessionExercises.GetByID`, `Exercises.GetByName`, `Exercises.UpdateGoalWeight` — UpdateExerciseUnit
 - `Sessions.GetByID`, `SessionExercises.GetByID`, `SessionExercises.UpdateName` — ChangeExercise
+- `Sessions.GetByID`, `SessionExercises.GetByID`, `SessionExercises.GetBySession`,
+  `SessionExercises.UpdateLinkedToNext` — UpdateLink
 - `Sessions.Delete` — Delete
 
 ## AJAX endpoints
@@ -81,6 +86,10 @@ All handlers check `c.GetSession("user_id")`; nil → /login (or JSON error for 
   library entry by session-exercise name, converts goal weight, saves new unit; returns `{"ok": true}`
 - **ChangeExercise** — `POST /sessions/:id/exercises/:eid/change` with `name`; validates ownership, updates
   `session_exercises.name`, redirects back to session page; existing sets remain linked to the exercise row
+- **UpdateLink** — `POST /sessions/:id/exercises/:eid/link` with `linked=true|false`; toggles the superset chain to the
+  next exercise in the block. Returns `{"ok": true, "linked": <bool>}`; 401 unauthenticated, 404 on a session or
+  exercise the caller does not own, 400 when linking an exercise that is last in its block or that would make a run of
+  more than four. Never redirects — an AJAX caller cannot follow one.
 
 ## Key invariants
 
@@ -89,6 +98,13 @@ All handlers check `c.GetSession("user_id")`; nil → /login (or JSON error for 
 - `isDeload` is true when `weekNumber == program.WeeksPerPhase`.
 - HitMax: prev session's first N sets (N = phaseDefaultSets) all at or above repMax and goalWeight; prev-set weights are converted to the exercise's own unit before comparison.
 - Block ordering: main → abs → cardio → stretch.
+- Supersets: `linked_to_next` is *never* read directly at render time. `groupSessionExercises` computes
+  `SupersetLinked` = raw link AND an exercise exists at `i+1` in the same block AND the run stays under four members;
+  runs of two or more are labelled `A1`, `A2`, `B1`, … per block. A stale link on the last exercise of a block is
+  inert, so the rest timer still fires after it. `views/sessions/show.tpl` starts the rest timer after a logged set
+  only when the card's computed `data-linked` is not `true`.
+- Ownership for `UpdateLink` is enforced in the controller (`Sessions.GetByID(sessionID, userID)`, then
+  `exercise.SessionID != sessionID`); `SessionExerciseRepository` methods are not userID-scoped.
 
 ## Flash messages
 

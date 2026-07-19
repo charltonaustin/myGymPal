@@ -7,7 +7,13 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
     <link rel="manifest" href="/manifest.json">
-    <style>.drag-handle { cursor: grab; touch-action: none; } .sortable-ghost { opacity: 0.4; }</style>
+    <style>
+        .drag-handle { cursor: grab; touch-action: none; } .sortable-ghost { opacity: 0.4; }
+        /* A superset must read as one unit: members share an accent stripe and sit
+           tight against each other, while solo exercises look exactly as before. */
+        .card.superset-member { border-left: 3px solid var(--bs-dark); }
+        .card.superset-linked { margin-bottom: 0.35rem !important; }
+    </style>
 </head>
 <body>
 
@@ -213,16 +219,24 @@
     {{else}}
 
     <div class="sortable-block" data-session-id="{{$.Session.ID}}" data-block="{{.Block}}">
-    {{range .Exercises}}
+    {{$blockCount := len .Exercises}}
+    {{range $i, $ev := .Exercises}}
     {{$exID := .Exercise.ID}}
-    <div class="card mb-3" data-ex-id="{{$exID}}" data-server-unit="{{.Exercise.WeightUnit}}">
+    {{$isLast := not (lt (add $i 1) $blockCount)}}
+    <div class="card mb-3{{if .SupersetLabel}} superset-member{{end}}{{if .SupersetLinked}} superset-linked{{end}}" data-ex-id="{{$exID}}" data-server-unit="{{.Exercise.WeightUnit}}" data-linked="{{.SupersetLinked}}" data-link-raw="{{.Exercise.LinkedToNext}}">
         <div class="card-body pb-2">
             <div class="d-flex align-items-center justify-content-between mb-1">
                 <div class="d-flex align-items-center gap-2 flex-grow-1 min-w-0">
                     <i class="bi bi-grip-vertical text-muted drag-handle flex-shrink-0" style="font-size:1.1rem;"></i>
+                    <span class="badge rounded-pill text-bg-dark superset-badge flex-shrink-0{{if not .SupersetLabel}} d-none{{end}}">{{.SupersetLabel}}</span>
                     <h2 class="h6 fw-semibold mb-0 text-capitalize text-truncate">{{.Exercise.Name}}</h2>
                 </div>
-                <div class="d-flex align-items-center gap-1 flex-shrink-0">
+                <div class="d-flex align-items-center gap-1 flex-shrink-0 card-actions">
+                    {{if not $isLast}}
+                    <button type="button" class="btn btn-link btn-sm p-0 border-0 chain-btn" data-eid="{{$exID}}" data-session-id="{{$.Session.ID}}" title="Superset with the next exercise (no rest between)" style="line-height:1;">
+                        <i class="bi {{if .SupersetLinked}}bi-link text-dark{{else}}bi-link-45deg text-muted{{end}}" style="font-size:1.0em;"></i>
+                    </button>
+                    {{end}}
                     <div class="dropdown">
                         <button type="button" class="btn btn-link btn-sm p-0 border-0" data-bs-toggle="dropdown" aria-expanded="false" title="Exercise options" style="line-height:1;">
                             {{if and (not .Exercise.IsTimeBased) .HitMax}}<i class="bi bi-arrow-up-circle-fill text-black" style="font-size:1.0em;"></i>{{else if and (not .Exercise.IsTimeBased) .BelowGoal}}<i class="bi bi-arrow-down-circle-fill text-black" style="font-size:1.0em;"></i>{{else}}<i class="bi bi-three-dots-vertical text-black" style="font-size:1.0em;"></i>{{end}}
@@ -635,7 +649,12 @@ document.querySelectorAll('.log-set-form').forEach(form => {
         }
         tbody.appendChild(row);
 
-        if (typeof window.startRestTimer === 'function') window.startRestTimer();
+        // A linked card flows straight into the exercise below it, so no rest is
+        // taken after it. data-linked is the computed link, never the raw column,
+        // so a stale link on the last card of a block still rests.
+        const loggedCard = form.closest('.card[data-ex-id]');
+        const inSuperset = loggedCard && loggedCard.dataset.linked === 'true';
+        if (!inSuperset && typeof window.startRestTimer === 'function') window.startRestTimer();
     });
 });
 
@@ -683,8 +702,108 @@ document.querySelectorAll('.sortable-block').forEach(function (container) {
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                 body: 'ids=' + encodeURIComponent(ids),
             });
+            // The runs re-form around the new order without a reload.
+            relabelBlock(container);
         },
     });
+});
+</script>
+<script>
+// ---- Supersets ----
+// A superset is a run of exercises performed back to back with no rest between
+// them. The link is a property of one exercise — "do not rest after me" — so
+// reordering and deleting degrade gracefully instead of orphaning a pair.
+const SUPERSET_MAX = 4;
+
+function createChainBtn(sessionID, exID) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'btn btn-link btn-sm p-0 border-0 chain-btn';
+    btn.dataset.eid = exID;
+    btn.dataset.sessionId = sessionID;
+    btn.title = 'Superset with the next exercise (no rest between)';
+    btn.style.lineHeight = '1';
+    btn.innerHTML = '<i class="bi bi-link-45deg text-muted" style="font-size:1.0em;"></i>';
+    return btn;
+}
+
+// Recompute one block's effective links and A1/A2 labels in place. This mirrors
+// computeSupersetRuns in controllers/session.go: the raw link only counts when
+// there is a next card to flow into and the run is still under the cap. Keep the
+// two in step — the server owns the truth, this keeps the page correct between
+// reloads so a running rest timer is never lost.
+function relabelBlock(container) {
+    const cards = Array.from(container.querySelectorAll('.card[data-ex-id]'));
+    let runStart = 0;
+
+    cards.forEach(function (card, i) {
+        const isLast = i === cards.length - 1;
+        const linked = card.dataset.linkRaw === 'true' && !isLast && (i - runStart + 1) < SUPERSET_MAX;
+        card.dataset.linked = linked ? 'true' : 'false';
+        card.classList.toggle('superset-linked', linked);
+        if (!linked) runStart = i + 1;
+
+        // Only a card with something below it can be chained to anything.
+        let btn = card.querySelector('.chain-btn');
+        if (isLast) {
+            if (btn) btn.remove();
+            return;
+        }
+        if (!btn) {
+            const actions = card.querySelector('.card-actions');
+            btn = createChainBtn(container.dataset.sessionId, card.dataset.exId);
+            actions.insertBefore(btn, actions.firstChild);
+        }
+        btn.querySelector('i').className = linked ? 'bi bi-link text-dark' : 'bi bi-link-45deg text-muted';
+    });
+
+    let letter = 'A'.charCodeAt(0);
+    for (let start = 0; start < cards.length;) {
+        let end = start;
+        while (end < cards.length && cards[end].dataset.linked === 'true') end++;
+        const members = end - start + 1;
+        for (let i = start; i <= end && i < cards.length; i++) {
+            const label = members >= 2 ? String.fromCharCode(letter) + (i - start + 1) : '';
+            const badge = cards[i].querySelector('.superset-badge');
+            badge.textContent = label;
+            badge.classList.toggle('d-none', label === '');
+            cards[i].classList.toggle('superset-member', label !== '');
+        }
+        if (members >= 2) letter++;
+        start = end + 1;
+    }
+}
+
+document.addEventListener('click', async function (e) {
+    const btn = e.target.closest('.chain-btn');
+    if (!btn) return;
+    e.preventDefault();
+
+    const card = btn.closest('.card[data-ex-id]');
+    const container = card.closest('.sortable-block');
+    const wantLinked = card.dataset.linkRaw !== 'true';
+
+    btn.disabled = true;
+    let ok = false;
+    try {
+        const res = await fetch('/sessions/' + btn.dataset.sessionId + '/exercises/' + btn.dataset.eid + '/link', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+            body: 'linked=' + (wantLinked ? 'true' : 'false'),
+        });
+        ok = res.ok;
+    } catch {}
+    btn.disabled = false;
+
+    // The server rejects a link with nothing below it or one that would overfill a
+    // superset. Leave the chain as it was.
+    if (!ok) return;
+
+    card.dataset.linkRaw = wantLinked ? 'true' : 'false';
+    relabelBlock(container);
 });
 </script>
 

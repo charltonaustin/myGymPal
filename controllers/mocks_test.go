@@ -271,6 +271,7 @@ type mockSessionExerciseRepo struct {
 	DeleteExerciseFn      func(exerciseID int64) error
 	UpdateSortOrdersFn    func(sessionID int64, ids []int64) error
 	UpdateNameFn          func(id int64, name string) error
+	UpdateLinkedToNextFn  func(id int64, linked bool) error
 }
 
 func (m *mockSessionExerciseRepo) Create(sessionID int64, name string, isBodyweight bool, goalWeight float64, weightUnit string, goalReps int, block string, isTimeBased bool, goalSeconds int) (*models.SessionExercise, error) {
@@ -346,6 +347,13 @@ func (m *mockSessionExerciseRepo) UpdateSortOrders(sessionID int64, ids []int64)
 func (m *mockSessionExerciseRepo) UpdateName(id int64, name string) error {
 	if m.UpdateNameFn != nil {
 		return m.UpdateNameFn(id, name)
+	}
+	return nil
+}
+
+func (m *mockSessionExerciseRepo) UpdateLinkedToNext(id int64, linked bool) error {
+	if m.UpdateLinkedToNextFn != nil {
+		return m.UpdateLinkedToNextFn(id, linked)
 	}
 	return nil
 }
@@ -565,6 +573,11 @@ func resetMocks() {
 		activityType  string
 	}{}
 	sessionExerciseCreateNames = nil
+	lastUpdateLink = struct {
+		called bool
+		id     int64
+		linked bool
+	}{}
 }
 
 // setGetByUsernameReturnsUser makes mockUsers return a test user for any username lookup.
@@ -890,6 +903,69 @@ func captureLogSet() {
 		lastLogSet.actualSeconds = actualSeconds
 		lastLogSet.activityType = activityType
 		return &models.SessionSet{ID: testSetID, SessionExerciseID: exerciseID, SetNumber: setNumber, ActualWeight: actualWeight, WeightUnit: weightUnit, ActualReps: actualReps, ActualSeconds: actualSeconds}, nil
+	}
+}
+
+// lastUpdateLink records the args of the last UpdateLinkedToNext call. The called
+// flag is what proves the repository was never reached on a rejected request.
+var lastUpdateLink struct {
+	called bool
+	id     int64
+	linked bool
+}
+
+// captureUpdateLink records each UpdateLinkedToNext call and reports success.
+func captureUpdateLink() {
+	mockSessionExercises.UpdateLinkedToNextFn = func(id int64, linked bool) error {
+		lastUpdateLink.called = true
+		lastUpdateLink.id = id
+		lastUpdateLink.linked = linked
+		return nil
+	}
+}
+
+// setUpdateLinkError makes UpdateLinkedToNext fail, still recording that it was called.
+func setUpdateLinkError(err error) {
+	mockSessionExercises.UpdateLinkedToNextFn = func(id int64, linked bool) error {
+		lastUpdateLink.called = true
+		return err
+	}
+}
+
+// setSessionExerciseBlock makes GetBySession return exercises in one block with the
+// given raw linked_to_next flags, in sort order, with ids 1..n.
+func setSessionExerciseBlock(block string, links []bool) {
+	mockSessionExercises.GetBySessionFn = func(sessionID int64) ([]*models.SessionExerciseView, error) {
+		views := make([]*models.SessionExerciseView, len(links))
+		for i, linked := range links {
+			views[i] = &models.SessionExerciseView{
+				Exercise: &models.SessionExercise{
+					ID:           int64(i + 1),
+					SessionID:    sessionID,
+					Name:         fmt.Sprintf("exercise %d", i+1),
+					WeightUnit:   "lb",
+					Block:        block,
+					SortOrder:    i,
+					LinkedToNext: linked,
+				},
+			}
+		}
+		return views, nil
+	}
+	mockSessionExercises.GetByIDFn = func(exerciseID int64) (*models.SessionExercise, error) {
+		i := int(exerciseID) - 1
+		if i < 0 || i >= len(links) {
+			return nil, errors.New("not found")
+		}
+		return &models.SessionExercise{
+			ID:           exerciseID,
+			SessionID:    testSessionID,
+			Name:         fmt.Sprintf("exercise %d", i+1),
+			WeightUnit:   "lb",
+			Block:        block,
+			SortOrder:    i,
+			LinkedToNext: links[i],
+		}, nil
 	}
 }
 

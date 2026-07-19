@@ -29,12 +29,71 @@ func groupSessionExercises(exercises []*models.SessionExerciseView) []sessionExe
 	var blocks []sessionExerciseBlock
 	for _, key := range blockOrder {
 		exs := byBlock[key]
+		computeSupersetRuns(exs)
 		// Always include the cardio block so the section is always visible.
 		if exs != nil || key == "cardio" {
 			blocks = append(blocks, sessionExerciseBlock{Block: key, Label: blockLabels[key], Exercises: exs})
 		}
 	}
 	return blocks
+}
+
+// supersetMaxRun is the largest number of exercises one superset may hold.
+const supersetMaxRun = 4
+
+// computeSupersetRuns fills in SupersetLinked and SupersetLabel for one block's
+// sort-ordered exercises.
+//
+// The raw LinkedToNext column is never trusted directly: an exercise is only
+// *effectively* linked when there is a next exercise to flow into and the run it
+// would extend is still under the cap. That is what makes a stale link on the last
+// card of a block harmless — it is ignored, and the rest timer fires as normal.
+//
+// Runs of two or more get a per-block letter and a 1-based index (A1, A2, B1 …);
+// a solo exercise gets no label.
+func computeSupersetRuns(exercises []*models.SessionExerciseView) {
+	runStart := 0
+	for i, ev := range exercises {
+		runLen := i - runStart + 1
+		ev.SupersetLinked = ev.Exercise.LinkedToNext && i+1 < len(exercises) && runLen < supersetMaxRun
+		ev.SupersetLabel = ""
+		if !ev.SupersetLinked {
+			runStart = i + 1
+		}
+	}
+
+	letter := 'A'
+	for start := 0; start < len(exercises); {
+		end := start
+		for end < len(exercises) && exercises[end].SupersetLinked {
+			end++
+		}
+		// The run is exercises[start..end]: every member up to end links onward, and
+		// end itself does not, so it is the last member.
+		if end-start+1 >= 2 {
+			for i := start; i <= end; i++ {
+				exercises[i].SupersetLabel = fmt.Sprintf("%c%d", letter, i-start+1)
+			}
+			letter++
+		}
+		start = end + 1
+	}
+}
+
+// supersetRunSize reports how many exercises would sit in the run containing the
+// exercise at index i, if that exercise's link were turned on. It reads the raw
+// links so that a request to link a 5th exercise into a full run can be rejected
+// rather than silently capped.
+func supersetRunSize(block []*models.SessionExerciseView, i int) int {
+	start := i
+	for start > 0 && block[start-1].Exercise.LinkedToNext {
+		start--
+	}
+	end := i + 1
+	for end < len(block)-1 && block[end].Exercise.LinkedToNext {
+		end++
+	}
+	return end - start + 1
 }
 
 type SessionController struct {
@@ -450,6 +509,124 @@ func (c *SessionController) UpdateRest() {
 
 	c.Data["json"] = map[string]interface{}{"ok": true, "rest_seconds": restSeconds}
 	c.ServeJSON()
+}
+
+// UpdateLink toggles whether an exercise flows straight into the one below it in
+// its block — a superset — instead of triggering the rest timer. Responds with
+// JSON for the AJAX caller on the session page, which updates the card in place so
+// a running rest timer is never lost to a reload.
+func (c *SessionController) UpdateLink() {
+	userID := c.GetSession("user_id")
+	if userID == nil {
+		c.Ctx.Output.SetStatus(401)
+		c.Data["json"] = map[string]interface{}{"ok": false, "error": "not logged in"}
+		c.ServeJSON()
+		return
+	}
+
+	sessionID, err := strconv.ParseInt(c.Ctx.Input.Param(":id"), 10, 64)
+	if err != nil {
+		c.Ctx.Output.SetStatus(400)
+		c.Data["json"] = map[string]interface{}{"ok": false, "error": "invalid session"}
+		c.ServeJSON()
+		return
+	}
+
+	eid, err := strconv.ParseInt(c.Ctx.Input.Param(":eid"), 10, 64)
+	if err != nil {
+		c.Ctx.Output.SetStatus(400)
+		c.Data["json"] = map[string]interface{}{"ok": false, "error": "invalid exercise"}
+		c.ServeJSON()
+		return
+	}
+
+	// Ownership lives here, not in the repository: the session must belong to the
+	// caller, and the exercise must belong to that session.
+	if _, err := Sessions.GetByID(sessionID, userID.(int64)); err != nil {
+		c.Ctx.Output.SetStatus(404)
+		c.Data["json"] = map[string]interface{}{"ok": false, "error": "session not found"}
+		c.ServeJSON()
+		return
+	}
+
+	exercise, err := SessionExercises.GetByID(eid)
+	if err != nil || exercise.SessionID != sessionID {
+		c.Ctx.Output.SetStatus(404)
+		c.Data["json"] = map[string]interface{}{"ok": false, "error": "exercise not found"}
+		c.ServeJSON()
+		return
+	}
+
+	linked := c.GetString("linked") == "true"
+
+	// Turning a link off is always safe. Turning one on is only valid when there is
+	// a next exercise in the same block and the run stays within the cap.
+	if linked {
+		exercises, err := SessionExercises.GetBySession(sessionID)
+		if err != nil {
+			logs.Error("SessionController.UpdateLink: GetBySession: %v", err)
+			c.Ctx.Output.SetStatus(500)
+			c.Data["json"] = map[string]interface{}{"ok": false, "error": "could not load session"}
+			c.ServeJSON()
+			return
+		}
+
+		block := blockMates(exercises, exercise)
+		i := indexOfExercise(block, eid)
+		if i < 0 || i == len(block)-1 {
+			c.Ctx.Output.SetStatus(400)
+			c.Data["json"] = map[string]interface{}{"ok": false, "error": "nothing to link to"}
+			c.ServeJSON()
+			return
+		}
+		if supersetRunSize(block, i) > supersetMaxRun {
+			c.Ctx.Output.SetStatus(400)
+			c.Data["json"] = map[string]interface{}{"ok": false, "error": fmt.Sprintf("a superset holds at most %d exercises", supersetMaxRun)}
+			c.ServeJSON()
+			return
+		}
+	}
+
+	if err := SessionExercises.UpdateLinkedToNext(eid, linked); err != nil {
+		logs.Error("SessionController.UpdateLink: %v", err)
+		c.Ctx.Output.SetStatus(500)
+		c.Data["json"] = map[string]interface{}{"ok": false, "error": "could not save"}
+		c.ServeJSON()
+		return
+	}
+
+	c.Data["json"] = map[string]interface{}{"ok": true, "linked": linked}
+	c.ServeJSON()
+}
+
+// blockMates returns the exercises sharing a block with the given one, in sort
+// order. GetBySession already returns exercises sorted, so filtering preserves it.
+func blockMates(exercises []*models.SessionExerciseView, exercise *models.SessionExercise) []*models.SessionExerciseView {
+	target := exercise.Block
+	if target == "" {
+		target = "main"
+	}
+	var block []*models.SessionExerciseView
+	for _, ev := range exercises {
+		b := ev.Exercise.Block
+		if b == "" {
+			b = "main"
+		}
+		if b == target {
+			block = append(block, ev)
+		}
+	}
+	return block
+}
+
+// indexOfExercise returns the position of the exercise within the block, or -1.
+func indexOfExercise(block []*models.SessionExerciseView, eid int64) int {
+	for i, ev := range block {
+		if ev.Exercise.ID == eid {
+			return i
+		}
+	}
+	return -1
 }
 
 func (c *SessionController) AddExercise() {

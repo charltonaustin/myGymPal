@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"regexp"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -450,4 +451,194 @@ func TestSessionDelete_DeleteError(t *testing.T) {
 	w := postForm("/sessions/99/delete", url.Values{}, cookies)
 	assert.Equal(t, http.StatusFound, w.Code)
 	assert.Equal(t, fmt.Sprintf("/programs/%d", testProgramID), w.Header().Get("Location"))
+}
+
+// --- Superset link toggle ---
+
+// linkPath builds the toggle endpoint for an exercise in the test session.
+func linkPath(eid int64) string {
+	return fmt.Sprintf("/sessions/%d/exercises/%d/link", testSessionID, eid)
+}
+
+func TestSessionUpdateLink_Unauthenticated(t *testing.T) {
+	t.Cleanup(resetMocks)
+
+	w := postForm(linkPath(1), url.Values{"linked": {"true"}}, nil)
+
+	// A JSON endpoint must say 401, not redirect — an AJAX caller cannot follow one.
+	assert.Equal(t, http.StatusUnauthorized, w.Code)
+	assert.False(t, lastUpdateLink.called)
+}
+
+func TestSessionUpdateLink_TurnsLinkOn(t *testing.T) {
+	t.Cleanup(resetMocks)
+	setSessionGetByID(1, 1, 1, false)
+	setSessionExerciseBlock("main", []bool{false, false, false})
+	captureUpdateLink()
+	cookies := loginAs(t, "link_on", "lb")
+
+	w := postForm(linkPath(1), url.Values{"linked": {"true"}}, cookies)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	assert.True(t, lastUpdateLink.called)
+	assert.Equal(t, int64(1), lastUpdateLink.id)
+	assert.True(t, lastUpdateLink.linked)
+	assert.Contains(t, w.Body.String(), `"ok": true`)
+}
+
+func TestSessionUpdateLink_TurnsLinkOff(t *testing.T) {
+	t.Cleanup(resetMocks)
+	setSessionGetByID(1, 1, 1, false)
+	setSessionExerciseBlock("main", []bool{true, false})
+	captureUpdateLink()
+	cookies := loginAs(t, "link_off", "lb")
+
+	w := postForm(linkPath(1), url.Values{"linked": {"false"}}, cookies)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	assert.True(t, lastUpdateLink.called)
+	assert.False(t, lastUpdateLink.linked)
+}
+
+func TestSessionUpdateLink_UnlinkingLastExerciseIsAllowed(t *testing.T) {
+	t.Cleanup(resetMocks)
+	setSessionGetByID(1, 1, 1, false)
+	setSessionExerciseBlock("main", []bool{false, true})
+	captureUpdateLink()
+	cookies := loginAs(t, "link_off_last", "lb")
+
+	// Clearing a stale link on the last exercise needs no validation.
+	w := postForm(linkPath(2), url.Values{"linked": {"false"}}, cookies)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	assert.True(t, lastUpdateLink.called)
+	assert.False(t, lastUpdateLink.linked)
+}
+
+func TestSessionUpdateLink_OtherUsersSessionRejected(t *testing.T) {
+	t.Cleanup(resetMocks)
+	// User B holds a valid login, but the session belongs to user A.
+	setSessionGetByIDError(errors.New("not found"))
+	setSessionExerciseBlock("main", []bool{false, false})
+	captureUpdateLink()
+	cookies := loginAs(t, "link_other_user", "lb")
+
+	w := postForm(linkPath(1), url.Values{"linked": {"true"}}, cookies)
+
+	assert.Equal(t, http.StatusNotFound, w.Code)
+	// The write must never reach the repository across accounts.
+	assert.False(t, lastUpdateLink.called)
+}
+
+func TestSessionUpdateLink_ExerciseFromAnotherSessionRejected(t *testing.T) {
+	t.Cleanup(resetMocks)
+	setSessionGetByID(1, 1, 1, false)
+	captureUpdateLink()
+	// The exercise exists but hangs off a different session.
+	mockSessionExercises.GetByIDFn = func(exerciseID int64) (*models.SessionExercise, error) {
+		return &models.SessionExercise{ID: exerciseID, SessionID: testSessionID + 1, Block: "main"}, nil
+	}
+	cookies := loginAs(t, "link_wrong_session", "lb")
+
+	w := postForm(linkPath(1), url.Values{"linked": {"true"}}, cookies)
+
+	assert.Equal(t, http.StatusNotFound, w.Code)
+	assert.False(t, lastUpdateLink.called)
+}
+
+func TestSessionUpdateLink_LastExerciseInBlockRejected(t *testing.T) {
+	t.Cleanup(resetMocks)
+	setSessionGetByID(1, 1, 1, false)
+	setSessionExerciseBlock("main", []bool{false, false})
+	captureUpdateLink()
+	cookies := loginAs(t, "link_last", "lb")
+
+	// Exercise 2 is last in its block — there is nothing below it to link to.
+	w := postForm(linkPath(2), url.Values{"linked": {"true"}}, cookies)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+	assert.False(t, lastUpdateLink.called)
+}
+
+func TestSessionUpdateLink_FifthMemberRejected(t *testing.T) {
+	t.Cleanup(resetMocks)
+	setSessionGetByID(1, 1, 1, false)
+	// Exercises 1–4 already form a full run; exercise 5 sits below it.
+	setSessionExerciseBlock("main", []bool{true, true, true, false, false})
+	captureUpdateLink()
+	cookies := loginAs(t, "link_cap", "lb")
+
+	// Linking the 4th member onward would make a run of five.
+	w := postForm(linkPath(4), url.Values{"linked": {"true"}}, cookies)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+	assert.False(t, lastUpdateLink.called)
+}
+
+func TestSessionUpdateLink_RepositoryErrorReturns500(t *testing.T) {
+	t.Cleanup(resetMocks)
+	setSessionGetByID(1, 1, 1, false)
+	setSessionExerciseBlock("main", []bool{false, false})
+	setUpdateLinkError(errors.New("db error"))
+	cookies := loginAs(t, "link_err", "lb")
+
+	w := postForm(linkPath(1), url.Values{"linked": {"true"}}, cookies)
+
+	assert.Equal(t, http.StatusInternalServerError, w.Code)
+}
+
+func TestSessionShow_RendersSupersetPair(t *testing.T) {
+	t.Cleanup(resetMocks)
+	setSessionGetByID(1, 1, 1, false)
+	setProgramGetByID("My Program", 4)
+	setSessionExerciseBlock("main", []bool{true, false})
+	cookies := loginAs(t, "show_superset", "lb")
+
+	w := getPath(fmt.Sprintf("/sessions/%d", testSessionID), cookies)
+	body := w.Body.String()
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	// The labels and the computed link must actually reach the HTML — a c.Data or
+	// field-name typo renders blank, and a status-code-only assertion sails past it.
+	assert.Contains(t, body, "A1")
+	assert.Contains(t, body, "A2")
+	assert.Contains(t, body, `data-linked="true"`)
+	assert.Contains(t, body, `data-linked="false"`)
+	assert.Contains(t, body, "chain-btn")
+}
+
+func TestSessionShow_NoChainButtonOnLastExercise(t *testing.T) {
+	t.Cleanup(resetMocks)
+	setSessionGetByID(1, 1, 1, false)
+	setProgramGetByID("My Program", 4)
+	setSessionExerciseBlock("main", []bool{false, false})
+	cookies := loginAs(t, "show_last_no_chain", "lb")
+
+	w := getPath(fmt.Sprintf("/sessions/%d", testSessionID), cookies)
+	body := w.Body.String()
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	// Two exercises, but only the first has something below it to chain to.
+	assert.Len(t, chainButtonRE.FindAllString(body, -1), 1)
+}
+
+// chainButtonRE matches a rendered chain button, and not the class names and
+// selectors that also mention chain-btn in the page's own script.
+var chainButtonRE = regexp.MustCompile(`<button[^>]*\bchain-btn\b`)
+
+func TestSessionShow_StaleLinkOnLastExerciseNotRendered(t *testing.T) {
+	t.Cleanup(resetMocks)
+	setSessionGetByID(1, 1, 1, false)
+	setProgramGetByID("My Program", 4)
+	setSessionExerciseBlock("main", []bool{false, true})
+	cookies := loginAs(t, "show_stale_link", "lb")
+
+	w := getPath(fmt.Sprintf("/sessions/%d", testSessionID), cookies)
+	body := w.Body.String()
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	// The stale link must not survive into the page: nothing is effectively linked,
+	// so the rest timer will fire after every exercise here.
+	assert.NotContains(t, body, `data-linked="true"`)
+	assert.NotContains(t, body, "A1")
 }

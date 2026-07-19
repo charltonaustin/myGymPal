@@ -88,4 +88,5 @@ type SessionExerciseRepository interface {
 	DeleteExercise(exerciseID int64) error
 	UpdateSortOrders(sessionID int64, ids []int64) error
 	UpdateName(id int64, name string) error
+	UpdateLinkedToNext(id int64, linked bool) error
 }

@@ -176,10 +176,17 @@ CREATE TABLE session_exercises (
     weight_unit   VARCHAR(8)   NOT NULL DEFAULT 'lb',
     goal_reps     INT          NOT NULL DEFAULT 0,
     goal_seconds  INT          NOT NULL DEFAULT 0,
-    block         VARCHAR(20)  NOT NULL DEFAULT 'main',
-    sort_order    INT          NOT NULL DEFAULT 0
+    block          VARCHAR(20) NOT NULL DEFAULT 'main',
+    sort_order     INT         NOT NULL DEFAULT 0,
+    linked_to_next BOOLEAN     NOT NULL DEFAULT FALSE
 );
 ```
+
+`linked_to_next` means "do not rest after this exercise — go straight to the next one", forming a superset. It is a
+property of a single exercise, not of a pair, so reordering and deleting cannot orphan a group. The column is never
+read directly for display: the session controller computes an *effective* link, which requires a next exercise in the
+same block and a run of at most four members. A stale `true` on an exercise that ends up last in its block is ignored,
+and the rest timer fires as normal.
 
 ---
 

@@ -1,0 +1,1 @@
+ALTER TABLE session_exercises ADD COLUMN linked_to_next BOOLEAN NOT NULL DEFAULT FALSE;
