@@ -8,7 +8,8 @@ source: views/templates/show.tpl
 
 ## Purpose
 
-Display a workout template's details in read-only form, organised by exercise block.
+Display a workout template's details in read-only form: loose exercises organised by block, and each circuit as its
+own grouped card.
 
 ## Partials Included
 
@@ -16,17 +17,25 @@ Display a workout template's details in read-only form, organised by exercise bl
 
 ## Template Variables
 
-| Variable          | Type              | Description                                                                      |
-|-------------------|-------------------|----------------------------------------------------------------------------------|
-| `.Template`       | Template struct   | `.ID`, `.Name`, `.Focus`                                                         |
-| `.ExerciseBlocks` | `[]ExerciseBlock` | Each: `.Label` (display heading), `.Exercises` (slice of `{Name, IsBodyweight}`) |
-| `.Success`        | string            | Flash success message; auto-dismissed after 3 000 ms.                            |
+| Variable          | Type                    | Description                                                                                        |
+|-------------------|-------------------------|----------------------------------------------------------------------------------------------------|
+| `.Template`       | Template struct         | `.ID`, `.Name`, `.Focus`                                                                           |
+| `.ExerciseBlocks` | `[]templateExerciseBlock` | Each: `.Label` (display heading), `.Exercises` (`{Name, IsBodyweight}`). **Loose exercises only.** |
+| `.Circuits`       | `[]templateCircuitView` | Each: `.Name`, `.Rounds`, `.TransitionSeconds`, `.Exercises` (`{Name, WorkSeconds}`)                |
+| `.Success`        | string                  | Flash success message; auto-dismissed after 3 000 ms.                                              |
+
+A circuit's exercises are held back from `.ExerciseBlocks` by `groupTemplateExercises`, which skips any exercise with
+a non-nil `CircuitID`. Without that, every circuit exercise would be listed twice — once in its circuit card and again
+as a loose exercise in its block.
 
 ## Conditional Rendering
 
 - `{{if .Template.Focus}}` — renders focus subtitle.
-- `{{if .ExerciseBlocks}}` — renders block sections or empty-state paragraph.
-- `{{if .IsBodyweight}}` — renders "Bodyweight" secondary text under exercise name.
+- `{{range .ExerciseBlocks}}` — block sections for loose exercises.
+- `{{range .Circuits}}` — one card per circuit: header shows `{{.Rounds}} round{{if ne .Rounds 1}}s{{end}} ·
+  {{.TransitionSeconds}}s transition`; each exercise row carries its `{{.WorkSeconds}}s` badge.
+- `{{if and (not .ExerciseBlocks) (not .Circuits)}}` — empty-state paragraph, shown only when there is neither.
+- `{{if .IsBodyweight}}` — renders "Bodyweight" secondary text under a loose exercise name.
 
 ## User Interactions
 

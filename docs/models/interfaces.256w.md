@@ -49,12 +49,16 @@ UpdateRepRanges(programID int64, updates []PhaseUpdate) error
 ## TemplateRepository
 
 ```go
-Create(name, focus string, exercises []TemplateExerciseInput) (*Template, error)
-Update(id int64, name, focus string, exercises []TemplateExerciseInput) (*Template, error)
+Create(name, focus string, circuits []TemplateCircuitInput, exercises []TemplateExerciseInput) (*Template, error)
+Update(id int64, name, focus string, circuits []TemplateCircuitInput, exercises []TemplateExerciseInput) (*Template, error)
 GetAll() ([]*Template, error)
 GetByID(id int64) (*Template, []*TemplateExercise, error)
+GetCircuits(templateID int64) ([]*TemplateCircuit, error)
 Delete(id int64) error
 ```
+
+`GetByID` returns exercises but not circuits: the session and exercise controllers call it for the exercise list
+alone. Circuits are a separate read so those callers stay unaffected.
 
 ## SessionRepository
 

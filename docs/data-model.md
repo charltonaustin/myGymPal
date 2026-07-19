@@ -100,6 +100,24 @@ CREATE TABLE templates (
 
 ---
 
+### `template_circuits`
+
+A named, ordered group of exercises within a template. The group runs `rounds` times, and `transition_seconds`
+separates one exercise from the next.
+
+```sql
+CREATE TABLE template_circuits (
+    id                 BIGSERIAL    PRIMARY KEY,
+    template_id        BIGINT       NOT NULL REFERENCES templates(id) ON DELETE CASCADE,
+    name               VARCHAR(255) NOT NULL,
+    rounds             INT          NOT NULL DEFAULT 1 CHECK (rounds >= 1),
+    transition_seconds INT          NOT NULL DEFAULT 0 CHECK (transition_seconds >= 0),
+    sort_order         INT          NOT NULL DEFAULT 0
+);
+```
+
+---
+
 ### `template_exercises`
 
 Ordered exercises within a template. Stores identity only — goal weight and rep targets come from the user's exercise
@@ -113,12 +131,20 @@ CREATE TABLE template_exercises (
     is_bodyweight BOOLEAN      NOT NULL DEFAULT FALSE,
     is_time_based BOOLEAN      NOT NULL DEFAULT FALSE,
     sort_order    INT          NOT NULL DEFAULT 0,
-    block         VARCHAR(20)  NOT NULL DEFAULT 'main'
+    block         VARCHAR(20)  NOT NULL DEFAULT 'main',
+    circuit_id    BIGINT       REFERENCES template_circuits(id) ON DELETE SET NULL,
+    work_seconds  INT          NOT NULL DEFAULT 0 CHECK (work_seconds >= 0)
 );
 ```
 
 `name` is always stored lowercase and trimmed. Exercise names are the coupling point between templates and a user's
 exercise library — there is no FK to `exercises`.
+
+`circuit_id IS NULL` means a normal, non-circuit exercise — which is every row predating migration `000035`. That is
+why the column is nullable and why the migration is safe against live data. `ON DELETE SET NULL` rather than CASCADE:
+deleting a circuit should return its exercises to the template as loose exercises, not delete them along with the
+grouping. `work_seconds` is how long the exercise is worked for inside a circuit, and is meaningless (0) otherwise —
+it is not a goal, it is the length of an interval.
 
 ---
 
