@@ -16,5 +16,5 @@ source: views/
 | templates  | Workout template list, create, edit, and show views; drag-to-reorder exercises, exercise-library autocomplete                     | [32w](views/templates.32w.md) |
 | macros     | Macro logging and goal-setting page; N-day average summary; food-history autocomplete; inline edit rows                           | [32w](views/macros.32w.md)    |
 | weight     | Body-weight log with N-day rolling average card; inline edit per entry; lb/kg unit selector                                       | [32w](views/weight.32w.md)    |
-| partials   | Shared navbar, exercise-fields partial, and three goal-update modals (weight, reps, seconds) with AJAX saves                      | [32w](views/partials.32w.md)  |
+| partials   | Shared navbar, exercise-fields and template-form partials, and three goal-update modals (weight, reps, seconds) with AJAX saves   | [32w](views/partials.32w.md)  |
 | root       | Landing (index), dashboard, settings, error fallback, and offline PWA pages                                                       | [32w](views/root.32w.md)      |

@@ -22,5 +22,9 @@ Both `Create` and `Update` run inside transactions and replace exercises atomica
 `template_exercises` for the template, then inserts the new list. At least one exercise is required; all exercise names
 must be non-empty.
 
+Because `Update` re-inserts rather than patches, **every** `TemplateExercise` field must be copied from the input on
+both paths — a field `Create` sets and `Update` omits is not merely ignored on edit, it is cleared. `IsTimeBased` was
+dropped this way; `TestUpdateTemplate_PreservesExerciseType` guards both flags now.
+
 The `TemplateRepository` interface provides `Create`, `Update`, `GetAll` (ordered by name), `GetByID`, and `Delete`. The
 template controller is the primary consumer.

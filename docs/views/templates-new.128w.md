@@ -4,11 +4,15 @@ parent: templates.32w.md
 deeper: templates-new.256w.md
 relates-to:
   - ../controllers/templates.128w.md
+  - partials-template_form.128w.md
 source: views/templates/new.tpl
 ---
 
-Create-template form. Includes `partials/navbar.tpl`. Fields: template name (required), focus (optional). Below that, a
-dynamically managed exercise list allows adding/removing rows; each row has a name input, weighted/bodyweight/time-based
-radio group, hidden is_bodyweight/is_time_based fields, and a block selector. Rows are drag-to-reorder via SortableJS.
-Exercise-name inputs have autocomplete from `.ExerciseLibraryJSON` (type radio is auto-set). A hidden `exercise_count`
-field tracks count. POSTs to `/templates/new`.
+Create-template form. A thin shell: `<head>` (title "New Template — My Gym Pal") plus
+`{{template "partials/template_form.tpl" .}}`, which carries the whole page — navbar, name and focus inputs, the
+dynamic exercise list with drag-to-reorder, type radios, block selectors, and exercise-library autocomplete. See
+[partials-template_form.128w.md](partials-template_form.128w.md).
+
+The controller supplies the keys that make the shared partial render as the *create* page: `.Heading` "New Workout
+Template", `.FormAction` `/templates/new`, `.SubmitLabel` "Create Template", `.BackURL` `/templates`, `.BackLabel`
+"Templates". POSTs to `/templates/new`.

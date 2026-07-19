@@ -60,15 +60,18 @@ Delete(id int64) error
   `strings.ToLower(strings.TrimSpace(...))`. Transactional: inserts template then all exercises; rolls back on failure.
 - `Update`: validates same rules as `Create`, then in a transaction: updates the `Template` row, deletes all existing
   `template_exercises` via raw SQL (`DELETE FROM template_exercises WHERE template_id = ?`), and re-inserts the new
-  exercise list. Note: `IsTimeBased` is not re-inserted in the update path in the current implementation.
+  exercise list. Because this is a delete-and-reinsert rather than a patch, the insert must copy **every** field from
+  `TemplateExerciseInput`: a field `Create` sets and `Update` omits gets silently cleared on each edit. `IsTimeBased`
+  was omitted here and reverted every time-based exercise to weighted on save;
+  `TestUpdateTemplate_PreservesExerciseType` now asserts both a time-based and a weighted exercise survive an update.
 - `GetAll`: `QueryTable.OrderBy("Name")` — alphabetical ordering.
 - `GetByID`: reads template, then `QueryTable.Filter("TemplateID").OrderBy("SortOrder")` for exercises.
 - `Delete`: deletes by primary key; cascade behavior depends on DB constraints.
 
 ## Key invariant
 
-Template exercises store only name + is_bodyweight; goal weight/reps/seconds come from the Exercise library and Phase
-config at render time (per CLAUDE.md).
+Template exercises store only identity — name, `is_bodyweight`, `is_time_based`, `block`, `sort_order`; goal
+weight/reps/seconds come from the Exercise library and Phase config at render time (per CLAUDE.md).
 
 ## Relationships
 

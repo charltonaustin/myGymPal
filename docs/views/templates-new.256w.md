@@ -3,6 +3,7 @@ level: 256w
 parent: templates.32w.md
 relates-to:
   - ../controllers/templates.128w.md
+  - partials-template_form.256w.md
 source: views/templates/new.tpl
 ---
 
@@ -11,52 +12,38 @@ source: views/templates/new.tpl
 Create a new workout template with a name, optional focus, and a list of exercises (with type and section block per
 exercise).
 
-## Partials Included
+## Structure
 
-- `partials/navbar.tpl`
+The file is a shell. It contributes only the document scaffolding — `<!DOCTYPE>`, `<head>` with the title
+"New Template — My Gym Pal", the Bootstrap/icon links, the manifest link, and the drag-handle style — and then includes
+the shared body:
+
+```
+{{template "partials/template_form.tpl" .}}
+```
+
+`views/templates/edit.tpl` is the same shell with a different `<title>`. The form, the exercise rows, and all the
+JavaScript live in the partial and are documented in
+[partials-template_form.256w.md](partials-template_form.256w.md) — including the full field table and the JS helper
+list, which were previously duplicated between this file and `templates-edit.256w.md`.
 
 ## Template Variables
 
-| Variable               | Type                 | Description                                                                                      |
-|------------------------|----------------------|--------------------------------------------------------------------------------------------------|
-| `.Error`               | string               | Server-side error; auto-removed after 4 000 ms.                                                  |
-| `.Name`                | string               | Pre-fills template name input (on re-render after error).                                        |
-| `.Focus`               | string               | Pre-fills focus input.                                                                           |
-| `.Exercises`           | `[]TemplateExercise` | Pre-populated exercise rows; each: `.Name`, `.IsBodyweight`, `.IsTimeBased`, `.Block`.           |
-| `.ExerciseLibraryJSON` | template.JS          | JSON array used for exercise-name autocomplete; each entry: `{name, isBodyweight, isTimeBased}`. |
+Everything the partial needs (`.Error`, `.Name`, `.Focus`, `.Exercises`, `.ExerciseLibraryJSON`), plus the page-chrome
+keys that make it render as the create page rather than the edit page:
 
-## Form Fields
+| Variable       | Value on this page     |
+|----------------|------------------------|
+| `.Heading`     | `New Workout Template` |
+| `.FormAction`  | `/templates/new`       |
+| `.SubmitLabel` | `Create Template`      |
+| `.BackURL`     | `/templates`           |
+| `.BackLabel`   | `Templates`            |
 
-Form: `id="template-form" method="POST" action="/templates/new" novalidate`
-
-Static fields:
-| Field | Name | Type | Notes |
-|-------|------|------|-------|
-| Template Name | `name` | text | required |
-| Focus | `focus` | text | optional |
-| Exercise Count | `exercise_count` | hidden | managed by JS; submitted count used to parse exercise array |
-
-Per exercise (index `i`):
-| Field | Name | Type | Notes |
-|-------|------|------|-------|
-| Name | `exercise_name_i` | text | required; has autocomplete |
-| Type | `ex_type_i` | radio | values: weighted / bodyweight / time_based |
-| Is Bodyweight | `is_bodyweight_i` | hidden | "on" or "" — synced by JS |
-| Is Time Based | `is_time_based_i` | hidden | "on" or "" — synced by JS |
-| Block | `block_i` | select | main / abs / cardio / stretch |
-
-## JavaScript Behavior
-
-- `syncHiddens(row)`: reads selected radio and sets `is_bodyweight_i` / `is_time_based_i` hidden fields.
-- `autofillFromLibrary(row, name)`: looks up exercise library entry and checks matching type radio, then calls
-  `syncHiddens`.
-- `attachAutocomplete(input, row)`: attaches typeahead dropdown to a name input using `exerciseLibraryArr`.
-- `bindRow(row)`: attaches remove button, autocomplete, and radio change listeners.
-- `reindexRows()`: renumbers all exercise row field names and `exercise_count` after add/remove/reorder.
-- "Add Exercise" button: creates a new row HTML, appends to `#exercises-container`, calls `bindRow`.
-- SortableJS on `#exercises-container` with `onEnd: reindexRows`.
-- Form submit: calls `reindexRows()` then `checkValidity()` guard; adds `was-validated`.
+These are set by `newFormChrome()` in `controllers/template.go`, called from **both** render paths that reach this
+template: `New()` (the initial GET) and `Create()`'s `renderForm` (the validation-error re-render). A key set on only
+one of them renders as an empty string on the other — a blank submit button, with no error and no failing compile.
 
 ## AJAX / Fetch
 
-None. Exercise library data is embedded in the page as `template.JS` to prevent HTML escaping.
+None.

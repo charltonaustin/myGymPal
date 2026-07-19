@@ -14,5 +14,7 @@ indexed form fields (`exercise_name_0`, `is_bodyweight_0`, `block_0`, etc.). GET
 exercises grouped by block (main/abs/cardio/stretch). GET /templates/:id/edit and POST /templates/:id (Update) handle
 editing. POST /templates/:id/delete removes a template. All handlers are session-gated. The New and Edit forms embed
 `ExerciseLibraryJSON` (via the `exerciseLibraryJSON` helper from exercise.go) for autocomplete. Block grouping and
-ordering logic (`blockOrder`, `blockLabels`, `validBlock`) is defined in this file and shared with the session
-controller.
+ordering logic (`blockOrder`, `blockLabels`) is defined in this file and shared with the session controller; block-name
+sanitizing is `models.ValidBlock`. The New/Create and Edit/Update render paths set the `c.Data` chrome keys
+(`Heading`, `FormAction`, `SubmitLabel`, `BackURL`, `BackLabel`) consumed by `partials/template_form.tpl`, via
+`newFormChrome()` / `editFormChrome()`.

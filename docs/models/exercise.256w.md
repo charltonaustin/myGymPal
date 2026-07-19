@@ -43,7 +43,7 @@ Delete(id, userID int64) error
 ## Notable behavior
 
 - `Create` and `Update` both normalize name: `strings.ToLower(strings.TrimSpace(name))`; error if result is empty.
-- `DefaultBlock` is validated by `validDefaultBlock()`: accepts `"abs"`, `"cardio"`, `"stretch"`; all others become
+- `DefaultBlock` is validated by `ValidBlock()`: accepts `"abs"`, `"cardio"`, `"stretch"`; all others become
   `"main"`.
 - `GetByName` uses raw SQL: `LOWER(TRIM(name)) = LOWER(TRIM(?))` — case-insensitive, whitespace-insensitive lookup.
 - `UpdateGoalWeight` does a targeted ORM update of only `GoalWeight`, `WeightUnit`, `UpdatedAt` fields — used by the

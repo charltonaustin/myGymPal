@@ -71,8 +71,8 @@ All handlers check `c.GetSession("user_id")`; nil redirects to /login.
 ## Exercise form parsing (Create / Update)
 
 Reads `exercise_count` then iterates `0..count-1`, reading `exercise_name_N`, `is_bodyweight_N`, `is_time_based_N`,
-`block_N`. Blank names are skipped. Block is validated via `validBlock()` (defaults to "main"). `SortOrder` is set from
-the filtered index position.
+`block_N`. Blank names are skipped. Block is validated via `models.ValidBlock()` (defaults to "main"). `SortOrder` is
+set from the filtered index position.
 
 ## Flash messages
 
@@ -84,7 +84,7 @@ the filtered index position.
 
 - `blockOrder` = ["main", "abs", "cardio", "stretch"]
 - `blockLabels` = map of block key → display label
-- `validBlock(b)` — sanitizes block string to one of the four valid values
+- block sanitizing lives in `models.ValidBlock(b)` (shared with the exercise model, which validates `default_block`)
 - `groupTemplateExercises(exercises)` — returns `[]templateExerciseBlock` (used by Show)
 - `groupSessionExercises(exercises)` — returns `[]sessionExerciseBlock` (used by SessionController.Show)
 
