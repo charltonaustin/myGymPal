@@ -27,7 +27,6 @@
     <div class="alert alert-success alert-dismissible fade show" id="success-alert">{{.Success}}</div>
     {{end}}
 
-    {{if .ExerciseBlocks}}
     {{range .ExerciseBlocks}}
     <h2 class="h6 fw-semibold text-uppercase text-muted mb-3">{{.Label}}</h2>
     <div class="card mb-4">
@@ -41,7 +40,28 @@
         </ul>
     </div>
     {{end}}
-    {{else}}
+
+    {{range .Circuits}}
+    <h2 class="h6 fw-semibold text-uppercase text-muted mb-3">Circuit</h2>
+    <div class="card mb-4 border-dark">
+        <div class="card-header bg-dark text-white">
+            <div class="fw-semibold">{{.Name}}</div>
+            <div class="small">
+                {{.Rounds}} round{{if ne .Rounds 1}}s{{end}} &middot; {{.TransitionSeconds}}s transition
+            </div>
+        </div>
+        <ul class="list-group list-group-flush">
+            {{range .Exercises}}
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                <span class="fw-semibold text-capitalize">{{.Name}}</span>
+                <span class="badge text-bg-secondary">{{.WorkSeconds}}s</span>
+            </li>
+            {{end}}
+        </ul>
+    </div>
+    {{end}}
+
+    {{if and (not .ExerciseBlocks) (not .Circuits)}}
     <p class="text-muted">No exercises in this template.</p>
     {{end}}
 </main>

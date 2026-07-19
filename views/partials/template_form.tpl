@@ -1,5 +1,16 @@
 {{template "partials/navbar.tpl" .}}
 
+<style>
+    /* Whether a row is in a circuit is decided by the container it sits in, not
+       by its markup, so the same row partial serves both cases and a row dragged
+       or re-rendered into a circuit picks up the right fields with no JS. */
+    .row-work { display: none; }
+    .circuit-exercises .row-work { display: flex; }
+    .circuit-exercises .row-block { display: none; }
+    .circuit-card { border-left: 3px solid var(--bs-dark); }
+    .circuit-card .exercise-row { background-color: var(--bs-tertiary-bg); }
+</style>
+
 <main class="container mt-4 mb-4" style="max-width: 560px;">
     <div class="mb-4">
         <a href="{{.BackURL}}" class="text-muted small">&larr; {{.BackLabel}}</a>
@@ -40,40 +51,47 @@
         <h2 class="h6 fw-semibold text-uppercase text-muted mt-4 mb-3">Exercises</h2>
 
         <div id="exercises-container">
-            {{range $i, $ex := .Exercises}}
-            <div class="exercise-row card mb-3 p-3" data-index="{{$i}}">
+            {{range .Exercises}}
+            {{template "partials/template_exercise_row.tpl" .}}
+            {{end}}
+        </div>
+
+        <button type="button" id="add-exercise" class="btn btn-outline-secondary btn-sm mb-4">+ Add Exercise</button>
+
+        <h2 class="h6 fw-semibold text-uppercase text-muted mt-4 mb-3">Circuits</h2>
+
+        <div id="circuits-container">
+            {{range .Circuits}}
+            <div class="circuit-card card mb-3 p-3" data-circuit-index="{{.Index}}">
                 <div class="mb-2 d-flex align-items-center gap-2">
-                    <i class="bi bi-grip-vertical text-muted drag-handle flex-shrink-0" style="font-size:1.1rem;"></i>
-                    <input type="text" class="form-control" name="exercise_name_{{$i}}" value="{{$ex.Name}}" placeholder="Exercise name" required>
+                    <input type="text" class="form-control circuit-name" name="circuit_name_{{.Index}}" value="{{.Name}}" placeholder="Circuit name" required>
+                    <button type="button" class="btn btn-sm btn-outline-danger remove-circuit flex-shrink-0">Remove</button>
                 </div>
-                <div class="mb-2">
-                    <div class="btn-group w-100" role="group">
-                        <input type="radio" class="btn-check" name="ex_type_{{$i}}" id="ex_weighted_{{$i}}" value="weighted" autocomplete="off" {{if and (not $ex.IsBodyweight) (not $ex.IsTimeBased)}}checked{{end}}>
-                        <label class="btn btn-outline-secondary btn-sm" for="ex_weighted_{{$i}}">Weighted</label>
-                        <input type="radio" class="btn-check" name="ex_type_{{$i}}" id="ex_bw_{{$i}}" value="bodyweight" autocomplete="off" {{if $ex.IsBodyweight}}checked{{end}}>
-                        <label class="btn btn-outline-secondary btn-sm" for="ex_bw_{{$i}}">Bodyweight</label>
-                        <input type="radio" class="btn-check" name="ex_type_{{$i}}" id="ex_tb_{{$i}}" value="time_based" autocomplete="off" {{if $ex.IsTimeBased}}checked{{end}}>
-                        <label class="btn btn-outline-secondary btn-sm" for="ex_tb_{{$i}}">Time-based</label>
+                <div class="mb-3 d-flex align-items-center gap-2">
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text">Rounds</span>
+                        <input type="number" class="form-control circuit-rounds" name="circuit_rounds_{{.Index}}" value="{{.Rounds}}" min="1" step="1">
                     </div>
-                    <input type="hidden" name="is_bodyweight_{{$i}}" class="ex-bw-hidden" value="{{if $ex.IsBodyweight}}on{{end}}">
-                    <input type="hidden" name="is_time_based_{{$i}}" class="ex-tb-hidden" value="{{if $ex.IsTimeBased}}on{{end}}">
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text">Transition</span>
+                        <input type="number" class="form-control circuit-transition" name="circuit_transition_{{.Index}}" value="{{.TransitionSeconds}}" min="0" step="5">
+                        <span class="input-group-text">sec</span>
+                    </div>
                 </div>
-                <div class="d-flex align-items-center gap-2">
-                    <select class="form-select form-select-sm flex-grow-1" name="block_{{$i}}">
-                        <option value="main" {{if or (eq $ex.Block "") (eq $ex.Block "main")}}selected{{end}}>Main</option>
-                        <option value="abs" {{if eq $ex.Block "abs"}}selected{{end}}>Abs</option>
-                        <option value="cardio" {{if eq $ex.Block "cardio"}}selected{{end}}>Cardio</option>
-                        <option value="stretch" {{if eq $ex.Block "stretch"}}selected{{end}}>Stretch</option>
-                    </select>
-                    <button type="button" class="btn btn-sm btn-outline-danger remove-exercise flex-shrink-0">Remove</button>
+                <div class="circuit-exercises">
+                    {{range .Exercises}}
+                    {{template "partials/template_exercise_row.tpl" .}}
+                    {{end}}
                 </div>
+                <button type="button" class="btn btn-outline-secondary btn-sm add-circuit-exercise align-self-start">+ Add Exercise to Circuit</button>
             </div>
             {{end}}
         </div>
 
-        <input type="hidden" name="exercise_count" id="exercise_count" value="{{len .Exercises}}">
+        <button type="button" id="add-circuit" class="btn btn-outline-secondary btn-sm mb-4">+ Add Circuit</button>
 
-        <button type="button" id="add-exercise" class="btn btn-outline-secondary btn-sm mb-4">+ Add Exercise</button>
+        <input type="hidden" name="exercise_count" id="exercise_count" value="{{.ExerciseCount}}">
+        <input type="hidden" name="circuit_count" id="circuit_count" value="{{.CircuitCount}}">
 
         <div class="d-flex gap-2">
             <button type="submit" class="btn btn-dark">{{.SubmitLabel}}</button>
@@ -154,7 +172,20 @@
         input.addEventListener('blur', () => setTimeout(hideDropdown, 150));
     }
 
-    let exerciseCount = parseInt(document.getElementById('exercise_count').value, 10);
+    // Circuits are renumbered before the exercises, because each exercise reads
+    // the circuit index off the card it sits in.
+    function reindexCircuits() {
+        document.querySelectorAll('.circuit-card').forEach((card, i) => {
+            card.dataset.circuitIndex = i;
+            const name = card.querySelector('.circuit-name');
+            if (name) name.name = `circuit_name_${i}`;
+            const rounds = card.querySelector('.circuit-rounds');
+            if (rounds) rounds.name = `circuit_rounds_${i}`;
+            const transition = card.querySelector('.circuit-transition');
+            if (transition) transition.name = `circuit_transition_${i}`;
+        });
+        document.getElementById('circuit_count').value = document.querySelectorAll('.circuit-card').length;
+    }
 
     function reindexRows() {
         document.querySelectorAll('.exercise-row').forEach((row, i) => {
@@ -173,28 +204,37 @@
             if (bwHidden) bwHidden.name = `is_bodyweight_${i}`;
             const tbHidden = row.querySelector('.ex-tb-hidden');
             if (tbHidden) tbHidden.name = `is_time_based_${i}`;
-            const blockSelect = row.querySelector('[name^="block_"]');
+            const blockSelect = row.querySelector('.row-block');
             if (blockSelect) blockSelect.name = `block_${i}`;
+            const work = row.querySelector('.ex-work-seconds');
+            if (work) work.name = `work_seconds_${i}`;
+
+            // Membership follows the DOM: a row inside a circuit card belongs to
+            // that circuit, a row anywhere else is loose. Nothing else records it,
+            // so this must run before every submit.
+            const card = row.closest('.circuit-card');
+            const circuitIndex = row.querySelector('.ex-circuit-index');
+            if (circuitIndex) circuitIndex.value = card ? card.dataset.circuitIndex : '-1';
         });
         document.getElementById('exercise_count').value = document.querySelectorAll('.exercise-row').length;
     }
 
+    function reindexAll() {
+        reindexCircuits();
+        reindexRows();
+    }
+
     function bindRow(row) {
-        row.querySelector('.remove-exercise').addEventListener('click', () => { row.remove(); reindexRows(); });
+        row.querySelector('.remove-exercise').addEventListener('click', () => { row.remove(); reindexAll(); });
         const nameInput = row.querySelector('[name^="exercise_name_"]');
         if (nameInput) attachAutocomplete(nameInput, row);
         row.querySelectorAll('input[name^="ex_type_"]').forEach(r => r.addEventListener('change', () => syncHiddens(row)));
     }
 
-    document.querySelectorAll('.exercise-row').forEach(bindRow);
-
-    document.getElementById('add-exercise').addEventListener('click', () => {
-        const i = exerciseCount++;
-
-        const row = document.createElement('div');
-        row.className = 'exercise-row card mb-3 p-3';
-        row.dataset.index = i;
-        row.innerHTML = `
+    // Mirrors partials/template_exercise_row.tpl. The indices here are
+    // provisional: reindexAll rewrites every name before the form is submitted.
+    function exerciseRowHTML(i) {
+        return `
             <div class="mb-2 d-flex align-items-center gap-2">
                 <i class="bi bi-grip-vertical text-muted drag-handle flex-shrink-0" style="font-size:1.1rem;"></i>
                 <input type="text" class="form-control" name="exercise_name_${i}" placeholder="Exercise name" required>
@@ -212,21 +252,89 @@
                 <input type="hidden" name="is_time_based_${i}" class="ex-tb-hidden" value="">
             </div>
             <div class="d-flex align-items-center gap-2">
-                <select class="form-select form-select-sm flex-grow-1" name="block_${i}">
+                <select class="form-select form-select-sm flex-grow-1 row-block" name="block_${i}">
                     <option value="main" selected>Main</option>
                     <option value="abs">Abs</option>
                     <option value="cardio">Cardio</option>
                     <option value="stretch">Stretch</option>
                 </select>
+                <div class="input-group input-group-sm row-work flex-grow-1">
+                    <input type="number" class="form-control ex-work-seconds" name="work_seconds_${i}" value="30" min="0" step="5" placeholder="Work" aria-label="Work seconds">
+                    <span class="input-group-text">sec</span>
+                </div>
                 <button type="button" class="btn btn-sm btn-outline-danger remove-exercise flex-shrink-0">Remove</button>
             </div>
+            <input type="hidden" name="circuit_index_${i}" class="ex-circuit-index" value="-1">
         `;
-        document.getElementById('exercises-container').appendChild(row);
+    }
+
+    function newExerciseRow() {
+        const i = document.querySelectorAll('.exercise-row').length;
+        const row = document.createElement('div');
+        row.className = 'exercise-row card mb-3 p-3';
+        row.dataset.index = i;
+        row.innerHTML = exerciseRowHTML(i);
         bindRow(row);
+        return row;
+    }
+
+    function bindCircuit(card) {
+        card.querySelector('.remove-circuit').addEventListener('click', () => { card.remove(); reindexAll(); });
+        card.querySelector('.add-circuit-exercise').addEventListener('click', () => {
+            card.querySelector('.circuit-exercises').appendChild(newExerciseRow());
+            reindexAll();
+        });
+        makeSortable(card.querySelector('.circuit-exercises'));
+    }
+
+    function makeSortable(container) {
+        Sortable.create(container, {
+            handle: '.drag-handle',
+            animation: 150,
+            ghostClass: 'sortable-ghost',
+            onEnd: reindexAll,
+        });
+    }
+
+    document.querySelectorAll('.exercise-row').forEach(bindRow);
+    document.querySelectorAll('.circuit-card').forEach(bindCircuit);
+
+    document.getElementById('add-exercise').addEventListener('click', () => {
+        document.getElementById('exercises-container').appendChild(newExerciseRow());
+        reindexAll();
+    });
+
+    document.getElementById('add-circuit').addEventListener('click', () => {
+        const i = document.querySelectorAll('.circuit-card').length;
+        const card = document.createElement('div');
+        card.className = 'circuit-card card mb-3 p-3';
+        card.dataset.circuitIndex = i;
+        card.innerHTML = `
+            <div class="mb-2 d-flex align-items-center gap-2">
+                <input type="text" class="form-control circuit-name" name="circuit_name_${i}" placeholder="Circuit name" required>
+                <button type="button" class="btn btn-sm btn-outline-danger remove-circuit flex-shrink-0">Remove</button>
+            </div>
+            <div class="mb-3 d-flex align-items-center gap-2">
+                <div class="input-group input-group-sm">
+                    <span class="input-group-text">Rounds</span>
+                    <input type="number" class="form-control circuit-rounds" name="circuit_rounds_${i}" value="1" min="1" step="1">
+                </div>
+                <div class="input-group input-group-sm">
+                    <span class="input-group-text">Transition</span>
+                    <input type="number" class="form-control circuit-transition" name="circuit_transition_${i}" value="15" min="0" step="5">
+                    <span class="input-group-text">sec</span>
+                </div>
+            </div>
+            <div class="circuit-exercises"></div>
+            <button type="button" class="btn btn-outline-secondary btn-sm add-circuit-exercise align-self-start">+ Add Exercise to Circuit</button>
+        `;
+        document.getElementById('circuits-container').appendChild(card);
+        bindCircuit(card);
+        reindexAll();
     });
 
     document.getElementById('template-form').addEventListener('submit', function (e) {
-        reindexRows();
+        reindexAll();
         if (!this.checkValidity()) {
             e.preventDefault();
             e.stopPropagation();
@@ -234,11 +342,11 @@
         this.classList.add('was-validated');
     });
 
-    Sortable.create(document.getElementById('exercises-container'), {
-        handle: '.drag-handle',
-        animation: 150,
-        ghostClass: 'sortable-ghost',
-        onEnd: reindexRows,
-    });
+    makeSortable(document.getElementById('exercises-container'));
+
+    // The edit page arrives with rows already server-rendered; the new page starts
+    // empty. Running this once on load settles both into the same state, and in
+    // particular writes each row's circuit membership into its hidden field.
+    reindexAll();
 </script>
 <script>if ('serviceWorker' in navigator) { navigator.serviceWorker.register('/sw.js').catch(console.error); }</script>
