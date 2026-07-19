@@ -206,15 +206,25 @@
             if (tbHidden) tbHidden.name = `is_time_based_${i}`;
             const blockSelect = row.querySelector('.row-block');
             if (blockSelect) blockSelect.name = `block_${i}`;
-            const work = row.querySelector('.ex-work-seconds');
-            if (work) work.name = `work_seconds_${i}`;
-
             // Membership follows the DOM: a row inside a circuit card belongs to
             // that circuit, a row anywhere else is loose. Nothing else records it,
-            // so this must run before every submit.
+            // so this must run before every submit — and the field has to be
+            // renamed as well as re-valued, or row i submits row j's membership.
             const card = row.closest('.circuit-card');
             const circuitIndex = row.querySelector('.ex-circuit-index');
-            if (circuitIndex) circuitIndex.value = card ? card.dataset.circuitIndex : '-1';
+            if (circuitIndex) {
+                circuitIndex.name = `circuit_index_${i}`;
+                circuitIndex.value = card ? card.dataset.circuitIndex : '-1';
+            }
+
+            // Work seconds only mean anything inside a circuit. Zeroing them on the
+            // way out keeps a row that was dragged out of one — or whose circuit was
+            // removed — from carrying a duration nothing will ever read.
+            const work = row.querySelector('.ex-work-seconds');
+            if (work) {
+                work.name = `work_seconds_${i}`;
+                if (!card) work.value = '0';
+            }
         });
         document.getElementById('exercise_count').value = document.querySelectorAll('.exercise-row').length;
     }
@@ -259,7 +269,7 @@
                     <option value="stretch">Stretch</option>
                 </select>
                 <div class="input-group input-group-sm row-work flex-grow-1">
-                    <input type="number" class="form-control ex-work-seconds" name="work_seconds_${i}" value="30" min="0" step="5" placeholder="Work" aria-label="Work seconds">
+                    <input type="number" class="form-control ex-work-seconds" name="work_seconds_${i}" value="0" min="0" step="5" placeholder="Work" aria-label="Work seconds">
                     <span class="input-group-text">sec</span>
                 </div>
                 <button type="button" class="btn btn-sm btn-outline-danger remove-exercise flex-shrink-0">Remove</button>
@@ -281,7 +291,11 @@
     function bindCircuit(card) {
         card.querySelector('.remove-circuit').addEventListener('click', () => { card.remove(); reindexAll(); });
         card.querySelector('.add-circuit-exercise').addEventListener('click', () => {
-            card.querySelector('.circuit-exercises').appendChild(newExerciseRow());
+            const row = newExerciseRow();
+            // A circuit exercise is worked for a length of time by definition, so it
+            // opens on a usable duration rather than on zero.
+            row.querySelector('.ex-work-seconds').value = '30';
+            card.querySelector('.circuit-exercises').appendChild(row);
             reindexAll();
         });
         makeSortable(card.querySelector('.circuit-exercises'));
