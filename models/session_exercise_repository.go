@@ -10,6 +10,14 @@ func (r *ormSessionExerciseRepository) Create(in SessionExerciseInput) (*Session
 	return CreateSessionExercise(in)
 }
 
+func (r *ormSessionExerciseRepository) CreateBody(sessionID int64, circuits []SessionCircuitInput, exercises []SessionExerciseInput) error {
+	return CreateSessionBody(sessionID, circuits, exercises)
+}
+
+func (r *ormSessionExerciseRepository) GetCircuitsBySession(sessionID int64) ([]*SessionCircuit, error) {
+	return GetSessionCircuits(sessionID)
+}
+
 func (r *ormSessionExerciseRepository) GetBySession(sessionID int64) ([]*SessionExerciseView, error) {
 	return GetSessionExercisesWithSets(sessionID)
 }

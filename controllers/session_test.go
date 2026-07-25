@@ -150,9 +150,11 @@ func TestSessionCreate_SetsGoalRepsFromPhase(t *testing.T) {
 	setTemplateGetByID(testTemplateID, "Upper Body A", "Upper", 2)
 	setPhasesGetByProgram(4) // phases 1–4 all have RepMin=10
 	var capturedGoalReps []int
-	mockSessionExercises.CreateFn = func(in models.SessionExerciseInput) (*models.SessionExercise, error) {
-		capturedGoalReps = append(capturedGoalReps, in.GoalReps)
-		return &models.SessionExercise{ID: testExerciseID, SessionID: in.SessionID, Name: in.Name, GoalReps: in.GoalReps}, nil
+	mockSessionExercises.CreateBodyFn = func(sessionID int64, circuits []models.SessionCircuitInput, exercises []models.SessionExerciseInput) error {
+		for _, in := range exercises {
+			capturedGoalReps = append(capturedGoalReps, in.GoalReps)
+		}
+		return nil
 	}
 	cookies := loginAs(t, "session_create_goalreps", "lb")
 

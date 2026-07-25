@@ -79,6 +79,8 @@ type ProgramWorkoutTemplateRepository interface {
 
 type SessionExerciseRepository interface {
 	Create(in SessionExerciseInput) (*SessionExercise, error)
+	CreateBody(sessionID int64, circuits []SessionCircuitInput, exercises []SessionExerciseInput) error
+	GetCircuitsBySession(sessionID int64) ([]*SessionCircuit, error)
 	GetBySession(sessionID int64) ([]*SessionExerciseView, error)
 	GetByID(exerciseID int64) (*SessionExercise, error)
 	LogSet(exerciseID int64, setNumber int, actualWeight float64, weightUnit string, actualReps int, actualSeconds int, activityType string) (*SessionSet, error)

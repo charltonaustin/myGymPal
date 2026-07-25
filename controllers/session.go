@@ -222,9 +222,16 @@ func (c *SessionController) Create() {
 		return
 	}
 
-	// Copy template exercises into the new session if a template was selected.
+	// Copy the template's circuits and exercises into the new session if a
+	// template was selected.
 	if templateID, err := strconv.ParseInt(c.GetString("template_id"), 10, 64); err == nil && templateID > 0 {
 		if _, exercises, err := Templates.GetByID(templateID); err == nil {
+			// Circuits are a second read: GetByID returns exercises only.
+			circuits, err := Templates.GetCircuits(templateID)
+			if err != nil {
+				logs.Error("SessionController.Create: GetCircuits: %v", err)
+			}
+
 			// Determine the rep minimum for the session's phase so it can be
 			// stored as the goal reps on each exercise.
 			goalReps := 0
@@ -240,14 +247,29 @@ func (c *SessionController) Create() {
 			if user, err := Users.GetByID(userID.(int64)); err == nil {
 				defaultUnit = user.WeightUnit
 			}
+
+			circuitInputs := make([]models.SessionCircuitInput, 0, len(circuits))
+			for _, ci := range circuits {
+				circuitInputs = append(circuitInputs, models.SessionCircuitInput{
+					TemplateCircuitID: ci.ID,
+					Name:              ci.Name,
+					Rounds:            ci.Rounds,
+					TransitionSeconds: ci.TransitionSeconds,
+					SortOrder:         ci.SortOrder,
+				})
+			}
+
+			exerciseInputs := make([]models.SessionExerciseInput, 0, len(exercises))
 			for _, ex := range exercises {
 				in := models.SessionExerciseInput{
-					SessionID:    session.ID,
 					Name:         ex.Name,
 					IsBodyweight: ex.IsBodyweight,
 					WeightUnit:   defaultUnit,
 					GoalReps:     goalReps,
 					Block:        ex.Block,
+					// CircuitID carries the *template* circuit id here; the copy
+					// rewrites it to the session circuit it creates.
+					CircuitID: ex.CircuitID,
 				}
 				if libEx, err := Exercises.GetByName(userID.(int64), ex.Name); err == nil {
 					in.GoalWeight = libEx.GoalWeight
@@ -258,7 +280,26 @@ func (c *SessionController) Create() {
 						in.GoalReps = libEx.GoalRepMin
 					}
 				}
-				SessionExercises.Create(in)
+				// Inside a circuit the template's work seconds win over the
+				// library's goal: holding this stretch 30s and that one 45s is
+				// part of the circuit's definition, not a property the exercise
+				// carries everywhere. Such an exercise is timed by definition,
+				// whatever the library says its name usually means.
+				//
+				// Membership is CircuitID, never a non-zero WorkSeconds — a loose
+				// exercise is allowed to carry one, and must keep the library's
+				// behaviour when it does.
+				if ex.CircuitID != nil {
+					in.IsTimeBased = true
+					in.IsBodyweight = false
+					in.WorkSeconds = ex.WorkSeconds
+					in.GoalSeconds = ex.WorkSeconds
+				}
+				exerciseInputs = append(exerciseInputs, in)
+			}
+
+			if err := SessionExercises.CreateBody(session.ID, circuitInputs, exerciseInputs); err != nil {
+				logs.Error("SessionController.Create: CreateBody: %v", err)
 			}
 		}
 	}

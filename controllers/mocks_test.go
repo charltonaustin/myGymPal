@@ -268,18 +268,20 @@ func (m *mockPhaseRepo) UpdateRestSeconds(programID int64, phaseNumber, restSeco
 }
 
 type mockSessionExerciseRepo struct {
-	CreateFn              func(in models.SessionExerciseInput) (*models.SessionExercise, error)
-	GetBySessionFn        func(sessionID int64) ([]*models.SessionExerciseView, error)
-	GetByIDFn             func(exerciseID int64) (*models.SessionExercise, error)
-	LogSetFn              func(exerciseID int64, setNumber int, actualWeight float64, weightUnit string, actualReps int, actualSeconds int, activityType string) (*models.SessionSet, error)
-	CountSetsByExerciseFn func(exerciseID int64) (int, error)
-	DeleteSetFn           func(setID int64) error
-	LogCardioFn           func(sessionExerciseID int64, cardioType string, goalDuration, actualDuration int) (*models.CardioLog, error)
-	DeleteCardioLogFn     func(id int64) error
-	DeleteExerciseFn      func(exerciseID int64) error
-	UpdateSortOrdersFn    func(sessionID int64, ids []int64) error
-	UpdateNameFn          func(id int64, name string) error
-	UpdateLinkedToNextFn  func(id int64, linked bool) error
+	CreateFn               func(in models.SessionExerciseInput) (*models.SessionExercise, error)
+	CreateBodyFn           func(sessionID int64, circuits []models.SessionCircuitInput, exercises []models.SessionExerciseInput) error
+	GetCircuitsBySessionFn func(sessionID int64) ([]*models.SessionCircuit, error)
+	GetBySessionFn         func(sessionID int64) ([]*models.SessionExerciseView, error)
+	GetByIDFn              func(exerciseID int64) (*models.SessionExercise, error)
+	LogSetFn               func(exerciseID int64, setNumber int, actualWeight float64, weightUnit string, actualReps int, actualSeconds int, activityType string) (*models.SessionSet, error)
+	CountSetsByExerciseFn  func(exerciseID int64) (int, error)
+	DeleteSetFn            func(setID int64) error
+	LogCardioFn            func(sessionExerciseID int64, cardioType string, goalDuration, actualDuration int) (*models.CardioLog, error)
+	DeleteCardioLogFn      func(id int64) error
+	DeleteExerciseFn       func(exerciseID int64) error
+	UpdateSortOrdersFn     func(sessionID int64, ids []int64) error
+	UpdateNameFn           func(id int64, name string) error
+	UpdateLinkedToNextFn   func(id int64, linked bool) error
 }
 
 func (m *mockSessionExerciseRepo) Create(in models.SessionExerciseInput) (*models.SessionExercise, error) {
@@ -287,6 +289,20 @@ func (m *mockSessionExerciseRepo) Create(in models.SessionExerciseInput) (*model
 		return m.CreateFn(in)
 	}
 	return newMockSessionExercise(in), nil
+}
+
+func (m *mockSessionExerciseRepo) CreateBody(sessionID int64, circuits []models.SessionCircuitInput, exercises []models.SessionExerciseInput) error {
+	if m.CreateBodyFn != nil {
+		return m.CreateBodyFn(sessionID, circuits, exercises)
+	}
+	return nil
+}
+
+func (m *mockSessionExerciseRepo) GetCircuitsBySession(sessionID int64) ([]*models.SessionCircuit, error) {
+	if m.GetCircuitsBySessionFn != nil {
+		return m.GetCircuitsBySessionFn(sessionID)
+	}
+	return nil, nil
 }
 
 // newMockSessionExercise mirrors what the real repository stores for one input,
@@ -303,6 +319,8 @@ func newMockSessionExercise(in models.SessionExerciseInput) *models.SessionExerc
 		Block:        in.Block,
 		IsTimeBased:  in.IsTimeBased,
 		GoalSeconds:  in.GoalSeconds,
+		CircuitID:    in.CircuitID,
+		WorkSeconds:  in.WorkSeconds,
 	}
 }
 
@@ -600,6 +618,11 @@ func resetMocks() {
 		activityType  string
 	}{}
 	sessionExerciseCreateNames = nil
+	lastCreateBody = struct {
+		called    bool
+		circuits  []models.SessionCircuitInput
+		exercises []models.SessionExerciseInput
+	}{}
 	lastUpdateLink = struct {
 		called bool
 		id     int64
@@ -935,13 +958,36 @@ var lastLogSet struct {
 // sessionExerciseCreateNames captures exercise names from captureSessionExerciseCreates.
 var sessionExerciseCreateNames []string
 
-// captureSessionExerciseCreates records the name of each exercise created.
+// captureSessionExerciseCreates records the name of each exercise created, by
+// either route: one at a time, or as a whole template body.
 func captureSessionExerciseCreates() {
 	sessionExerciseCreateNames = nil
+	lastCreateBody = struct {
+		called    bool
+		circuits  []models.SessionCircuitInput
+		exercises []models.SessionExerciseInput
+	}{}
 	mockSessionExercises.CreateFn = func(in models.SessionExerciseInput) (*models.SessionExercise, error) {
 		sessionExerciseCreateNames = append(sessionExerciseCreateNames, in.Name)
 		return newMockSessionExercise(in), nil
 	}
+	mockSessionExercises.CreateBodyFn = func(sessionID int64, circuits []models.SessionCircuitInput, exercises []models.SessionExerciseInput) error {
+		lastCreateBody.called = true
+		lastCreateBody.circuits = circuits
+		lastCreateBody.exercises = exercises
+		for _, in := range exercises {
+			sessionExerciseCreateNames = append(sessionExerciseCreateNames, in.Name)
+		}
+		return nil
+	}
+}
+
+// lastCreateBody records the arguments of the last CreateBody call. The called
+// flag is what proves the copy ran at all.
+var lastCreateBody struct {
+	called    bool
+	circuits  []models.SessionCircuitInput
+	exercises []models.SessionExerciseInput
 }
 
 // setSessionExerciseGetBySessionWithOne makes GetBySession return a single exercise with no sets.
