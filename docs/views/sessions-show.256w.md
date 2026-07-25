@@ -28,6 +28,7 @@ adjust goal weights/reps/seconds via modals, and tracks rest time between sets.
 | `.ExerciseBlocks`               | `[]ExerciseBlock` | Each block: `.Block` (string: main/abs/cardio/stretch), `.Label`, `.Exercises`                                                             |
 | `.ExerciseBlocks[].Exercises[]` | ExerciseEntry     | `.Exercise` (name, ID, goal fields, IsTimeBased, IsBodyweight, LinkedToNext), `.Sets`, `.LastSet`, `.HitMax`, `.BelowGoal`, `.GoalRepMin`, `.GoalRepMax`, `.SupersetLinked`, `.SupersetLabel` |
 | `.PhaseRestSeconds`             | int               | Rest timer duration; 0 means timer disabled                                                                                                |
+| `.Circuits[]`                   | sessionCircuitView | `.Circuit` (`.Name`, `.Rounds`, `.TransitionSeconds`) and `.Exercises[]` (same shape as a block entry, plus `.Exercise.WorkSeconds`)      |
 | `.PhaseRepMin` / `.PhaseRepMax` | int               | Phase-level rep targets shown as goal hint                                                                                                 |
 | `.WeightUnit`                   | string            | `"lb"` or `"kg"`; user's global preference — drives the global toggle default; each exercise renders in its own `exercises.weight_unit`    |
 | `.ExerciseLibraryJSON`          | template.JS       | JSON array of all exercises for autocomplete                                                                                               |
@@ -63,8 +64,9 @@ All set-log requests send `X-Requested-With: XMLHttpRequest`. Response is JSON `
   fires `POST /sessions/:id/exercises/:eid/unit` to persist the preference to the exercise library. Each card carries
   `data-ex-id` (session_exercise ID) and `data-server-unit` (the unit the server rendered in).
 - **Set logging AJAX**: intercepts `.log-set-form` submit; on success, appends a new `<tr>` to the sets table and calls
-  `window.startRestTimer()` — but only when the card's `data-linked` is not `"true"`, so a superset flows straight into
-  the next exercise with no rest.
+  `window.startRestTimer()` — but only when `flowsIntoNext(card)` is false. That helper reads `data-linked` (superset)
+  or `data-in-circuit` (circuit member); either one means the exercise runs straight into the next with no rest. Both
+  attributes are computed server-side, never a raw column re-interpreted in JS.
 - **Supersets**: each card carries `data-link-raw` (stored `linked_to_next`) and `data-linked` (the effective link
   computed by the controller). Every card except the last in its block renders a `.chain-btn`; clicking it POSTs to
   `/sessions/:id/exercises/:eid/link` and, on success, calls `relabelBlock()` — which recomputes effective links and
@@ -76,7 +78,28 @@ All set-log requests send `X-Requested-With: XMLHttpRequest`. Response is JSON `
 - **SortableJS**: creates a Sortable instance per `.sortable-block`; fires reorder fetch on `onEnd`, then `relabelBlock()`.
 - **Rest timer**: IIFE managing a fixed-bottom countdown panel. Stores start time and duration in `localStorage` keyed
   by session ID, restoring on reload. Uses Web Audio API (`AudioContext`) for a three-beep alarm and
-  `navigator.serviceWorker.ready` for a push notification when rest completes.
+  `navigator.serviceWorker.ready` for a push notification when rest completes. It exports `window.unlockAudio`,
+  `window.playStartCue` and `window.playTransitionCue` so the circuit runner shares the one `AudioContext` — iOS
+  unlocks one per gesture and will not unlock a second.
+- **Circuits**: `.Circuits` renders one dark-headed card per circuit holding its members' cards, each carrying
+  `data-work-seconds`, `data-ex-name`, `data-in-circuit="true"`, a rounds table and a manual `+ Round` form. Members
+  appear only here and get no chain toggle.
+- **Circuit runner** (`#circuit-runner`): a full-screen overlay on this page, opened by `.start-circuit-btn`, never a
+  separate page — the session holds a running rest timer that a navigation would destroy. `buildPlan()` reads the
+  circuit card's `data-rounds` / `data-transition` and its members' `data-work-seconds` into a flat list of steps: a
+  lead-in gap (the transition length, or 3s when there is none), then each member's work interval per round separated
+  by the transition gap, with no gap after the last interval. Members with `work_seconds` of 0 are skipped.
+  A `setInterval` fires every 200ms but only *reads* the clock: `remaining = step.secs - floor((Date.now() - stepStart) / 1000)`.
+  Never accumulate ticks — a backgrounded mobile tab throttles timers and the clock would drift over four rounds.
+  Pause records `Date.now()` and resume adds the elapsed pause onto `stepStart`. Skip advances without logging or
+  cueing. Quit closes the overlay, leaving completed intervals logged.
+  At the end of a work step the **transition cue** fires and the interval is POSTed to the ordinary set endpoint with
+  `X-Requested-With: XMLHttpRequest`; the returned row is appended to the member's card via the shared
+  `ensureSetsTable` / `timeSetRow` helpers, so nothing reloads. At the end of a gap the **start cue** fires.
+- **Audio cues**: `start` is three short rising beeps (660 → 880 → 1100 Hz); `transition` is two long falling tones
+  (440 → 294 Hz). They must stay audibly different — the engineer identifies them with the phone in a pocket. Both go
+  through `playTones()`, which first dispatches a `circuit-cue` DOM event (`{cue, tones}`); the runner listens and
+  flashes the overlay green or amber so a muted device still gets the signal.
 - **Exercise autocomplete**: IIFE that reads `.ExerciseLibraryJSON`, filters as the user types in `#ex_name`, and calls
   `autofillFromLibrary()` to set the type radio and goal fields.
 

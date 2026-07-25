@@ -46,7 +46,10 @@ All handlers check `c.GetSession("user_id")`; nil → /login (or JSON error for 
 - `c.Data["Session"]`, `c.Data["Program"]`
 - `c.Data["ExerciseBlocks"]` = `[]sessionExerciseBlock` (grouped by main/abs/cardio/stretch). Each
   `SessionExerciseView` inside carries the computed `SupersetLinked` and `SupersetLabel`; they are not separate
-  top-level `c.Data` keys.
+  top-level `c.Data` keys. **Circuit members are excluded from these blocks.**
+- `c.Data["Circuits"]` = `[]sessionCircuitView` — `.Circuit` (`*models.SessionCircuit`: `Name`, `Rounds`,
+  `TransitionSeconds`) and `.Exercises` (`[]*models.SessionExerciseView`, the members in sort order). Circuits with no
+  remaining members are omitted. Set on the one render path `Show` has; every other exit is a redirect.
 - `c.Data["WeightUnit"]`, `c.Data["ExWeightUnit"]`
 - `c.Data["PhaseRepMin"]`, `c.Data["PhaseRepMax"]`, `c.Data["PhaseRestSeconds"]`
 - `c.Data["ExerciseLibraryJSON"]` = `template.JS` — embedded JSON for autocomplete
@@ -58,10 +61,11 @@ All handlers check `c.GetSession("user_id")`; nil → /login (or JSON error for 
 ## Repository calls
 
 - `Programs.GetByID`, `Sessions.CountByProgram`, `Sessions.LatestByProgram` — New
-- `Sessions.Create`, `Templates.GetByID`, `Phases.GetByProgram`, `Exercises.GetByName`, `SessionExercises.Create` —
-  Create
-- `Sessions.GetByID`, `Programs.GetByID`, `SessionExercises.GetBySession`, `Exercises.GetByName`, `Users.GetByID`,
-  `Phases.GetByProgram`, `Sessions.GetByProgram`, `SessionExercises.GetBySession` (previous) — Show
+- `Sessions.Create`, `Templates.GetByID`, `Templates.GetCircuits`, `Phases.GetByProgram`, `Exercises.GetByName`,
+  `SessionExercises.CreateBody` — Create
+- `Sessions.GetByID`, `Programs.GetByID`, `SessionExercises.GetBySession`, `SessionExercises.GetCircuitsBySession`,
+  `Exercises.GetByName`, `Users.GetByID`, `Phases.GetByProgram`, `Sessions.GetByProgram`,
+  `SessionExercises.GetBySession` (previous) — Show
 - `SessionExercises.Create` — AddExercise, AddCardioActivity
 - `SessionExercises.LogSet`, `SessionExercises.CountSetsByExercise`, `Exercises.GetByName`,
   `Exercises.UpdateGoalWeight` — LogSet
@@ -88,7 +92,8 @@ All handlers check `c.GetSession("user_id")`; nil → /login (or JSON error for 
   `session_exercises.name`, redirects back to session page; existing sets remain linked to the exercise row
 - **UpdateLink** — `POST /sessions/:id/exercises/:eid/link` with `linked=true|false`; toggles the superset chain to the
   next exercise in the block. Returns `{"ok": true, "linked": <bool>}`; 401 unauthenticated, 404 on a session or
-  exercise the caller does not own, 400 when linking an exercise that is last in its block or that would make a run of
+  exercise the caller does not own, 400 for an exercise inside a circuit (checked before the repository is reached),
+  400 when linking an exercise that is last in its block or that would make a run of
   more than four. Never redirects — an AJAX caller cannot follow one.
 
 ## Key invariants
@@ -102,7 +107,15 @@ All handlers check `c.GetSession("user_id")`; nil → /login (or JSON error for 
   `SupersetLinked` = raw link AND an exercise exists at `i+1` in the same block AND the run stays under four members;
   runs of two or more are labelled `A1`, `A2`, `B1`, … per block. A stale link on the last exercise of a block is
   inert, so the rest timer still fires after it. `views/sessions/show.tpl` starts the rest timer after a logged set
-  only when the card's computed `data-linked` is not `true`.
+  only when neither `data-linked` nor `data-in-circuit` is `true` on the card.
+- Circuits: copied into the session at creation by one `SessionExercises.CreateBody` call, in one transaction, with
+  each exercise's *template* circuit id remapped to the new session circuit. Inside a circuit the template's
+  `work_seconds` overrides the library's `goal_seconds` and the exercise is stored time-based; outside one the library
+  still wins. `groupSessionCircuits` pairs each circuit with its members, and `groupSessionExercises` drops them from
+  the block listing so a member is rendered exactly once. Circuit membership is `circuit_id != nil`, never a non-zero
+  `work_seconds` — a loose exercise may legally carry one.
+- A circuit round is a set. The runner POSTs each completed interval to `LogSet` (round N → set N), so there is no
+  circuit-logging endpoint and no results table.
 - Ownership for `UpdateLink` is enforced in the controller (`Sessions.GetByID(sessionID, userID)`, then
   `exercise.SessionID != sessionID`); `SessionExerciseRepository` methods are not userID-scoped.
 

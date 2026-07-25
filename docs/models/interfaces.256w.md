@@ -104,7 +104,9 @@ Upsert(userID int64, protein, carbs, fat float64) (*MacroGoal, error)
 ## SessionExerciseRepository
 
 ```go
-Create(sessionID int64, name string, isBodyweight bool, goalWeight float64, weightUnit string, goalReps int, block string, isTimeBased bool, goalSeconds int) (*SessionExercise, error)
+Create(in SessionExerciseInput) (*SessionExercise, error)
+CreateBody(sessionID int64, circuits []SessionCircuitInput, exercises []SessionExerciseInput) error
+GetCircuitsBySession(sessionID int64) ([]*SessionCircuit, error)
 GetBySession(sessionID int64) ([]*SessionExerciseView, error)
 GetByID(exerciseID int64) (*SessionExercise, error)
 LogSet(exerciseID int64, setNumber int, actualWeight float64, weightUnit string, actualReps int, actualSeconds int, activityType string) (*SessionSet, error)
@@ -114,7 +116,17 @@ LogCardio(sessionExerciseID int64, cardioType string, goalDuration, actualDurati
 DeleteCardioLog(id int64) error
 DeleteExercise(exerciseID int64) error
 UpdateSortOrders(sessionID int64, ids []int64) error
+UpdateName(id int64, name string) error
+UpdateLinkedToNext(id int64, linked bool) error
 ```
+
+`Create` takes a struct because it already had nine positional parameters and circuits needed two more; an
+eleven-argument call of mostly `int` and `bool` is where a transposed pair compiles cleanly and fails silently.
+`SessionExerciseInput.CircuitID` is a `*int64` so an omitted field means "loose", not "circuit 0".
+
+`CreateBody` copies a whole template body in one transaction. Each exercise arrives with `CircuitID` holding the
+**template** circuit id, matched against `SessionCircuitInput.TemplateCircuitID` and rewritten to the new session
+circuit's id. There is no `LogRound`: a circuit round is logged through `LogSet` as an ordinary time-based set.
 
 ## Not in this file
 

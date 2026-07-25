@@ -186,6 +186,27 @@ CREATE TABLE sessions (
 
 ---
 
+### `session_circuits`
+
+A named, ordered group of exercises within one session — the session-side copy of a `template_circuits` row.
+
+```sql
+CREATE TABLE session_circuits (
+    id                 BIGSERIAL    PRIMARY KEY,
+    session_id         BIGINT       NOT NULL REFERENCES sessions(id) ON DELETE CASCADE,
+    name               VARCHAR(255) NOT NULL,
+    rounds             INT          NOT NULL DEFAULT 1 CHECK (rounds >= 1),
+    transition_seconds INT          NOT NULL DEFAULT 0 CHECK (transition_seconds >= 0),
+    sort_order         INT          NOT NULL DEFAULT 0
+);
+```
+
+There is deliberately **no foreign key back to `template_circuits`.** A session records what was actually performed;
+if it referenced the template, editing that template next month would retroactively change the rounds and durations of
+a workout already done. The circuit is copied, exactly as the exercises are.
+
+---
+
 ### `session_exercises`
 
 Exercises logged within a session. Goals are snapshotted from the user's exercise library and the current phase at
@@ -204,9 +225,17 @@ CREATE TABLE session_exercises (
     goal_seconds  INT          NOT NULL DEFAULT 0,
     block          VARCHAR(20) NOT NULL DEFAULT 'main',
     sort_order     INT         NOT NULL DEFAULT 0,
-    linked_to_next BOOLEAN     NOT NULL DEFAULT FALSE
+    linked_to_next BOOLEAN     NOT NULL DEFAULT FALSE,
+    circuit_id     BIGINT      REFERENCES session_circuits(id) ON DELETE SET NULL,
+    work_seconds   INT         NOT NULL DEFAULT 0 CHECK (work_seconds >= 0)
 );
 ```
+
+`circuit_id` is the **only** marker of circuit membership. `work_seconds` is the length of one round inside a circuit,
+but a loose exercise is permitted to carry a non-zero value, so a duration must never be read as membership.
+
+Circuit membership and `linked_to_next` are mutually exclusive: a circuit already means "no rest between these", so a
+member's link is ignored, the page renders no chain toggle for it, and the link endpoint refuses one.
 
 `linked_to_next` means "do not rest after this exercise — go straight to the next one", forming a superset. It is a
 property of a single exercise, not of a pair, so reordering and deleting cannot orphan a group. The column is never
@@ -374,7 +403,8 @@ users
   ├── programs
   │     └── phases
   │     └── sessions
-  │           ├── session_exercises
+  │           ├── session_circuits
+  │           ├── session_exercises   (circuit_id → session_circuits, nullable)
   │           │     ├── session_sets
   │           │     └── cardio_logs
   ├── user_exercise_goals  (per-user goals for global exercises)
@@ -409,6 +439,13 @@ time, so each user gets their own personalised targets from the same shared temp
 
 `session_exercises` copies goal weight, reps, and seconds from the exercise library at the moment the session is
 created. This preserves the historical target even if the user later updates their exercise goals.
+
+### A circuit round is a set, not its own record
+
+There is no circuit-results table. Round N of an exercise inside a circuit is logged as **set N** of that exercise in
+`session_sets`, with `actual_seconds` set to the work interval. A circuit stretch therefore appears in the ordinary
+exercise-history graph with no special-casing anywhere, and "which circuit was that?" is answered by
+`session_exercises.circuit_id`.
 
 ### `is_deload` stored explicitly on sessions
 
