@@ -381,6 +381,81 @@
     {{end}}
     {{end}}
 
+    {{range .Circuits}}
+    <h2 class="h6 fw-semibold text-uppercase text-muted mt-4 mb-3">Circuit</h2>
+    <div class="card mb-4 border-dark circuit-card"
+         data-circuit-id="{{.Circuit.ID}}"
+         data-circuit-name="{{.Circuit.Name}}"
+         data-rounds="{{.Circuit.Rounds}}"
+         data-transition="{{.Circuit.TransitionSeconds}}">
+        <div class="card-header bg-dark text-white d-flex align-items-center justify-content-between gap-2">
+            <div class="min-w-0">
+                <div class="fw-semibold text-truncate">{{.Circuit.Name}}</div>
+                <div class="small">
+                    {{.Circuit.Rounds}} round{{if ne .Circuit.Rounds 1}}s{{end}} &middot; {{.Circuit.TransitionSeconds}}s transition
+                </div>
+            </div>
+            <button type="button" class="btn btn-light btn-sm flex-shrink-0 start-circuit-btn" style="white-space:nowrap;">
+                <i class="bi bi-play-fill"></i> Start Circuit
+            </button>
+        </div>
+        <div class="card-body pb-2">
+            {{range .Exercises}}
+            {{$exID := .Exercise.ID}}
+            <div class="card mb-2 circuit-exercise" data-ex-id="{{$exID}}" data-in-circuit="true"
+                 data-server-unit="{{.Exercise.WeightUnit}}"
+                 data-work-seconds="{{.Exercise.WorkSeconds}}"
+                 data-ex-name="{{.Exercise.Name}}">
+                <div class="card-body py-2">
+                    <div class="d-flex align-items-center justify-content-between mb-1">
+                        <h3 class="h6 fw-semibold mb-0 text-capitalize text-truncate">{{.Exercise.Name}}</h3>
+                        <div class="d-flex align-items-center gap-2 flex-shrink-0">
+                            <span class="badge text-bg-secondary">{{.Exercise.WorkSeconds}}s</span>
+                            <form method="POST" action="/sessions/{{$.Session.ID}}/exercises/{{$exID}}/delete" class="d-inline">
+                                <button type="submit" class="btn btn-link btn-sm text-danger p-0" title="Remove exercise"><i class="bi bi-trash"></i></button>
+                            </form>
+                        </div>
+                    </div>
+
+                    {{if .Sets}}
+                    <table class="table table-sm mb-2">
+                        <thead><tr>
+                            <th class="text-muted fw-normal small ps-0">Round</th>
+                            <th class="text-muted fw-normal small">Type</th>
+                            <th class="text-muted fw-normal small">Duration</th>
+                            <th></th>
+                        </tr></thead>
+                        <tbody>
+                            {{range .Sets}}
+                            <tr>
+                                <td class="ps-0">{{.SetNumber}}</td>
+                                <td class="text-capitalize">{{if .ActivityType}}{{.ActivityType}}{{else}}&mdash;{{end}}</td>
+                                <td>{{fmtDuration .ActualSeconds}}</td>
+                                <td class="text-end">
+                                    <form method="POST" action="/sessions/{{$.Session.ID}}/exercises/{{$exID}}/sets/{{.ID}}/delete" class="d-inline delete-set-form">
+                                        <button type="submit" class="btn btn-link btn-sm text-danger p-0" title="Delete round"><i class="bi bi-trash"></i></button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {{end}}
+                        </tbody>
+                    </table>
+                    {{end}}
+
+                    <form method="POST" action="/sessions/{{$.Session.ID}}/exercises/{{$exID}}/sets" class="d-flex gap-2 align-items-end w-100 log-set-form" data-time-based="1">
+                        <input type="hidden" name="activity_type" value="">
+                        <input type="hidden" name="actual_h" value="0">
+                        <input type="hidden" name="actual_m" value="{{restMinutes .Exercise.WorkSeconds}}">
+                        <input type="hidden" name="actual_s" value="{{restSecs .Exercise.WorkSeconds}}">
+                        <button type="submit" class="btn btn-outline-dark btn-sm">+ Round</button>
+                    </form>
+                </div>
+            </div>
+            {{end}}
+        </div>
+    </div>
+    {{end}}
+
     <h2 class="h6 fw-semibold text-uppercase text-muted mt-4 mb-3">Add Exercise</h2>
 
     <form id="add-exercise-form" method="POST" action="/sessions/{{.Session.ID}}/exercises">
@@ -579,31 +654,10 @@ document.querySelectorAll('.log-set-form').forEach(form => {
             return;
         }
 
-        // Find or create the sets table inside this card.
-        const cardBody = form.closest('.card-body');
-        let table = cardBody.querySelector('table');
-        if (!table) {
-            table = document.createElement('table');
-            table.className = 'table table-sm mb-2';
-            if (isTimeBased) {
-                table.innerHTML =
-                    '<thead><tr>' +
-                    '<th class="text-muted fw-normal small ps-0">Set</th>' +
-                    '<th class="text-muted fw-normal small">Type</th>' +
-                    '<th class="text-muted fw-normal small">Duration</th>' +
-                    '<th></th>' +
-                    '</tr></thead><tbody></tbody>';
-            } else {
-                table.innerHTML =
-                    '<thead><tr>' +
-                    '<th class="text-muted fw-normal small ps-0">Set</th>' +
-                    '<th class="text-muted fw-normal small">Weight</th>' +
-                    '<th class="text-muted fw-normal small">Reps</th>' +
-                    '<th></th>' +
-                    '</tr></thead><tbody></tbody>';
-            }
-            form.before(table);
-        }
+        const table  = ensureSetsTable(form, isTimeBased);
+        const tbody  = table.querySelector('tbody');
+        const setNum = data.set_number;
+        const setID  = data.id;
 
         // Extract exercise and session IDs from the form action URL.
         const parts   = form.action.split('/');
@@ -612,26 +666,14 @@ document.querySelectorAll('.log-set-form').forEach(form => {
         const exIdx   = parts.indexOf('exercises');
         const exID    = parts[exIdx + 1];
 
-        const tbody  = table.querySelector('tbody');
-        const setNum = data.set_number;
-        const setID  = data.id;
         const deleteAction = `/sessions/${sessID}/exercises/${exID}/sets/${setID}/delete`;
-        const row    = document.createElement('tr');
+        let row;
 
         if (isTimeBased) {
             const h = parseInt(formData.get('actual_h') || '0', 10);
             const m = parseInt(formData.get('actual_m') || '0', 10);
             const s = parseInt(formData.get('actual_s') || '0', 10);
-            const totalSecs = h * 3600 + m * 60 + s;
-            const actType = formData.get('activity_type') || '';
-            const actTypeDisplay = actType ? `<span class="text-capitalize">${actType}</span>` : '&mdash;';
-            row.innerHTML =
-                `<td class="ps-0">${setNum}</td>` +
-                `<td>${actTypeDisplay}</td>` +
-                `<td>${fmtDuration(totalSecs)}</td>` +
-                `<td class="text-end"><form method="POST" action="${deleteAction}" class="d-inline delete-set-form">` +
-                `<button type="submit" class="btn btn-link btn-sm text-danger p-0" title="Delete set"><i class="bi bi-trash"></i></button>` +
-                `</form></td>`;
+            row = timeSetRow(setNum, h * 3600 + m * 60 + s, formData.get('activity_type') || '', deleteAction);
         } else {
             const rawWeight  = parseFloat(formData.get('actual_weight') || '0');
             const loggedUnit = formData.get('weight_unit') || 'lb';
@@ -639,6 +681,7 @@ document.querySelectorAll('.log-set-form').forEach(form => {
             const exUnit     = exCard ? getCardUnit(exCard) : serverUnit;
             const converted  = convertWeight(rawWeight, loggedUnit, exUnit);
             const reps       = formData.get('actual_reps') || '0';
+            row = document.createElement('tr');
             row.innerHTML =
                 `<td class="ps-0">${setNum}</td>` +
                 `<td class="weight-cell" data-w="${converted}" data-u="${exUnit}">${Math.round(converted)} ${exUnit}</td>` +
@@ -649,14 +692,57 @@ document.querySelectorAll('.log-set-form').forEach(form => {
         }
         tbody.appendChild(row);
 
-        // A linked card flows straight into the exercise below it, so no rest is
-        // taken after it. data-linked is the computed link, never the raw column,
-        // so a stale link on the last card of a block still rests.
-        const loggedCard = form.closest('.card[data-ex-id]');
-        const inSuperset = loggedCard && loggedCard.dataset.linked === 'true';
-        if (!inSuperset && typeof window.startRestTimer === 'function') window.startRestTimer();
+        if (!flowsIntoNext(form.closest('.card[data-ex-id]')) && typeof window.startRestTimer === 'function') {
+            window.startRestTimer();
+        }
     });
 });
+
+// flowsIntoNext reports whether an exercise runs straight into the next one, so
+// no rest is taken after it. Both attributes are computed by the controller and
+// written onto the card — never a raw column the JS reinterprets. data-linked is
+// the *effective* superset link, so a stale link on the last card of a block
+// still rests; data-in-circuit is set only on a card the controller filed under
+// a circuit, where the transition gap is the rest.
+function flowsIntoNext(card) {
+    if (!card) return false;
+    return card.dataset.linked === 'true' || card.dataset.inCircuit === 'true';
+}
+
+// ensureSetsTable returns the sets table in the form's card, creating it above
+// the form on the first logged set.
+function ensureSetsTable(form, isTimeBased) {
+    const cardBody = form.closest('.card-body');
+    let table = cardBody.querySelector('table');
+    if (table) return table;
+
+    table = document.createElement('table');
+    table.className = 'table table-sm mb-2';
+    const first = form.closest('.circuit-exercise') ? 'Round' : 'Set';
+    const cols = isTimeBased ? [first, 'Type', 'Duration'] : [first, 'Weight', 'Reps'];
+    table.innerHTML =
+        '<thead><tr>' +
+        cols.map((c, i) => `<th class="text-muted fw-normal small${i === 0 ? ' ps-0' : ''}">${c}</th>`).join('') +
+        '<th></th>' +
+        '</tr></thead><tbody></tbody>';
+    form.before(table);
+    return table;
+}
+
+// timeSetRow builds one row of a time-based sets table. The circuit runner and
+// the manual log form share it so a round logged either way looks the same.
+function timeSetRow(setNum, totalSecs, actType, deleteAction) {
+    const row = document.createElement('tr');
+    const actTypeDisplay = actType ? `<span class="text-capitalize">${actType}</span>` : '&mdash;';
+    row.innerHTML =
+        `<td class="ps-0">${setNum}</td>` +
+        `<td>${actTypeDisplay}</td>` +
+        `<td>${fmtDuration(totalSecs)}</td>` +
+        `<td class="text-end"><form method="POST" action="${deleteAction}" class="d-inline delete-set-form">` +
+        `<button type="submit" class="btn btn-link btn-sm text-danger p-0" title="Delete set"><i class="bi bi-trash"></i></button>` +
+        `</form></td>`;
+    return row;
+}
 
 // Delete set via AJAX so the page never reloads and the rest timer keeps running.
 document.addEventListener('submit', async function (e) {
@@ -877,25 +963,50 @@ document.addEventListener('click', async function (e) {
         } catch (e) { audioCtx = null; }
     }
 
-    function playAlarm() {
+    // playTones sounds a sequence of [frequency, offset, length] beeps and
+    // announces itself as a `circuit-cue` event, so anything that needs to react
+    // to a cue — the runner's screen flash — does not have to own the audio, and
+    // a muted phone still shows what it would have heard.
+    function playTones(name, tones) {
+        document.dispatchEvent(new CustomEvent('circuit-cue', {
+            detail: { cue: name, tones: tones.map(function (t) { return t[0]; }) },
+        }));
         if (!audioCtx) return;
         if (audioCtx.state === 'suspended') audioCtx.resume();
-        // Three short rising beeps.
-        [0, 0.35, 0.7].forEach(function (offset, i) {
+        tones.forEach(function (tone) {
+            const freq = tone[0], offset = tone[1], length = tone[2];
             const osc  = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
             osc.connect(gain);
             gain.connect(audioCtx.destination);
             osc.type = 'sine';
-            osc.frequency.value = 660 + i * 220; // 660 → 880 → 1100 Hz
+            osc.frequency.value = freq;
             const t = audioCtx.currentTime + offset;
             gain.gain.setValueAtTime(0, t);
             gain.gain.linearRampToValueAtTime(0.9, t + 0.02);
-            gain.gain.exponentialRampToValueAtTime(0.001, t + 0.25);
+            gain.gain.exponentialRampToValueAtTime(0.001, t + length);
             osc.start(t);
-            osc.stop(t + 0.25);
+            osc.stop(t + length);
         });
     }
+
+    // Three short rising beeps: rest is over, or the next interval starts now.
+    function playAlarm() {
+        playTones('start', [[660, 0, 0.25], [880, 0.35, 0.25], [1100, 0.7, 0.25]]);
+    }
+
+    // Two long falling tones: stop and move on. Deliberately the opposite shape
+    // to the start cue — lower, slower, descending — because the engineer has to
+    // tell the two apart with the phone in a pocket and no chance to look at it.
+    function playTransition() {
+        playTones('transition', [[440, 0, 0.45], [294, 0.5, 0.6]]);
+    }
+
+    // The runner needs the same AudioContext: iOS unlocks one per gesture and
+    // will not unlock a second.
+    window.unlockAudio         = unlockAudio;
+    window.playStartCue        = playAlarm;
+    window.playTransitionCue   = playTransition;
 
     let notified = false;
 
@@ -1051,6 +1162,247 @@ document.addEventListener('click', async function (e) {
     });
 })();
 </script>
+<!-- Circuit runner -->
+<div id="circuit-runner" class="d-none" style="position:fixed;inset:0;z-index:2000;background:#0f0f0f;color:#fff;">
+    <div class="d-flex flex-column align-items-center justify-content-center text-center h-100 px-4">
+        <div id="cr-name" class="text-uppercase small text-secondary" style="letter-spacing:0.12em;"></div>
+        <div id="cr-round" class="text-secondary mb-4"></div>
+        <div id="cr-phase" class="badge text-bg-secondary mb-2 text-uppercase" style="letter-spacing:0.08em;"></div>
+        <div id="cr-exercise" class="h2 fw-bold text-capitalize mb-1"></div>
+        <div id="cr-clock" class="fw-bold font-monospace" style="font-size:min(28vw,7rem);line-height:1;letter-spacing:0.02em;">0:00</div>
+        <div id="cr-next" class="text-secondary mt-3"></div>
+        <div class="d-flex gap-2 mt-5">
+            <button type="button" id="cr-pause" class="btn btn-outline-light px-4">Pause</button>
+            <button type="button" id="cr-skip" class="btn btn-outline-light px-4">Skip</button>
+            <button type="button" id="cr-quit" class="btn btn-outline-danger px-4">Quit</button>
+        </div>
+    </div>
+</div>
+
+<script>
+// ---- Circuit runner ----
+// A full-screen overlay on this page, never a separate one: the session holds a
+// running rest timer in JS and a navigation would lose it.
+//
+// Every countdown is derived from a wall-clock delta rather than by counting
+// setInterval ticks. A backgrounded mobile tab throttles timers hard, and a
+// tick-counting clock drifts badly over a four-round circuit — exactly the
+// situation this feature exists for, with the phone face-down on the mat.
+(function () {
+    const overlay    = document.getElementById('circuit-runner');
+    if (!overlay) return;
+    const nameEl     = document.getElementById('cr-name');
+    const roundEl    = document.getElementById('cr-round');
+    const phaseEl    = document.getElementById('cr-phase');
+    const exerciseEl = document.getElementById('cr-exercise');
+    const clockEl    = document.getElementById('cr-clock');
+    const nextEl     = document.getElementById('cr-next');
+    const pauseBtn   = document.getElementById('cr-pause');
+    const skipBtn    = document.getElementById('cr-skip');
+    const quitBtn    = document.getElementById('cr-quit');
+
+    // LEAD_IN_SECONDS is the countdown into the first exercise when the circuit
+    // defines no transition gap, so the runner never starts timing an exercise
+    // the instant the button is released.
+    const LEAD_IN_SECONDS = 3;
+
+    let steps  = [];
+    let index  = 0;
+    let stepStart = 0;
+    let pausedAt  = 0;
+    let ticker    = null;
+    let circuitName = '';
+    let totalRounds = 1;
+
+    function clock(secs) {
+        const s = Math.max(0, secs);
+        return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
+    }
+
+    // buildPlan flattens a circuit into the sequence the runner walks: a lead-in
+    // gap, then each exercise's work interval for each round, separated by the
+    // transition gap. The last interval has no gap after it — the circuit is over.
+    function buildPlan(card) {
+        totalRounds = Math.max(1, parseInt(card.dataset.rounds || '1', 10));
+        const transition = Math.max(0, parseInt(card.dataset.transition || '0', 10));
+        circuitName = card.dataset.circuitName || 'Circuit';
+
+        const exercises = Array.from(card.querySelectorAll('.circuit-exercise'))
+            .map(function (el) {
+                return {
+                    id:   el.dataset.exId,
+                    name: el.dataset.exName,
+                    secs: parseInt(el.dataset.workSeconds || '0', 10),
+                    el:   el,
+                };
+            })
+            // An exercise with no duration has nothing to count down; running it
+            // would fire both cues back to back and log a zero-second round.
+            .filter(function (ex) { return ex.secs > 0; });
+
+        const plan = [];
+        if (!exercises.length) return plan;
+
+        plan.push({ kind: 'gap', secs: transition > 0 ? transition : LEAD_IN_SECONDS, label: 'Get ready', next: exercises[0].name, round: 1 });
+
+        for (let r = 1; r <= totalRounds; r++) {
+            for (let i = 0; i < exercises.length; i++) {
+                const last = r === totalRounds && i === exercises.length - 1;
+                const following = last ? '' : (exercises[i + 1] || exercises[0]).name;
+                plan.push({ kind: 'work', secs: exercises[i].secs, ex: exercises[i], round: r, next: following });
+                if (!last && transition > 0) {
+                    plan.push({ kind: 'gap', secs: transition, label: 'Transition', next: following, round: r });
+                }
+            }
+        }
+        return plan;
+    }
+
+    function render(remaining) {
+        const step = steps[index];
+        nameEl.textContent  = circuitName;
+        roundEl.textContent = 'Round ' + step.round + ' of ' + totalRounds;
+        clockEl.textContent = clock(remaining);
+        if (step.kind === 'work') {
+            phaseEl.textContent    = 'Work';
+            phaseEl.className      = 'badge text-bg-light mb-2 text-uppercase';
+            exerciseEl.textContent = step.ex.name;
+        } else {
+            phaseEl.textContent    = step.label;
+            phaseEl.className      = 'badge text-bg-secondary mb-2 text-uppercase';
+            exerciseEl.textContent = step.next;
+        }
+        nextEl.textContent = step.kind === 'work' && step.next ? 'next: ' + step.next : '';
+    }
+
+    // logRound records one completed interval as an ordinary time-based set:
+    // round N of an exercise is set N of it. That is what puts a circuit stretch
+    // in its own exercise-history graph with no special-casing anywhere, and it
+    // is why there is no separate results table.
+    async function logRound(step) {
+        const body = new URLSearchParams({
+            activity_type: '',
+            actual_h: '0',
+            actual_m: String(Math.floor(step.secs / 60)),
+            actual_s: String(step.secs % 60),
+        });
+        let data;
+        try {
+            const res = await fetch('/sessions/' + sessionID + '/exercises/' + step.ex.id + '/sets', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+                body: body.toString(),
+            });
+            if (!res.ok) return;
+            data = await res.json();
+        } catch { return; }
+
+        // Update the card underneath so the page is already correct when the
+        // overlay closes — the rest timer must survive, so there is no reload.
+        const form = step.ex.el.querySelector('.log-set-form');
+        if (!form) return;
+        const table = ensureSetsTable(form, true);
+        const del = '/sessions/' + sessionID + '/exercises/' + step.ex.id + '/sets/' + data.id + '/delete';
+        table.querySelector('tbody').appendChild(timeSetRow(data.set_number, step.secs, '', del));
+    }
+
+    function advance() {
+        const finished = steps[index];
+        if (finished.kind === 'work') {
+            // Stop first, then record. The cue is what the engineer is waiting
+            // on; the POST can take its time.
+            window.playTransitionCue();
+            logRound(finished);
+        } else {
+            window.playStartCue();
+        }
+
+        index++;
+        if (index >= steps.length) { close(); return; }
+
+        // A circuit with no transition gap goes straight from one exercise into
+        // the next, so only the stop cue sounds. Two cues back to back with no
+        // time between them would be noise, not information.
+        stepStart = Date.now();
+        render(steps[index].secs);
+    }
+
+    function tick() {
+        if (pausedAt) return;
+        const elapsed   = Math.floor((Date.now() - stepStart) / 1000);
+        const remaining = steps[index].secs - elapsed;
+        if (remaining <= 0) { advance(); return; }
+        render(remaining);
+    }
+
+    function open(card) {
+        steps = buildPlan(card);
+        if (!steps.length) return;
+        index = 0;
+        pausedAt = 0;
+        pauseBtn.textContent = 'Pause';
+        stepStart = Date.now();
+        overlay.classList.remove('d-none');
+        document.body.style.overflow = 'hidden';
+        render(steps[0].secs);
+        ticker = setInterval(tick, 200);
+    }
+
+    function close() {
+        if (ticker) { clearInterval(ticker); ticker = null; }
+        overlay.classList.add('d-none');
+        document.body.style.overflow = '';
+    }
+
+    document.addEventListener('click', function (e) {
+        const btn = e.target.closest('.start-circuit-btn');
+        if (!btn) return;
+        // This click is the user gesture the AudioContext needs; without it iOS
+        // will refuse to play anything for the rest of the circuit.
+        window.unlockAudio();
+        open(btn.closest('.circuit-card'));
+    });
+
+    pauseBtn.addEventListener('click', function () {
+        if (pausedAt) {
+            // Shift the step's start by however long the pause lasted, so the
+            // wall-clock arithmetic stays honest instead of losing the pause.
+            stepStart += Date.now() - pausedAt;
+            pausedAt = 0;
+            pauseBtn.textContent = 'Pause';
+        } else {
+            pausedAt = Date.now();
+            pauseBtn.textContent = 'Resume';
+        }
+    });
+
+    // Skipping abandons the current interval: it is not logged and no cue fires.
+    // An interval the engineer did not finish is not a round they did.
+    skipBtn.addEventListener('click', function () {
+        index++;
+        if (index >= steps.length) { close(); return; }
+        pausedAt = 0;
+        pauseBtn.textContent = 'Pause';
+        stepStart = Date.now();
+        render(steps[index].secs);
+    });
+
+    // Quitting halfway leaves every completed interval logged. They were done.
+    quitBtn.addEventListener('click', close);
+
+    // A cue the engineer cannot hear — muted phone, iOS ringer switch — still
+    // reads as a flash of colour.
+    document.addEventListener('circuit-cue', function (e) {
+        if (overlay.classList.contains('d-none')) return;
+        overlay.style.background = e.detail.cue === 'start' ? '#14532d' : '#7c2d12';
+        setTimeout(function () { overlay.style.background = '#0f0f0f'; }, 400);
+    });
+})();
+</script>
+
 <!-- goal modal scripts are in their respective partials -->
 <script>
 (function () {

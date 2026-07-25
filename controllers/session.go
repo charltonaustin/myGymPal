@@ -17,9 +17,16 @@ type sessionExerciseBlock struct {
 	Exercises []*models.SessionExerciseView
 }
 
+// groupSessionExercises buckets the loose exercises by block. Exercises inside a
+// circuit are left out: the circuit renders as its own card, so listing them here
+// as well would show each of them twice — and would hang a superset chain toggle
+// off an exercise whose rest is already governed by the circuit.
 func groupSessionExercises(exercises []*models.SessionExerciseView) []sessionExerciseBlock {
 	byBlock := map[string][]*models.SessionExerciseView{}
 	for _, ev := range exercises {
+		if ev.Exercise.CircuitID != nil {
+			continue
+		}
 		b := ev.Exercise.Block
 		if b == "" {
 			b = "main"
@@ -36,6 +43,34 @@ func groupSessionExercises(exercises []*models.SessionExerciseView) []sessionExe
 		}
 	}
 	return blocks
+}
+
+// sessionCircuitView is a circuit and its members, rendered as one card and run
+// as one unit by the timed runner.
+type sessionCircuitView struct {
+	Circuit   *models.SessionCircuit
+	Exercises []*models.SessionExerciseView
+}
+
+// groupSessionCircuits pairs each circuit with its members in sort order. A
+// circuit whose exercises have all been deleted is dropped rather than rendered
+// as an empty card with a Start button that would have nothing to run.
+func groupSessionCircuits(circuits []*models.SessionCircuit, exercises []*models.SessionExerciseView) []sessionCircuitView {
+	byCircuit := map[int64][]*models.SessionExerciseView{}
+	for _, ev := range exercises {
+		if ev.Exercise.CircuitID != nil {
+			byCircuit[*ev.Exercise.CircuitID] = append(byCircuit[*ev.Exercise.CircuitID], ev)
+		}
+	}
+	views := make([]sessionCircuitView, 0, len(circuits))
+	for _, circuit := range circuits {
+		members := byCircuit[circuit.ID]
+		if len(members) == 0 {
+			continue
+		}
+		views = append(views, sessionCircuitView{Circuit: circuit, Exercises: members})
+	}
+	return views
 }
 
 // supersetMaxRun is the largest number of exercises one superset may hold.
@@ -383,6 +418,21 @@ func (c *SessionController) Show() {
 				ev.GoalRepMax = libEx.GoalRepMax
 			}
 		}
+		// An exercise inside a circuit is timed by the circuit's definition, not
+		// by whatever the library says its name usually means — "shoulder
+		// stretch" is very likely filed there as bodyweight. Without this the
+		// enrichment above would flip it back and the runner would have nothing
+		// to count down.
+		if ev.Exercise.CircuitID != nil {
+			ev.Exercise.IsTimeBased = true
+			ev.Exercise.IsBodyweight = false
+		}
+	}
+
+	circuits, err := SessionExercises.GetCircuitsBySession(id)
+	if err != nil {
+		logs.Error("SessionController.Show: GetCircuitsBySession: %v", err)
+		circuits = []*models.SessionCircuit{}
 	}
 
 	user, err := Users.GetByID(userID.(int64))
@@ -490,6 +540,7 @@ func (c *SessionController) Show() {
 	c.Data["Session"] = session
 	c.Data["Program"] = program
 	c.Data["ExerciseBlocks"] = groupSessionExercises(exercises)
+	c.Data["Circuits"] = groupSessionCircuits(circuits, exercises)
 	c.Data["WeightUnit"] = weightUnit
 	c.Data["ExWeightUnit"] = weightUnit
 	c.Data["PhaseRepMin"] = phaseRepMin
@@ -597,6 +648,18 @@ func (c *SessionController) UpdateLink() {
 	if err != nil || exercise.SessionID != sessionID {
 		c.Ctx.Output.SetStatus(404)
 		c.Data["json"] = map[string]interface{}{"ok": false, "error": "exercise not found"}
+		c.ServeJSON()
+		return
+	}
+
+	// A circuit already means "no rest between these". Layering a superset link
+	// on top would give two competing rules for the same suppression, so an
+	// exercise in a circuit is not linkable at all — the page does not render the
+	// toggle for one, and a request that arrives anyway is refused here rather
+	// than left to the caller to avoid.
+	if exercise.CircuitID != nil {
+		c.Ctx.Output.SetStatus(400)
+		c.Data["json"] = map[string]interface{}{"ok": false, "error": "an exercise in a circuit cannot be supersetted"}
 		c.ServeJSON()
 		return
 	}

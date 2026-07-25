@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"sort"
 	"strings"
 	"testing"
 	"time"
@@ -1151,4 +1152,79 @@ func getPath(path string, cookies []*http.Cookie) *httptest.ResponseRecorder {
 	w := httptest.NewRecorder()
 	beego.BeeApp.Handlers.ServeHTTP(w, r)
 	return w
+}
+
+// --- Session circuit mock helpers ---
+
+// testCircuitID is the id of the session circuit built by the circuit helpers.
+const testCircuitID = int64(555)
+
+// setSessionCircuit makes GetBySession return one circuit's members followed by
+// the given loose exercises, and GetCircuitsBySession return the circuit itself.
+// The loose exercises are what make a "circuit exercises are treated
+// differently" assertion mean anything: without them a test cannot tell the
+// circuit rule apart from the feature being switched off everywhere.
+func setSessionCircuit(name string, rounds, transition int, members map[string]int, loose ...string) {
+	circuitID := testCircuitID
+	mockSessionExercises.GetCircuitsBySessionFn = func(sessionID int64) ([]*models.SessionCircuit, error) {
+		return []*models.SessionCircuit{{
+			ID:                circuitID,
+			SessionID:         sessionID,
+			Name:              name,
+			Rounds:            rounds,
+			TransitionSeconds: transition,
+		}}, nil
+	}
+	mockSessionExercises.GetBySessionFn = func(sessionID int64) ([]*models.SessionExerciseView, error) {
+		var views []*models.SessionExerciseView
+		id := int64(1)
+		for _, memberName := range sortedNames(members) {
+			views = append(views, &models.SessionExerciseView{Exercise: &models.SessionExercise{
+				ID: id, SessionID: sessionID, Name: memberName, Block: "stretch", WeightUnit: "lb",
+				SortOrder: int(id), IsTimeBased: true, CircuitID: &circuitID, WorkSeconds: members[memberName],
+				// A stale link on a circuit member must be ignored, not obeyed.
+				LinkedToNext: true,
+			}})
+			id++
+		}
+		for _, looseName := range loose {
+			views = append(views, &models.SessionExerciseView{Exercise: &models.SessionExercise{
+				ID: id, SessionID: sessionID, Name: looseName, Block: "main", WeightUnit: "lb", SortOrder: int(id),
+			}})
+			id++
+		}
+		return views, nil
+	}
+	mockSessionExercises.GetByIDFn = func(exerciseID int64) (*models.SessionExercise, error) {
+		if exerciseID <= int64(len(members)) {
+			return &models.SessionExercise{ID: exerciseID, SessionID: testSessionID, Name: "member", Block: "stretch", CircuitID: &circuitID}, nil
+		}
+		return &models.SessionExercise{ID: exerciseID, SessionID: testSessionID, Name: "loose", Block: "main"}, nil
+	}
+}
+
+// sortedNames returns a map's keys in a stable order so the rendered page does
+// not change between runs.
+func sortedNames(m map[string]int) []string {
+	names := make([]string, 0, len(m))
+	for name := range m {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+	return names
+}
+
+// setTemplateCircuitBody makes GetByID and GetCircuits return one circuit with
+// two members and one loose exercise, as a template built on the form would.
+func setTemplateCircuitBody() {
+	circuitID := int64(7)
+	setTemplateGetCircuits(&models.TemplateCircuit{
+		ID: circuitID, TemplateID: testTemplateID, Name: "Morning Stretch",
+		Rounds: 3, TransitionSeconds: 5, SortOrder: 0,
+	})
+	setTemplateGetByIDExercises(testTemplateID, "Mobility", "Mobility",
+		&models.TemplateExercise{ID: 1, TemplateID: testTemplateID, Name: "shoulder stretch", Block: "stretch", IsTimeBased: true, SortOrder: 0, CircuitID: &circuitID, WorkSeconds: 30},
+		&models.TemplateExercise{ID: 2, TemplateID: testTemplateID, Name: "hip flexor", Block: "stretch", IsTimeBased: true, SortOrder: 1, CircuitID: &circuitID, WorkSeconds: 45},
+		&models.TemplateExercise{ID: 3, TemplateID: testTemplateID, Name: "bench press", Block: "main", SortOrder: 2},
+	)
 }

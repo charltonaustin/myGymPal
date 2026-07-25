@@ -6,9 +6,11 @@ import (
 	"net/http"
 	"net/url"
 	"regexp"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"myGymPal/models"
 )
 
@@ -643,4 +645,194 @@ func TestSessionShow_StaleLinkOnLastExerciseNotRendered(t *testing.T) {
 	// so the rest timer will fire after every exercise here.
 	assert.NotContains(t, body, `data-linked="true"`)
 	assert.NotContains(t, body, "A1")
+}
+
+// --- Circuits ---
+
+func TestSessionCreate_CopiesCircuitFromTemplate(t *testing.T) {
+	t.Cleanup(resetMocks)
+	setProgramGetByIDWithDates("My Program", 4, 8, testProgramDate)
+	captureSessionCreate()
+	setTemplateCircuitBody()
+	captureSessionExerciseCreates()
+	cookies := loginAs(t, "session_create_circuit", "lb")
+
+	w := postForm("/programs/1/sessions", url.Values{
+		"phase_number":   {"1"},
+		"week_number":    {"1"},
+		"workout_number": {"1"},
+		"template_id":    {fmt.Sprintf("%d", testTemplateID)},
+	}, cookies)
+
+	assert.Equal(t, http.StatusFound, w.Code)
+	require.True(t, lastCreateBody.called, "the template body must be copied in one call")
+	require.Len(t, lastCreateBody.circuits, 1)
+	assert.Equal(t, "Morning Stretch", lastCreateBody.circuits[0].Name)
+	assert.Equal(t, 3, lastCreateBody.circuits[0].Rounds)
+	assert.Equal(t, 5, lastCreateBody.circuits[0].TransitionSeconds)
+	assert.Equal(t, int64(7), lastCreateBody.circuits[0].TemplateCircuitID,
+		"the copy needs the template circuit id to remap each exercise onto the new one")
+
+	require.Len(t, lastCreateBody.exercises, 3)
+	shoulder := lastCreateBody.exercises[0]
+	require.NotNil(t, shoulder.CircuitID)
+	assert.Equal(t, int64(7), *shoulder.CircuitID)
+	assert.Equal(t, 30, shoulder.WorkSeconds, "the template's work seconds must reach the session")
+	assert.True(t, shoulder.IsTimeBased, "an exercise in a circuit is timed by definition")
+	assert.Equal(t, 45, lastCreateBody.exercises[1].WorkSeconds)
+}
+
+// The library's goal seconds are authoritative outside a circuit and overridden
+// inside one. Both halves are asserted here: without the loose exercise, a
+// version that simply ignored the library entirely would pass.
+func TestSessionCreate_CircuitWorkSecondsOverrideTheLibrary(t *testing.T) {
+	t.Cleanup(resetMocks)
+	setProgramGetByIDWithDates("My Program", 4, 8, testProgramDate)
+	captureSessionCreate()
+	setTemplateCircuitBody()
+	captureSessionExerciseCreates()
+	mockExercises.GetByNameFn = func(userID int64, name string) (*models.Exercise, error) {
+		// The library has "shoulder stretch" filed as a 15-second bodyweight
+		// exercise — the circuit must not inherit any of that.
+		return &models.Exercise{ID: 1, Name: name, IsTimeBased: true, GoalSeconds: 15, IsBodyweight: true, WeightUnit: "lb"}, nil
+	}
+	cookies := loginAs(t, "session_create_circuit_secs", "lb")
+
+	w := postForm("/programs/1/sessions", url.Values{
+		"phase_number":   {"1"},
+		"week_number":    {"1"},
+		"workout_number": {"1"},
+		"template_id":    {fmt.Sprintf("%d", testTemplateID)},
+	}, cookies)
+
+	assert.Equal(t, http.StatusFound, w.Code)
+	require.Len(t, lastCreateBody.exercises, 3)
+	assert.Equal(t, 30, lastCreateBody.exercises[0].GoalSeconds, "inside a circuit the template's duration wins")
+	assert.False(t, lastCreateBody.exercises[0].IsBodyweight)
+	assert.Equal(t, 15, lastCreateBody.exercises[2].GoalSeconds, "outside a circuit the library still wins")
+	assert.Nil(t, lastCreateBody.exercises[2].CircuitID)
+}
+
+func TestSessionShow_RendersCircuitAsOneCard(t *testing.T) {
+	t.Cleanup(resetMocks)
+	setSessionGetByID(1, 1, 1, false)
+	setProgramGetByIDWithDates("My Program", 4, 8, testProgramDate)
+	setSessionCircuit("Morning Stretch", 3, 5, map[string]int{"a shoulder stretch": 30, "b hip flexor": 45}, "bench press")
+	cookies := loginAs(t, "session_show_circuit", "lb")
+
+	w := getPath(fmt.Sprintf("/sessions/%d", testSessionID), cookies)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	body := w.Body.String()
+	assert.Contains(t, body, "Morning Stretch")
+	assert.Contains(t, body, "3 rounds &middot; 5s transition")
+	assert.Contains(t, body, `class="btn btn-light btn-sm flex-shrink-0 start-circuit-btn"`)
+	assert.Contains(t, body, `data-rounds="3"`)
+	assert.Contains(t, body, `data-transition="5"`)
+	assert.Contains(t, body, `data-work-seconds="30"`)
+	assert.Contains(t, body, `data-work-seconds="45"`)
+	// Each member appears exactly once: in the circuit card, never also as a
+	// loose card in its block.
+	assert.Equal(t, 1, strings.Count(body, `data-ex-id="1"`),
+		"a circuit member must be rendered exactly once, not also as a loose card in its block")
+	assert.Equal(t, 1, strings.Count(body, `data-ex-id="2"`))
+}
+
+func TestSessionShow_CircuitExerciseHasNoChainToggle(t *testing.T) {
+	t.Cleanup(resetMocks)
+	setSessionGetByID(1, 1, 1, false)
+	setProgramGetByIDWithDates("My Program", 4, 8, testProgramDate)
+	setSessionCircuit("Morning Stretch", 1, 5, map[string]int{"a shoulder stretch": 30, "b hip flexor": 45}, "bench press", "overhead press")
+	cookies := loginAs(t, "session_show_circuit_chain", "lb")
+
+	w := getPath(fmt.Sprintf("/sessions/%d", testSessionID), cookies)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	body := w.Body.String()
+	// Both circuit members carry LinkedToNext = true in the fixture. A circuit
+	// already means "no rest between these", so the raw column must be ignored
+	// and no chain toggle offered for either of them.
+	circuitCard := body[strings.Index(body, `data-ex-id="1" data-in-circuit="true"`):]
+	circuitCard = circuitCard[:strings.Index(circuitCard, "Add Exercise")]
+	assert.NotContains(t, circuitCard, "chain-btn", "an exercise in a circuit must not offer the superset toggle")
+	assert.NotContains(t, circuitCard, "superset-badge")
+
+	// POSITIVE CONTROL: the loose exercises in the same session still do, so a
+	// version that never rendered the toggle anywhere would fail here.
+	assert.Contains(t, body, "chain-btn")
+	assert.Contains(t, body, `data-ex-id="3"`)
+}
+
+func TestSessionShow_CircuitExerciseCardSuppressesRest(t *testing.T) {
+	t.Cleanup(resetMocks)
+	setSessionGetByID(1, 1, 1, false)
+	setProgramGetByIDWithDates("My Program", 4, 8, testProgramDate)
+	setSessionCircuit("Morning Stretch", 1, 5, map[string]int{"a shoulder stretch": 30}, "bench press")
+	cookies := loginAs(t, "session_show_circuit_rest", "lb")
+
+	w := getPath(fmt.Sprintf("/sessions/%d", testSessionID), cookies)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	body := w.Body.String()
+	// The card carries the computed "do not rest after me" state the log handler
+	// reads, exactly as a superset member carries data-linked.
+	assert.Contains(t, body, `data-ex-id="1" data-in-circuit="true"`)
+	// POSITIVE CONTROL: the loose exercise carries no such attribute, so its
+	// rest timer still fires.
+	assert.NotContains(t, body, `data-ex-id="2" data-in-circuit="true"`)
+}
+
+func TestSessionShow_NoCircuitsRendersNoCircuitCard(t *testing.T) {
+	t.Cleanup(resetMocks)
+	setSessionGetByID(1, 1, 1, false)
+	setProgramGetByIDWithDates("My Program", 4, 8, testProgramDate)
+	setSessionExerciseBlock("main", []bool{true, false})
+	cookies := loginAs(t, "session_show_nocircuit", "lb")
+
+	w := getPath(fmt.Sprintf("/sessions/%d", testSessionID), cookies)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	body := w.Body.String()
+	// Matched on the rendered markup, not on the class name alone: the runner's
+	// JS mentions both selectors on every page whether a circuit exists or not.
+	assert.NotContains(t, body, "border-dark circuit-card")
+	assert.NotContains(t, body, "Start Circuit")
+	// Regression: supersets still link and still label.
+	assert.Contains(t, body, "chain-btn")
+	assert.Contains(t, body, ">A1<")
+}
+
+func TestSessionUpdateLink_RejectsCircuitExercise(t *testing.T) {
+	t.Cleanup(resetMocks)
+	setSessionGetByID(1, 1, 1, false)
+	setSessionCircuit("Morning Stretch", 1, 5, map[string]int{"a shoulder stretch": 30, "b hip flexor": 45}, "bench press")
+	captureUpdateLink()
+	cookies := loginAs(t, "session_link_circuit", "lb")
+
+	w := postForm(fmt.Sprintf("/sessions/%d/exercises/1/link", testSessionID), url.Values{
+		"linked": {"true"},
+	}, cookies)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+	assert.Contains(t, w.Body.String(), "cannot be supersetted")
+	assert.False(t, lastUpdateLink.called, "the repository must never be reached for a circuit exercise")
+}
+
+func TestSessionUpdateLink_StillAllowsLooseExercise(t *testing.T) {
+	t.Cleanup(resetMocks)
+	setSessionGetByID(1, 1, 1, false)
+	setSessionCircuit("Morning Stretch", 1, 5, map[string]int{"a shoulder stretch": 30, "b hip flexor": 45}, "bench press", "overhead press")
+	captureUpdateLink()
+	cookies := loginAs(t, "session_link_loose", "lb")
+
+	// POSITIVE CONTROL for the test above: exercise 3 is loose, and linking it
+	// still works, so the rejection is about circuits and not about linking
+	// having been broken outright.
+	w := postForm(fmt.Sprintf("/sessions/%d/exercises/3/link", testSessionID), url.Values{
+		"linked": {"true"},
+	}, cookies)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	assert.True(t, lastUpdateLink.called)
+	assert.True(t, lastUpdateLink.linked)
 }
