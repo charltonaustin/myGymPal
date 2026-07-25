@@ -241,21 +241,24 @@ func (c *SessionController) Create() {
 				defaultUnit = user.WeightUnit
 			}
 			for _, ex := range exercises {
-				goalWeight := 0.0
-				weightUnit := defaultUnit
-				isTimeBased := false
-				goalSeconds := 0
-				exGoalReps := goalReps
+				in := models.SessionExerciseInput{
+					SessionID:    session.ID,
+					Name:         ex.Name,
+					IsBodyweight: ex.IsBodyweight,
+					WeightUnit:   defaultUnit,
+					GoalReps:     goalReps,
+					Block:        ex.Block,
+				}
 				if libEx, err := Exercises.GetByName(userID.(int64), ex.Name); err == nil {
-					goalWeight = libEx.GoalWeight
-					weightUnit = libEx.WeightUnit
-					isTimeBased = libEx.IsTimeBased
-					goalSeconds = libEx.GoalSeconds
+					in.GoalWeight = libEx.GoalWeight
+					in.WeightUnit = libEx.WeightUnit
+					in.IsTimeBased = libEx.IsTimeBased
+					in.GoalSeconds = libEx.GoalSeconds
 					if libEx.GoalRepMin > 0 {
-						exGoalReps = libEx.GoalRepMin
+						in.GoalReps = libEx.GoalRepMin
 					}
 				}
-				SessionExercises.Create(session.ID, ex.Name, ex.IsBodyweight, goalWeight, weightUnit, exGoalReps, ex.Block, isTimeBased, goalSeconds)
+				SessionExercises.Create(in)
 			}
 		}
 	}
@@ -679,7 +682,17 @@ func (c *SessionController) AddExercise() {
 	} else {
 		Exercises.Create(userID.(int64), name, isBodyweight, goalWeight, weightUnit, isTimeBased, goalSeconds, 0, 0, block)
 	}
-	_, err = SessionExercises.Create(sessionID, name, isBodyweight, goalWeight, weightUnit, goalReps, block, isTimeBased, goalSeconds)
+	_, err = SessionExercises.Create(models.SessionExerciseInput{
+		SessionID:    sessionID,
+		Name:         name,
+		IsBodyweight: isBodyweight,
+		GoalWeight:   goalWeight,
+		WeightUnit:   weightUnit,
+		GoalReps:     goalReps,
+		Block:        block,
+		IsTimeBased:  isTimeBased,
+		GoalSeconds:  goalSeconds,
+	})
 	if err != nil {
 		c.Redirect(fmt.Sprintf("/sessions/%d", sessionID), 302)
 		return
@@ -818,7 +831,12 @@ func (c *SessionController) AddCardioActivity() {
 	goalDuration, _ := strconv.Atoi(c.GetString("goal_duration"))
 	actualDuration, _ := strconv.Atoi(c.GetString("actual_duration"))
 
-	ex, err := SessionExercises.Create(sessionID, name, false, 0, "lb", 0, "cardio", false, 0)
+	ex, err := SessionExercises.Create(models.SessionExerciseInput{
+		SessionID:  sessionID,
+		Name:       name,
+		WeightUnit: "lb",
+		Block:      "cardio",
+	})
 	if err != nil {
 		logs.Error("SessionController.AddCardioActivity: Create: %v", err)
 		c.Redirect(fmt.Sprintf("/sessions/%d", sessionID), 302)

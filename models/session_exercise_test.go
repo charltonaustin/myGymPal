@@ -23,7 +23,14 @@ func testSessionExercise(t *testing.T, username string) *SessionExercise {
 	s, err := CreateSession(p.ID, u.ID, 1, 1, 1, false, testStartDate)
 	require.NoError(t, err)
 
-	ex, err := CreateSessionExercise(s.ID, "test_bench_press", false, 100, "lb", 10, "main", false, 0)
+	ex, err := CreateSessionExercise(SessionExerciseInput{
+		SessionID:  s.ID,
+		Name:       "test_bench_press",
+		GoalWeight: 100,
+		WeightUnit: "lb",
+		GoalReps:   10,
+		Block:      "main",
+	})
 	require.NoError(t, err)
 	return ex
 }

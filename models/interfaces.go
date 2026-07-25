@@ -78,7 +78,7 @@ type ProgramWorkoutTemplateRepository interface {
 }
 
 type SessionExerciseRepository interface {
-	Create(sessionID int64, name string, isBodyweight bool, goalWeight float64, weightUnit string, goalReps int, block string, isTimeBased bool, goalSeconds int) (*SessionExercise, error)
+	Create(in SessionExerciseInput) (*SessionExercise, error)
 	GetBySession(sessionID int64) ([]*SessionExerciseView, error)
 	GetByID(exerciseID int64) (*SessionExercise, error)
 	LogSet(exerciseID int64, setNumber int, actualWeight float64, weightUnit string, actualReps int, actualSeconds int, activityType string) (*SessionSet, error)

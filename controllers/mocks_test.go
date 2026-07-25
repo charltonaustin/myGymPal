@@ -268,7 +268,7 @@ func (m *mockPhaseRepo) UpdateRestSeconds(programID int64, phaseNumber, restSeco
 }
 
 type mockSessionExerciseRepo struct {
-	CreateFn              func(sessionID int64, name string, isBodyweight bool, goalWeight float64, weightUnit string, goalReps int, block string, isTimeBased bool, goalSeconds int) (*models.SessionExercise, error)
+	CreateFn              func(in models.SessionExerciseInput) (*models.SessionExercise, error)
 	GetBySessionFn        func(sessionID int64) ([]*models.SessionExerciseView, error)
 	GetByIDFn             func(exerciseID int64) (*models.SessionExercise, error)
 	LogSetFn              func(exerciseID int64, setNumber int, actualWeight float64, weightUnit string, actualReps int, actualSeconds int, activityType string) (*models.SessionSet, error)
@@ -282,11 +282,28 @@ type mockSessionExerciseRepo struct {
 	UpdateLinkedToNextFn  func(id int64, linked bool) error
 }
 
-func (m *mockSessionExerciseRepo) Create(sessionID int64, name string, isBodyweight bool, goalWeight float64, weightUnit string, goalReps int, block string, isTimeBased bool, goalSeconds int) (*models.SessionExercise, error) {
+func (m *mockSessionExerciseRepo) Create(in models.SessionExerciseInput) (*models.SessionExercise, error) {
 	if m.CreateFn != nil {
-		return m.CreateFn(sessionID, name, isBodyweight, goalWeight, weightUnit, goalReps, block, isTimeBased, goalSeconds)
+		return m.CreateFn(in)
 	}
-	return &models.SessionExercise{ID: testExerciseID, SessionID: sessionID, Name: name, IsBodyweight: isBodyweight, GoalWeight: goalWeight, WeightUnit: weightUnit, GoalReps: goalReps, Block: block}, nil
+	return newMockSessionExercise(in), nil
+}
+
+// newMockSessionExercise mirrors what the real repository stores for one input,
+// so a test reading a field back gets the value the controller actually sent.
+func newMockSessionExercise(in models.SessionExerciseInput) *models.SessionExercise {
+	return &models.SessionExercise{
+		ID:           testExerciseID,
+		SessionID:    in.SessionID,
+		Name:         in.Name,
+		IsBodyweight: in.IsBodyweight,
+		GoalWeight:   in.GoalWeight,
+		WeightUnit:   in.WeightUnit,
+		GoalReps:     in.GoalReps,
+		Block:        in.Block,
+		IsTimeBased:  in.IsTimeBased,
+		GoalSeconds:  in.GoalSeconds,
+	}
 }
 
 func (m *mockSessionExerciseRepo) GetBySession(sessionID int64) ([]*models.SessionExerciseView, error) {
@@ -921,9 +938,9 @@ var sessionExerciseCreateNames []string
 // captureSessionExerciseCreates records the name of each exercise created.
 func captureSessionExerciseCreates() {
 	sessionExerciseCreateNames = nil
-	mockSessionExercises.CreateFn = func(sessionID int64, name string, isBodyweight bool, goalWeight float64, weightUnit string, goalReps int, block string, isTimeBased bool, goalSeconds int) (*models.SessionExercise, error) {
-		sessionExerciseCreateNames = append(sessionExerciseCreateNames, name)
-		return &models.SessionExercise{ID: testExerciseID, SessionID: sessionID, Name: name, IsBodyweight: isBodyweight, GoalWeight: goalWeight, WeightUnit: weightUnit, GoalReps: goalReps, Block: block}, nil
+	mockSessionExercises.CreateFn = func(in models.SessionExerciseInput) (*models.SessionExercise, error) {
+		sessionExerciseCreateNames = append(sessionExerciseCreateNames, in.Name)
+		return newMockSessionExercise(in), nil
 	}
 }
 

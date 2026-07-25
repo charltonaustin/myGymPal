@@ -30,6 +30,22 @@ func (s *SessionExercise) TableName() string {
 	return "session_exercises"
 }
 
+// SessionExerciseInput is everything needed to create one exercise in a session.
+// It replaces a nine-parameter constructor: adding circuit membership and work
+// seconds would have made eleven positional arguments, almost all of them int
+// and bool, where a transposed pair still compiles and still passes the tests.
+type SessionExerciseInput struct {
+	SessionID    int64
+	Name         string
+	IsBodyweight bool
+	GoalWeight   float64
+	WeightUnit   string
+	GoalReps     int
+	Block        string
+	IsTimeBased  bool
+	GoalSeconds  int
+}
+
 type SessionSet struct {
 	ID                int64   `orm:"column(id);auto;pk"`
 	SessionExerciseID int64   `orm:"column(session_exercise_id)"`
@@ -80,25 +96,30 @@ func init() {
 	orm.RegisterModel(&SessionExercise{}, &SessionSet{})
 }
 
-func CreateSessionExercise(sessionID int64, name string, isBodyweight bool, goalWeight float64, weightUnit string, goalReps int, block string, isTimeBased bool, goalSeconds int) (*SessionExercise, error) {
-	name = strings.ToLower(strings.TrimSpace(name))
+// newSessionExercise builds the row for one input at a known sort order.
+func newSessionExercise(in SessionExerciseInput, sortOrder int) *SessionExercise {
+	block := in.Block
 	if block == "" {
 		block = "main"
 	}
-	o := orm.NewOrm()
-	n, _ := o.QueryTable(&SessionExercise{}).Filter("SessionID", sessionID).Count()
-	e := &SessionExercise{
-		SessionID:    sessionID,
-		Name:         name,
-		IsBodyweight: isBodyweight,
-		GoalWeight:   goalWeight,
-		WeightUnit:   weightUnit,
-		GoalReps:     goalReps,
+	return &SessionExercise{
+		SessionID:    in.SessionID,
+		Name:         strings.ToLower(strings.TrimSpace(in.Name)),
+		IsBodyweight: in.IsBodyweight,
+		GoalWeight:   in.GoalWeight,
+		WeightUnit:   in.WeightUnit,
+		GoalReps:     in.GoalReps,
 		Block:        block,
-		SortOrder:    int(n),
-		IsTimeBased:  isTimeBased,
-		GoalSeconds:  goalSeconds,
+		SortOrder:    sortOrder,
+		IsTimeBased:  in.IsTimeBased,
+		GoalSeconds:  in.GoalSeconds,
 	}
+}
+
+func CreateSessionExercise(in SessionExerciseInput) (*SessionExercise, error) {
+	o := orm.NewOrm()
+	n, _ := o.QueryTable(&SessionExercise{}).Filter("SessionID", in.SessionID).Count()
+	e := newSessionExercise(in, int(n))
 	_, err := o.Insert(e)
 	return e, err
 }
