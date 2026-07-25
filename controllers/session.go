@@ -418,16 +418,13 @@ func (c *SessionController) Show() {
 				ev.GoalRepMax = libEx.GoalRepMax
 			}
 		}
-		// An exercise inside a circuit is timed by the circuit's definition, not
-		// by whatever the library says its name usually means — "shoulder
-		// stretch" is very likely filed there as bodyweight. Without this the
-		// enrichment above would flip it back and the runner would have nothing
-		// to count down.
-		if ev.Exercise.CircuitID != nil {
-			ev.Exercise.IsTimeBased = true
-			ev.Exercise.IsBodyweight = false
-		}
 	}
+	// Note that the enrichment above may leave a circuit member reading as
+	// bodyweight, because the library very likely has "shoulder stretch" filed
+	// that way. It does not matter and must not be "fixed" here: the circuit card
+	// renders from work_seconds, and LogSet reads is_time_based from the stored
+	// row rather than from this enriched copy. Forcing it here would be code no
+	// caller can observe.
 
 	circuits, err := SessionExercises.GetCircuitsBySession(id)
 	if err != nil {
